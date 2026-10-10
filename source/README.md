@@ -8,7 +8,7 @@ Extract the delivery ZIP. Upload the **dist** folder to https://app.netlify.com/
 
 ## Develop or deploy from Git
 
-Use **source** as your repository root. Node 24 is recommended (Vite requires modern Node). Run `npm ci`, `npm run dev`, `npm test`, `npm run build`. Build output is `dist`. The included `netlify.toml` sets build command `npm run build` and publish directory `dist`. `npm run typecheck` checks TypeScript separately.
+When deploying this entire repository, the root `netlify.toml` sets base directory `source`, build command `npm run build`, and publish directory `dist` relative to that base (the generated `source/dist` folder). If you instead use **source** as a standalone repository root, its included `netlify.toml` sets the same build command and publish directory without a base directory. Node 24 is recommended (Vite requires modern Node). For local development, run `npm ci`, `npm run dev`, `npm test`, and `npm run build` inside **source**. `npm run typecheck` checks TypeScript separately.
 
 ## Source structure
 

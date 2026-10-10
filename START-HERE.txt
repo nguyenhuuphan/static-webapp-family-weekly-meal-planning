@@ -13,7 +13,8 @@ Or export JSON from the older version and import it in Settings.
 No backend or API key. Changes save only in your browser.
 
 Local development: in source, npm ci then npm run dev.
-Git deploy: build npm run build; publish directory dist.
+Git deploy from this repository: base directory source; build npm run build;
+publish directory dist (relative to source). Root netlify.toml sets these values.
 
 This package has been compiled and tested automatically. Native-browser
 visual QA and deployment to your Netlify account have not been performed.

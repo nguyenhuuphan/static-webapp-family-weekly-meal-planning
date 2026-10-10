@@ -1,0 +1,23 @@
+WEEKDAY TABLE — STRUCTURED REACT + REDUX + TYPESCRIPT EDITION
+
+1. Extract this ZIP.
+2. Upload the dist folder to https://app.netlify.com/drop
+   (or to your existing Netlify site's manual deploy area).
+3. Open the URL Netlify returns.
+
+dist = production build, ready to upload. No installation needed.
+source = full React/TypeScript source, tests, package lock and README.
+
+To preserve browser data from the older website, deploy to the SAME site URL.
+Or export JSON from the older version and import it in Settings.
+No backend or API key. Changes save only in your browser.
+
+Local development: in source, npm ci then npm run dev.
+Git deploy: build npm run build; publish directory dist.
+
+This package has been compiled and tested automatically. Native-browser
+visual QA and deployment to your Netlify account have not been performed.
+
+Source conventions: containers/Feature/Screen/index.tsx, React.FC<IProps>,
+src/... aliases, typed Redux Toolkit store, services, hooks and SCSS.
+See source/README.md for the folder responsibility map.

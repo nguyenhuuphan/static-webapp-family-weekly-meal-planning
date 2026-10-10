@@ -11,6 +11,8 @@ import {
   Pencil,
   CheckCircle2,
   Info,
+  ChefHat,
+  Leaf,
 } from "lucide-react";
 import { DAYS } from "src/types";
 import { isPrepared, dateLabel } from "src/domain";
@@ -83,6 +85,8 @@ const WeeklyMenu: React.FC<IProps> = () => {
           </div>
         </div>
       </div>
+      <div className="weekly-workspace">
+      <section className="weekly-schedule" aria-label="Weekly meal plan">
       <div className="section-title">
         <div>
           <span className="eyebrow">WHAT’S COOKING</span>
@@ -174,6 +178,25 @@ const WeeklyMenu: React.FC<IProps> = () => {
             </div>
           </section>
         ))}
+      </div>
+      </section>
+      <aside className="week-companion" aria-label="Kitchen overview">
+        <section className="companion-progress">
+          <span className="eyebrow">ONE MEAL AT A TIME</span>
+          <h2>A week well spent.</h2>
+          <div className="progress-total"><strong>{doneCount}</strong><span>of 10 meals enjoyed</span></div>
+          <progress value={doneCount} max={10} aria-label="Meals enjoyed this week" />
+          <p>{doneCount === 10 ? "A full week of good food. Beautifully done." : "Your next good meal starts with one small step."}</p>
+        </section>
+        <section className="kitchen-shortcuts">
+          <span className="eyebrow">FROM PLAN TO PLATE</span>
+          <h2>Your kitchen rhythm</h2>
+          <button onClick={() => navigate("shop")}><span className="shortcut-icon"><ShoppingBag size={20} /></span><span><strong>Shopping list</strong><small>Gather your ingredients</small></span><ArrowRight size={17} /></button>
+          <button onClick={() => navigate("prep")}><span className="shortcut-icon"><ChefHat size={20} /></span><span><strong>Prep guide</strong><small>Get ready for the week</small></span><ArrowRight size={17} /></button>
+          <button onClick={() => navigate("cook")}><span className="shortcut-icon"><Utensils size={20} /></span><span><strong>Start cooking</strong><small>Follow your cooking steps</small></span><ArrowRight size={17} /></button>
+        </section>
+        <div className="companion-note"><Leaf size={24} /><p>Good food.<br />A little less hurry.</p><span>A little planning leaves more room for being together.</span></div>
+      </aside>
       </div>
       <div className="notice">
         <Info size={18} />

@@ -7,22 +7,22 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #263c31;
-  background: #f7f8f4;
+  color: #3f3522;
+  background: #fffbee;
   font-synthesis: none;
-  --green: #315a46;
-  --muted: #77837a;
-  --border: #e5e9e1;
+  --green: #785311;
+  --muted: #74664d;
+  --border: #ebdfbb;
   --paper: #fff;
-  --soft: #eef3eb;
-  --ink: #263c31;
+  --soft: #fff2bf;
+  --ink: #3f3522;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.6;
 }
 button,
@@ -48,8 +48,8 @@ button {
     border-color 0.16s;
 }
 button:hover {
-  background: #f1f5ed;
-  border-color: #b9cbb9;
+  background: #fff3c4;
+  border-color: #d7b95c;
 }
 button:active {
   transform: translateY(1px);
@@ -73,7 +73,7 @@ summary {
 button:focus-visible,
 a:focus-visible,
 summary:focus-visible {
-  outline: 2px solid #82a187;
+  outline: 2px solid #a66b09;
 }
 .primary {
   background: var(--green);
@@ -81,7 +81,7 @@ summary:focus-visible {
   border-color: var(--green);
 }
 .primary:hover {
-  background: #264836;
+  background: #61410b;
   color: white;
 }
 .actions {
@@ -91,7 +91,7 @@ summary:focus-visible {
   flex-wrap: wrap;
 }
 .small {
-  font-size: 12px;
+  font-size: 14px;
   padding: 8px 12px;
 }
 .icon-button {
@@ -107,7 +107,7 @@ summary:focus-visible {
   padding: 2px;
   background: transparent;
   color: var(--green);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
 }
 .danger {
@@ -138,7 +138,7 @@ summary:focus-visible {
 .brand > span {
   display: grid;
   place-items: center;
-  background: #eef3eb;
+  background: #fff2bf;
   width: 40px;
   height: 44px;
   border-radius: 15px 15px 15px 3px;
@@ -159,7 +159,7 @@ summary:focus-visible {
   margin-top: 5px;
 }
 .nav-label {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 2px;
   color: #95a096;
   padding: 0 12px;
@@ -175,30 +175,30 @@ summary:focus-visible {
   background: transparent;
   padding: 13px 14px;
   color: #778176;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 500;
 }
 .sidebar nav button.active {
   color: var(--green);
-  background: #edf3e9;
+  background: #ffedaa;
   font-weight: 650;
 }
 .sidebar nav button small {
   margin-left: auto;
   border-radius: 6px;
-  background: #dce7d5;
+  background: #f7d878;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .sidebar-bottom {
   margin-top: auto;
   padding: 32px 12px 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 14px;
 }
 .sidebar-bottom > div {
   padding: 18px;
-  background: #f7f8f2;
+  background: #fff5d4;
   border-radius: 13px;
   margin-bottom: 18px;
   color: #7f917b;
@@ -210,14 +210,14 @@ summary:focus-visible {
   margin: 8px 0 0;
 }
 .sidebar-bottom button {
-  font-size: 11px;
+  font-size: 14px;
   padding: 5px 0;
   border: 0;
   color: var(--muted);
   margin-bottom: 13px;
 }
 .sidebar-bottom > span {
-  font-size: 10px;
+  font-size: 12px;
   display: block;
   color: #98a195;
 }
@@ -232,7 +232,7 @@ main {
   justify-content: space-between;
   padding: 0 44px;
   background: #ffffff80;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
 }
 .week-label,
@@ -266,7 +266,7 @@ main {
   max-width: 660px;
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 2px;
   color: #748b73;
   font-weight: 650;
@@ -286,13 +286,13 @@ h2 {
   margin: 0 0 10px;
 }
 h3 {
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1.5;
   margin: 0;
 }
 h4 {
   margin: 18px 0 9px;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1.4px;
   text-transform: uppercase;
   color: #98a295;
@@ -301,15 +301,15 @@ p {
   margin: 0 0 12px;
 }
 .page-heading p {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   max-width: 550px;
   margin: 0;
   line-height: 1.8;
 }
 .welcome {
-  background: #e9efe3;
-  border: 1px solid #e0e8d8;
+  background: #fff0af;
+  border: 1px solid #efd98c;
   border-radius: 21px;
   display: flex;
   overflow: hidden;
@@ -325,7 +325,7 @@ p {
 .welcome .pill {
   background: #fff8;
   color: #648160;
-  font-size: 10px;
+  font-size: 12px;
 }
 .welcome h2 {
   font-size: 33px;
@@ -334,7 +334,7 @@ p {
   margin: 14px 0;
 }
 .welcome p {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.9;
   color: #819078;
 }
@@ -343,7 +343,7 @@ p {
   background: transparent;
   padding: 0;
   margin-top: 5px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
 }
 .table-art {
@@ -430,7 +430,7 @@ p {
   position: absolute;
   bottom: 16px;
   right: 40px;
-  font-size: 8px;
+  font-size: 12px;
   letter-spacing: 2px;
   color: #a6b19e;
 }
@@ -451,7 +451,7 @@ p {
 }
 .metric-icon {
   color: #87a17e;
-  background: #f3f6ef;
+  background: #fff3c7;
   width: 39px;
   height: 39px;
   display: grid;
@@ -460,12 +460,12 @@ p {
   flex-shrink: 0;
 }
 .metric-grid strong {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 550;
 }
 .metric-grid small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: #8b958b;
   margin-top: 2px;
 }
@@ -480,7 +480,7 @@ p {
   margin-bottom: 0;
 }
 .section-title p {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
   margin: 5px 0 0;
 }
@@ -489,7 +489,7 @@ p {
   margin-bottom: 6px;
 }
 .caption {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
   line-height: 1.8;
 }
@@ -516,11 +516,11 @@ p {
   line-height: 1;
 }
 .day-title h3 {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 .day-title > div > span {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .day-meals {
@@ -545,7 +545,7 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 9px;
+  font-size: 12px;
   color: #8b9689;
   margin-bottom: 13px;
 }
@@ -559,7 +559,7 @@ p {
   letter-spacing: 1.2px;
 }
 .meal-card > p {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--muted);
   margin: 5px 0 20px;
 }
@@ -576,7 +576,7 @@ p {
   border-radius: 20px;
   background: #f0f4ed;
   color: #72896c;
-  font-size: 9px;
+  font-size: 12px;
   padding: 4px 9px;
   font-weight: 500;
 }
@@ -599,10 +599,10 @@ p {
   gap: 12px;
   align-items: start;
   border-radius: 13px;
-  background: #edf2e8;
+  background: #fff3ce;
   color: #6b7f61;
   padding: 16px 18px;
-  font-size: 11px;
+  font-size: 14px;
   margin: 22px 0;
 }
 .notice svg {
@@ -625,7 +625,7 @@ p {
 }
 .panel > p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
 }
 .panel summary {
   cursor: pointer;
@@ -633,7 +633,7 @@ p {
   align-items: center;
   gap: 9px;
   color: var(--green);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 .panel details p,
@@ -679,11 +679,11 @@ progress::-moz-progress-bar {
   align-items: center;
 }
 .progress-panel strong {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 550;
 }
 .progress-panel span {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .progress-panel progress {
@@ -711,7 +711,7 @@ progress::-moz-progress-bar {
   border: 0;
   padding: 0;
   background: transparent;
-  font-size: 12px;
+  font-size: 14px;
   min-width: 0;
 }
 .search-field input:focus {
@@ -743,22 +743,22 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 .item-check strong {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   display: block;
 }
 .item-check small {
   color: #9aa397;
   display: block;
-  font-size: 9px;
+  font-size: 12px;
 }
 .quantity {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--green);
   white-space: nowrap;
 }
 .pantry-check {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
   display: flex;
   gap: 5px;
@@ -784,7 +784,7 @@ input[type="checkbox"] {
   gap: 13px;
   padding: 16px 0;
   border-bottom: 1px solid #edf0e9;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 .prep-row input {
@@ -794,7 +794,7 @@ input[type="checkbox"] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  background: #f6f8f2;
+  background: #fff8e2;
   border-radius: 11px;
   padding: 16px;
   margin-top: 18px;
@@ -805,7 +805,7 @@ input[type="checkbox"] {
   color: #8a9b81;
 }
 .storage-grid span {
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.8;
   color: #85927d;
 }
@@ -837,7 +837,7 @@ input[type="checkbox"] {
   border: 0;
   background: transparent;
   color: #8a9684;
-  font-size: 10px;
+  font-size: 12px;
   padding: 12px;
 }
 .meal-picker button.selected {
@@ -847,7 +847,7 @@ input[type="checkbox"] {
 }
 .meal-picker small {
   display: block;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.5;
   margin-top: 4px;
@@ -864,7 +864,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: start;
   gap: 10px;
-  font-size: 11px;
+  font-size: 14px;
   margin: 19px 0 0;
 }
 .readiness input {
@@ -877,7 +877,7 @@ input[type="checkbox"] {
   margin: 14px 0;
 }
 .ingredient-chips span {
-  font-size: 10px;
+  font-size: 12px;
   padding: 5px 9px;
   background: #f5f7f0;
   border-radius: 7px;
@@ -892,7 +892,7 @@ input[type="checkbox"] {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .step-text {
@@ -928,11 +928,11 @@ input[type="checkbox"] {
 }
 .step-timer small {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
 }
 .step-timer button {
   background: #fff;
-  font-size: 11px;
+  font-size: 14px;
   padding: 8px 12px;
 }
 .step-controls {
@@ -951,7 +951,7 @@ input[type="checkbox"] {
   flex-shrink: 0;
 }
 .doneness p {
-  font-size: 9px;
+  font-size: 12px;
   margin: 0;
   line-height: 1.8;
 }
@@ -962,7 +962,7 @@ input[type="checkbox"] {
   place-items: center;
   border-radius: 13px;
   padding: 9px;
-  background: #edf3e7;
+  background: #ffedb0;
   color: #79956c;
   margin-bottom: 19px;
 }
@@ -975,7 +975,7 @@ input[type="checkbox"] {
 .ingredient-row label,
 .edit-step label,
 .panel > label {
-  font-size: 11px;
+  font-size: 14px;
   color: #7d8a74;
   display: flex;
   flex-direction: column;
@@ -986,12 +986,12 @@ input:not([type="checkbox"]),
 select,
 textarea {
   border: 1px solid #e2e8dc;
-  background: #fafbf8;
+  background: #fffdf5;
   color: var(--ink);
   padding: 10px 12px;
   border-radius: 9px;
   width: 100%;
-  font-size: 12px;
+  font-size: 14px;
   min-width: 0;
 }
 input[type="number"] {
@@ -1014,7 +1014,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 11px 16px;
-  font-size: 14px !important;
+  font-size: 16px !important;
   color: var(--ink) !important;
   cursor: pointer;
   margin: 0 !important;
@@ -1043,21 +1043,21 @@ textarea {
 .recipe-label {
   width: 52px;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 14px;
   color: #8e9c82;
 }
 .recipe-label small {
-  font-size: 9px;
+  font-size: 12px;
 }
 .recipe-list small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   color: #98a18f;
   font-weight: 400;
   margin-top: 2px;
 }
 .recipe-list strong {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 .recipe-list svg {
@@ -1089,14 +1089,14 @@ textarea {
   flex: 1;
 }
 .number {
-  background: #eff4e9;
+  background: #fff0bc;
   color: #88a07d;
   width: 25px;
   height: 25px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 35px;
   flex-shrink: 0;
 }
@@ -1116,7 +1116,7 @@ textarea {
 .error {
   color: #a45141;
   white-space: pre-wrap;
-  font-size: 12px;
+  font-size: 14px;
   margin: 15px 0;
 }
 .save-bar {
@@ -1131,14 +1131,14 @@ textarea {
   justify-content: space-between;
   padding: 13px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 14px;
   text-decoration: none;
 }
 .sources p {
   margin-top: 20px;
 }
 .panel li {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   margin: 12px 0;
 }
@@ -1176,7 +1176,7 @@ textarea {
   display: block;
 }
 .floating-timer span {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--muted);
   display: block;
 }
@@ -1191,13 +1191,13 @@ textarea {
   display: flex;
   align-items: center;
   gap: 11px;
-  background: #315a46;
+  background: #785311;
   color: white;
   box-shadow: 0 5px 25px #22432c22;
   padding: 13px 16px;
   border-radius: 13px;
   max-width: 450px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .toast .icon-button {
   color: white;
@@ -1210,7 +1210,7 @@ footer {
   justify-content: space-between;
   gap: 14px;
   color: #a3ad9c;
-  font-size: 9px;
+  font-size: 12px;
   margin-top: 35px;
   padding-top: 21px;
   border-top: 1px solid var(--border);
@@ -1357,10 +1357,10 @@ footer > span:first-child {
     display: none;
   }
   .metric-grid strong {
-    font-size: 12px;
+    font-size: 14px;
   }
   .metric-grid small {
-    font-size: 9px;
+    font-size: 12px;
   }
   .settings-grid {
     grid-template-columns: 1fr;
@@ -1391,7 +1391,7 @@ footer > span:first-child {
     margin-top: 0;
   }
   .meal-picker button {
-    font-size: 10px;
+    font-size: 12px;
   }
   .ingredient-row {
     grid-template-columns: 1.5fr 0.7fr 0.7fr 32px;
@@ -1434,7 +1434,7 @@ footer > span:first-child {
   .sidebar nav button {
     flex-direction: column;
     gap: 4px;
-    font-size: 9px;
+    font-size: 12px;
     padding: 7px 4px;
     flex: 1;
     border-radius: 10px;
@@ -1459,7 +1459,7 @@ footer > span:first-child {
     display: none;
   }
   .saved {
-    font-size: 9px;
+    font-size: 12px;
     gap: 5px;
   }
   .page-content {
@@ -1474,7 +1474,7 @@ footer > span:first-child {
     margin-bottom: 22px;
   }
   .page-heading p {
-    font-size: 11px;
+    font-size: 14px;
   }
   .welcome {
     min-height: 236px;
@@ -1487,7 +1487,7 @@ footer > span:first-child {
     font-size: 29px;
   }
   .welcome-copy p {
-    font-size: 10px;
+    font-size: 12px;
   }
   .table-art {
     width: 170px;
@@ -1508,7 +1508,7 @@ footer > span:first-child {
     width: 34px;
   }
   .plate-inner span {
-    font-size: 9px;
+    font-size: 12px;
   }
   .napkin {
     width: 120px;
@@ -1523,7 +1523,7 @@ footer > span:first-child {
     display: none;
   }
   .welcome .pill {
-    font-size: 9px;
+    font-size: 12px;
   }
   .metric-grid {
     margin-bottom: 28px;
@@ -1532,10 +1532,10 @@ footer > span:first-child {
     padding: 12px 8px;
   }
   .metric-grid strong {
-    font-size: 11px;
+    font-size: 14px;
   }
   .metric-grid small {
-    font-size: 8px;
+    font-size: 12px;
     line-height: 1.5;
   }
   .section-title {
@@ -1566,7 +1566,7 @@ footer > span:first-child {
     align-items: center;
   }
   .day-title h3 {
-    font-size: 12px;
+    font-size: 14px;
   }
   .day-meals {
     gap: 9px;
@@ -1575,15 +1575,15 @@ footer > span:first-child {
     padding: 15px 13px;
   }
   .meal-card h3 {
-    font-size: 13px;
+    font-size: 16px;
   }
   .meal-card p {
-    font-size: 10px;
+    font-size: 12px;
     min-height: 32px;
     margin-bottom: 15px;
   }
   .card-meta {
-    font-size: 8px;
+    font-size: 12px;
   }
   .card-meta svg {
     width: 11px;
@@ -1597,7 +1597,7 @@ footer > span:first-child {
     align-self: end;
   }
   .pill {
-    font-size: 8px;
+    font-size: 12px;
   }
   .card-bottom .icon-button {
     width: 25px;
@@ -1616,10 +1616,10 @@ footer > span:first-child {
   }
   .pantry-check {
     margin-left: 30px;
-    font-size: 9px;
+    font-size: 12px;
   }
   .quantity {
-    font-size: 10px;
+    font-size: 12px;
   }
   .progress-panel {
     padding: 17px;
@@ -1630,10 +1630,10 @@ footer > span:first-child {
     gap: 3px;
   }
   .progress-panel strong {
-    font-size: 11px;
+    font-size: 14px;
   }
   .prep-row {
-    font-size: 11px;
+    font-size: 14px;
   }
   .prep-card .section-title {
     align-items: center;
@@ -1657,18 +1657,18 @@ footer > span:first-child {
     gap: 8px;
   }
   .step-timer small {
-    font-size: 8px;
+    font-size: 12px;
   }
   .ingredient-row {
     gap: 7px;
   }
   .ingredient-row > label {
-    font-size: 9px;
+    font-size: 12px;
   }
   .ingredient-row input,
   .ingredient-row select {
     padding: 8px;
-    font-size: 11px;
+    font-size: 14px;
   }
   .edit-step {
     gap: 7px;
@@ -1684,7 +1684,7 @@ footer > span:first-child {
     margin-top: 30px;
   }
   .sources a {
-    font-size: 11px;
+    font-size: 14px;
   }
   .floating-timer {
     left: 50%;
@@ -1699,26 +1699,265 @@ footer > span:first-child {
     right: 12px;
     left: 12px;
     max-width: none;
-    font-size: 11px;
+    font-size: 14px;
   }
   footer {
     flex-direction: column;
     gap: 8px;
-    font-size: 8px;
-  }
-  .file-button {
-    font-size: 12px !important;
-  }
-  .settings-grid .actions button {
     font-size: 12px;
   }
+  .file-button {
+    font-size: 14px !important;
+  }
+  .settings-grid .actions button {
+    font-size: 14px;
+  }
   .notice {
-    font-size: 10px;
+    font-size: 12px;
     padding: 14px;
     gap: 9px;
   }
 }
+// Warm, readable surfaces and gentle motion throughout the planner.
+.sidebar {
+  background: linear-gradient(180deg, #fff5cb, #fffdf5 70%);
+}
+.topbar {
+  background: #fff9e6;
+}
+.brand small,
+.nav-label,
+.sidebar-bottom > span,
+.sidebar nav button,
+.eyebrow,
+.card-meta,
+.metric-grid small,
+.welcome p,
+.welcome .pill,
+.item-check small,
+.settings-grid label,
+.field-grid label,
+.ingredient-row label,
+.edit-step label,
+.panel > label {
+  color: #746044;
+}
+h1 {
+  font-size: clamp(32px, 3.5vw, 44px);
+}
+h3 {
+  font-weight: 650;
+}
+.welcome {
+  background:
+    radial-gradient(circle at 85% 15%, #ffe18a 0, transparent 48%),
+    linear-gradient(115deg, #fff4c4, #ffecaa);
+  box-shadow: 0 8px 28px #b1841510;
+}
+.welcome h2 {
+  font-size: clamp(28px, 3vw, 38px);
+}
+.welcome button {
+  color: #68460d;
+}
+.napkin {
+  background: repeating-linear-gradient(90deg, #ecc674, #ecc674 3px, #f6d891 3px, #f6d891 7px);
+}
+.plate-inner {
+  color: #9a6a1e;
+  border-color: #ecdcae;
+}
+.art-label {
+  color: #786344;
+}
+.metric-grid > div {
+  border-top: 3px solid #e9bf52;
+}
+.metric-grid > div:nth-child(2) {
+  border-top-color: #9fb88a;
+}
+.metric-grid > div:nth-child(3) {
+  border-top-color: #e6a183;
+}
+.metric-icon {
+  color: #926511;
+}
+.day-number {
+  color: #9a7121;
+}
+.meal-card {
+  border-top: 3px solid #efd47f;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.meal-card:nth-child(2) {
+  border-top-color: #e7b196;
+}
+.primary {
+  background: #f4ce67;
+  border-color: #d5ab41;
+  color: #49340c;
+  font-weight: 700;
+  box-shadow: 0 3px 0 #cba13840;
+}
+.primary:hover {
+  background: #edbd45;
+  color: #49340c;
+}
+.sidebar nav button.active {
+  box-shadow: inset 3px 0 #c18a19;
+}
+.pill.amber {
+  background: #fff0bf;
+  color: #785315;
+}
+.pill.green {
+  color: #446637;
+}
+.icon-button {
+  min-width: 36px;
+  min-height: 36px;
+}
+@media (hover: hover) {
+  .meal-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px #8b671417;
+  }
+  .sidebar nav button:hover {
+    background: #fff0bb;
+  }
+}
+@keyframes warm-arrival {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .welcome, .metric-grid, .week-grid {
+    animation: warm-arrival 420ms ease both;
+  }
+  .metric-grid { animation-delay: 70ms; }
+  .week-grid { animation-delay: 120ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (max-width: 600px) {
+  .day-meals { grid-template-columns: 1fr; }
+  .metric-grid { grid-template-columns: 1fr; }
+  .metric-grid > div { padding: 14px 16px; }
+  .meal-card h3 { font-size: 18px; }
+  .card-bottom { flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .sidebar nav button { font-size: 12px; }
+  .welcome-copy { padding: 24px; }
+}
+@media (max-width: 420px) {
+  .welcome-copy { max-width: 100%; }
+  .table-art { display: none; }
+  .topbar { gap: 12px; }
+  .saved { max-width: 125px; }
+}
+// Weekly dashboard: a generous plan canvas with a compact action column.
+.page-content { max-width: 1500px; padding-top: 40px; }
+body { background: radial-gradient(ellipse at 90% 0, #fff1c4 0, transparent 45%), #fffcf4; }
+.page-heading { margin-bottom: 30px; align-items: center; }
+.page-heading h1 { max-width: 620px; line-height: 1.15; }
+.page-heading p { font-size: 16px; line-height: 1.7; }
+.eyebrow { font-size: 11px; letter-spacing: 1.6px; font-weight: 750; }
+.welcome { min-height: 300px; border-radius: 24px; }
+.welcome-copy { padding: 36px 40px; }
+.welcome h2 { font-size: clamp(32px, 3.2vw, 46px); }
+.welcome p { font-size: 15px; line-height: 1.75; }
+.welcome button { padding: 10px 15px; background: #fffdf4; border: 1px solid #d9bd6e; border-radius: 10px; font-size: 14px; }
+.table-art { width: 42%; background: none; }
+.table-scene { width: 100%; max-width: 420px; overflow: visible; }
+.art-caption { position: absolute; bottom: 12px; font: italic 14px Georgia, serif; color: #7b6034; }
+.metric-grid { gap: 18px; margin-bottom: 36px; }
+.metric-grid > div { padding: 22px; border-top-width: 1px; border-radius: 16px; box-shadow: 0 5px 18px #73541706; }
+.metric-grid strong { font-size: 23px; font-weight: 700; letter-spacing: -.5px; }
+.metric-grid small { font-size: 13px; }
+.metric-icon { width: 46px; height: 46px; border-radius: 14px; }
+.metric-grid > div:nth-child(2) .metric-icon { background: #edf3e7; color: #4e7042; }
+.metric-grid > div:nth-child(3) .metric-icon { background: #fbe9df; color: #a2583e; }
+.weekly-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; gap: 28px; }
+.weekly-schedule { min-width: 0; }
+.weekly-schedule .section-title { align-items: start; flex-wrap: wrap; gap: 4px 15px; margin-bottom: 24px; }
+.weekly-schedule .section-title h2 { font-size: 28px; }
+.week-grid { gap: 28px; }
+.day-block { display: block; }
+.day-title { padding: 0 0 12px; align-items: center; gap: 12px; }
+.day-number { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid #eedba5; border-radius: 10px; background: #fff1c6; font: 600 15px system-ui; }
+.day-title > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; }
+.day-title h3 { font-size: 17px; }
+.day-title > div > span { font-size: 13px; }
+.day-meals { gap: 16px; }
+.meal-card { display: flex; flex-direction: column; min-width: 0; padding: 22px; border: 1px solid #e9e1ce; border-radius: 17px; box-shadow: 0 4px 14px #63491d05; }
+.meal-card:nth-child(2) { border-top-color: #e9e1ce; }
+.card-meta { margin-bottom: 18px; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+.card-meta > span:first-child { color: #8c631c; background: #fff3cf; padding: 5px 9px; border-radius: 7px; letter-spacing: .7px; }
+.meal-card:nth-child(2) .card-meta > span:first-child { color: #a15b42; background: #fbeddf; }
+.meal-card h3 { font-size: 18px; line-height: 1.45; letter-spacing: -.2px; }
+.meal-card > p { font-size: 14px; line-height: 1.65; margin: 7px 0 22px; }
+.card-bottom { margin-top: auto; padding-top: 14px; border-top: 1px solid #f0e9d9; flex-wrap: wrap; }
+.card-bottom .text-button { padding: 7px 10px; background: #fff3cf; border-radius: 8px; font-size: 14px; }
+.meal-card.complete { background: #f4f8ef; border-color: #d6e4c9; }
+.week-companion { display: grid; gap: 20px; position: sticky; top: 24px; }
+.companion-progress, .kitchen-shortcuts { border: 1px solid #e8dfc9; border-radius: 19px; padding: 24px; background: #fffefa; }
+.companion-progress { background: #fff3cd; border-color: #ecda9e; }
+.week-companion h2 { font-size: 24px; margin: 10px 0 20px; }
+.progress-total { display: flex; align-items: baseline; gap: 10px; }
+.progress-total strong { font-size: 52px; line-height: 1; font-weight: 650; letter-spacing: -2px; }
+.progress-total span { font-size: 13px; color: #786344; }
+.companion-progress progress { height: 8px; margin: 20px 0 16px; }
+.companion-progress p { font-size: 14px; color: #746044; margin: 0; }
+.kitchen-shortcuts { padding: 24px 18px 12px; }
+.kitchen-shortcuts > .eyebrow, .kitchen-shortcuts h2 { margin-left: 6px; }
+.kitchen-shortcuts button { width: 100%; padding: 14px 6px; border: 0; border-top: 1px solid #eee6d6; border-radius: 0; background: transparent; gap: 10px; text-align: left; }
+.shortcut-icon { display: grid; place-items: center; width: 35px; height: 40px; flex-shrink: 0; color: #8f6a24; }
+.kitchen-shortcuts button > span:nth-child(2) { flex: 1; }
+.kitchen-shortcuts strong { display: block; font-size: 13px; font-weight: 650; }
+.kitchen-shortcuts small { display: block; font-size: 12px; color: #74664d; margin-top: 3px; }
+.kitchen-shortcuts button > svg { flex-shrink: 0; }
+.companion-note { background: #edf2e5; border-radius: 19px; padding: 26px; color: #47613d; }
+.companion-note p { font: 26px/1.3 Georgia, serif; margin: 14px 0; }
+.companion-note span { display: block; font-size: 14px; line-height: 1.7; }
+@media (max-width: 1200px) {
+  .weekly-workspace { grid-template-columns: minmax(0, 1fr) 250px; gap: 20px; }
+  .meal-card { padding: 17px; }
+  .day-meals { grid-template-columns: 1fr; }
+  .companion-progress, .kitchen-shortcuts { padding: 20px; }
+}
+@media (max-width: 950px) {
+  .weekly-workspace { grid-template-columns: 1fr; }
+  .week-companion { position: static; grid-template-columns: 1fr 1fr; }
+  .companion-note { display: none; }
+  .day-meals { grid-template-columns: 1fr 1fr; }
+  .metric-grid strong { font-size: 20px; }
+}
+@media (max-width: 680px) {
+  .page-content { padding: 26px 18px 120px; }
+  .welcome { min-height: 0; flex-direction: column; }
+  .welcome-copy { padding: 28px; max-width: 100%; }
+  .table-art { display: grid; position: relative; width: 100%; height: 210px; margin-top: -20px; }
+  .table-scene { max-width: 275px; height: 220px; }
+  .art-caption { bottom: 4px; }
+  .metric-grid { grid-template-columns: 1fr; gap: 10px; margin-bottom: 28px; }
+  .metric-grid > div { padding: 16px 18px; gap: 14px; }
+  .metric-icon { display: grid; }
+  .metric-grid strong { font-size: 20px; }
+  .weekly-workspace { display: flex; flex-direction: column; }
+  .weekly-schedule, .week-companion { width: 100%; }
+  .week-companion { grid-template-columns: 1fr; }
+  .day-meals { grid-template-columns: 1fr; }
+  .meal-card { padding: 22px; }
+  .card-bottom { flex-direction: row; align-items: center; }
+  .weekly-schedule .section-title h2 { font-size: 27px; }
+  .page-heading h1 { font-size: 36px; }
+}
 @media print {
+  .week-companion { display: none; }
+  .weekly-workspace { display: block; }
   .sidebar,
   .topbar,
   .page-heading .actions,

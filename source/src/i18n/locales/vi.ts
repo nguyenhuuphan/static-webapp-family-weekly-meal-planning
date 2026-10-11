@@ -338,6 +338,10 @@ export const vi = {
   unitTbsp: "muỗng canh",
   stepKindPrep: "sơ chế",
   stepKindCook: "nấu",
+  prepCollapseAll: "Thu gọn tất cả",
+  prepExpandAll: "Mở rộng tất cả",
+  prepCollapseCategory: "Thu gọn: {category}",
+  prepExpandCategory: "Mở rộng: {category}",
   prepCompleteCategory: "Hoàn thành nhóm: {category}",
   cookSeasoningsTitle: "Chuẩn bị nước xốt & gia vị trước khi nấu",
   cookSeasoningsHelp:

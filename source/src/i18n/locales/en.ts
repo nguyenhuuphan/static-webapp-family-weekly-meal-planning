@@ -333,6 +333,10 @@ export const en = {
   unitTbsp: "tbsp",
   stepKindPrep: "prep",
   stepKindCook: "steps",
+  prepCollapseAll: "Collapse all",
+  prepExpandAll: "Expand all",
+  prepCollapseCategory: "Collapse: {category}",
+  prepExpandCategory: "Expand: {category}",
   prepCompleteCategory: "Complete category: {category}",
   cookSeasoningsTitle: "Prepare sauces & seasonings before cooking",
   cookSeasoningsHelp:

@@ -1,5 +1,12 @@
-import { useMemo } from "react";
-import { Check, Layers3, ShieldCheck, Snowflake } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Layers3,
+  ShieldCheck,
+  Snowflake,
+} from "lucide-react";
 import { useI18n } from "src/i18n";
 import type { MessageKey } from "src/i18n/locales/en";
 import { groupPreparation, type PrepOperation } from "src/helpers/preparation";
@@ -37,6 +44,7 @@ const categories = [
 ] satisfies { key: string; title: MessageKey }[];
 
 const PrepDay: React.FC = () => {
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const { t: tr, content: ct, number, unit } = useI18n();
   const { s, plan, factor, prepTotal, prepDone, t, navigate, toggle } =
     useMealPlanner();
@@ -79,6 +87,22 @@ const PrepDay: React.FC = () => {
           {tr("fridge4CFreezer18CFreezeTuesdayFridayProteinsPromptlyMove")}
         </p>
       </div>
+      <div className="prep-collapse-controls">
+        <Button
+          onClick={() =>
+            setCollapsed(
+              Object.fromEntries(categories.map(({ key }) => [key, true])),
+            )
+          }
+        >
+          <ChevronUp size={16} />
+          {tr("prepCollapseAll")}
+        </Button>
+        <Button onClick={() => setCollapsed({})}>
+          <ChevronDown size={16} />
+          {tr("prepExpandAll")}
+        </Button>
+      </div>
       <div className="prep-batch-list">
         {categories.map((category) => {
           const categoryGroups = groups.filter((group) =>
@@ -101,6 +125,28 @@ const PrepDay: React.FC = () => {
                   {tr("prepBatchCount", { count: categoryGroups.length })}
                 </span>
                 <Button
+                  aria-expanded={!collapsed[category.key]}
+                  aria-controls={`prep-category-content-${category.key}`}
+                  onClick={() =>
+                    setCollapsed((current) => ({
+                      ...current,
+                      [category.key]: !current[category.key],
+                    }))
+                  }
+                >
+                  {collapsed[category.key] ? (
+                    <ChevronDown size={16} />
+                  ) : (
+                    <ChevronUp size={16} />
+                  )}
+                  {tr(
+                    collapsed[category.key]
+                      ? "prepExpandCategory"
+                      : "prepCollapseCategory",
+                    { category: tr(category.title) },
+                  )}
+                </Button>
+                <Button
                   disabled={categoryGroups.every((group) =>
                     group.allocations.every(
                       (allocation) => s.progress.prep[allocation.key],
@@ -118,7 +164,11 @@ const PrepDay: React.FC = () => {
                   {tr("prepCompleteCategory", { category: tr(category.title) })}
                 </Button>
               </header>
-              <div className="prep-category-groups">
+              <div
+                className="prep-category-groups"
+                id={`prep-category-content-${category.key}`}
+                hidden={!!collapsed[category.key]}
+              >
                 {categoryGroups.map((group) => {
                   const groupIndex = groups.indexOf(group);
                   const done = group.allocations.filter(

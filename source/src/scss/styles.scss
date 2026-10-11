@@ -2453,6 +2453,23 @@ html[lang="vi"] .welcome h2 {
   display: grid;
   gap: 20px;
 }
+.prep-category-groups[hidden] {
+  display: none;
+}
+.prep-collapse-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 24px 0 8px;
+}
+@media print {
+  .prep-collapse-controls {
+    display: none;
+  }
+  .prep-category-groups[hidden] {
+    display: grid;
+  }
+}
 .cook-seasonings {
   margin: 16px 0;
   padding: 16px;

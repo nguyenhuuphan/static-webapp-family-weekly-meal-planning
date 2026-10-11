@@ -92,6 +92,32 @@ describe("ingredient preparation groups", () => {
     const proteins = screen.getByRole("region", {
       name: "Meat, seafood & eggs",
     });
+    fireEvent.click(
+      within(proteins).getByRole("button", {
+        name: "Collapse: Meat, seafood & eggs",
+      }),
+    );
+    expect(
+      within(proteins).queryByRole("region", {
+        name: "Pork shoulder, boneless",
+      }),
+    ).toBeNull();
+    expect(within(vegetables).getAllByRole("checkbox").length).toBeGreaterThan(
+      0,
+    );
+    fireEvent.click(
+      within(proteins).getByRole("button", {
+        name: "Expand: Meat, seafood & eggs",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    expect(
+      within(proteins)
+        .getByRole("button", { name: "Collapse: Meat, seafood & eggs" })
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
     expect(
       screen.queryByRole("region", { name: "Seasonings & sauces" }),
     ).toBeNull();

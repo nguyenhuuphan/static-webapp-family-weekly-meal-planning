@@ -2453,6 +2453,18 @@ html[lang="vi"] .welcome h2 {
   display: grid;
   gap: 20px;
 }
+.cook-seasonings {
+  margin: 16px 0;
+  padding: 16px;
+  background: #fff5cc;
+  border-radius: 12px;
+}
+.cook-seasonings h3 {
+  margin: 0 0 8px;
+}
+.cook-seasonings li {
+  margin-bottom: 10px;
+}
 .prep-batch-heading h3 {
   margin: 4px 0;
   font-size: 24px;

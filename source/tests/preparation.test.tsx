@@ -5,6 +5,8 @@ import data from "../public/meal-plan.json";
 import type { Plan } from "../src/types";
 import { groupPreparation } from "../src/helpers/preparation";
 import { STORAGE_KEY } from "../src/domain";
+import { freshState, isPrepared } from "../src/domain";
+import { isCookingPreparation } from "../src/helpers/preparation";
 
 const plan = data as Plan;
 describe("ingredient preparation groups", () => {
@@ -90,9 +92,9 @@ describe("ingredient preparation groups", () => {
     const proteins = screen.getByRole("region", {
       name: "Meat, seafood & eggs",
     });
-    const seasonings = screen.getByRole("region", {
-      name: "Seasonings & sauces",
-    });
+    expect(
+      screen.queryByRole("region", { name: "Seasonings & sauces" }),
+    ).toBeNull();
     expect(
       within(proteins).getByRole("region", { name: "Pork shoulder, boneless" }),
     ).toBe(group);
@@ -101,9 +103,21 @@ describe("ingredient preparation groups", () => {
         name: "Pork shoulder, boneless",
       }),
     ).toBeNull();
+    fireEvent.click(
+      within(vegetables).getByRole("button", {
+        name: "Complete category: Vegetables & herbs",
+      }),
+    );
     expect(
-      within(seasonings).getByRole("region", { name: "Sauces & seasonings" }),
-    ).toBeTruthy();
+      within(vegetables)
+        .getAllByRole("checkbox")
+        .every((input) => (input as HTMLInputElement).checked),
+    ).toBe(true);
+    expect(
+      within(proteins)
+        .getAllByRole("checkbox")
+        .some((input) => (input as HTMLInputElement).checked),
+    ).toBe(false);
     expect(within(group).getByText("600")).toBeTruthy();
     const all = within(group).getByRole("checkbox", {
       name: "Mark all portions prepared: Pork shoulder, boneless",
@@ -134,5 +148,30 @@ describe("ingredient preparation groups", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     fireEvent.keyDown(trigger, { key: "Escape" });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(
+      within(screen.getByRole("navigation")).getByRole("button", {
+        name: "Cook",
+      }),
+    );
+    expect(
+      screen.getByRole("heading", {
+        name: "Prepare sauces & seasonings before cooking",
+      }),
+    ).toBeTruthy();
+    expect(screen.getByText(/no advance preparation is needed/)).toBeTruthy();
+  });
+  it("excludes cooking-only seasonings from preparation readiness but keeps edited instructions", () => {
+    const state = freshState(structuredClone(plan));
+    const meal = state.plan.meals[0];
+    meal.prep.forEach((_, index) => {
+      if (!isCookingPreparation(meal, index))
+        state.progress.prep[`${meal.id}:${index}`] = true;
+    });
+    expect(isPrepared(state, meal)).toBe(true);
+    const index = meal.prep.findIndex((_, index) =>
+      isCookingPreparation(meal, index),
+    );
+    meal.prep[index].text = "A new instruction requiring advance preparation.";
+    expect(isPrepared(state, meal)).toBe(false);
   });
 });

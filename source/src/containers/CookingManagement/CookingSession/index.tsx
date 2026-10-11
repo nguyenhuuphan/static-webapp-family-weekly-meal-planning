@@ -1,4 +1,5 @@
 import { useI18n } from "src/i18n";
+import { isCookingPreparation } from "src/helpers/preparation";
 import {
   ShoppingBag,
   ArrowRight,
@@ -97,6 +98,21 @@ const CookingSession: React.FC<IProps> = () => {
               </div>
               <p className="caption">{ct(meal.thaw)}</p>
             </details>
+            {meal.prep.some((_, index) =>
+              isCookingPreparation(meal, index),
+            ) && (
+              <div className="cook-seasonings">
+                <h3>{tr("cookSeasoningsTitle")}</h3>
+                <p className="caption">{tr("cookSeasoningsHelp")}</p>
+                <ul>
+                  {meal.prep.map((task, index) =>
+                    isCookingPreparation(meal, index) ? (
+                      <li key={index}>{t(task.text)}</li>
+                    ) : null,
+                  )}
+                </ul>
+              </div>
+            )}
             <label className="readiness">
               <input
                 type="checkbox"

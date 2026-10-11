@@ -107,6 +107,14 @@ export type PrepGroup = {
   allocations: PrepAllocation[];
 };
 
+export function isCookingPreparation(meal: Meal, taskIndex: number): boolean {
+  return (
+    profiles[meal.id]?.[taskIndex]?.operation === "prepareSauces" &&
+    original.meals.find((item) => item.id === meal.id)?.prep[taskIndex]
+      ?.text === meal.prep[taskIndex]?.text
+  );
+}
+
 export function groupPreparation(plan: Plan, servings: number): PrepGroup[] {
   const groups = new Map<string, PrepGroup>();
   const factor = servings / plan.servings;

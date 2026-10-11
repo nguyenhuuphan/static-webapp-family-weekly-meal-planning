@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "src/i18n";
+import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
 import {
   freshState,
@@ -171,10 +172,17 @@ export function usePlannerController() {
     step = meal.steps[pos],
     ready = isPrepared(s, meal) && s.progress.ready[meal.id],
     doneCount = plan.meals.filter((m) => s.progress.done[m.id]).length,
-    prepTotal = plan.meals.reduce((n, m) => n + m.prep.length, 0),
+    prepTotal = plan.meals.reduce(
+      (n, m) => n + m.prep.filter((_, i) => !isCookingPreparation(m, i)).length,
+      0,
+    ),
     prepDone = plan.meals.reduce(
       (n, m) =>
-        n + m.prep.filter((_, i) => s.progress.prep[m.id + ":" + i]).length,
+        n +
+        m.prep.filter(
+          (_, i) =>
+            !isCookingPreparation(m, i) && s.progress.prep[m.id + ":" + i],
+        ).length,
       0,
     ),
     needs = shopping.filter((i) => !s.progress.owned[ingredientKey(i)]),

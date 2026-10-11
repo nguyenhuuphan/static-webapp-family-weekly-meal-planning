@@ -41,7 +41,10 @@ const PrepDay: React.FC = () => {
   const { s, plan, factor, prepTotal, prepDone, t, navigate, toggle } =
     useMealPlanner();
   const groups = useMemo(
-    () => groupPreparation(plan, s.servings),
+    () =>
+      groupPreparation(plan, s.servings).filter(
+        (group) => group.operation !== "prepareSauces",
+      ),
     [plan, s.servings],
   );
   return (
@@ -97,6 +100,23 @@ const PrepDay: React.FC = () => {
                 <span className="pill amber">
                   {tr("prepBatchCount", { count: categoryGroups.length })}
                 </span>
+                <Button
+                  disabled={categoryGroups.every((group) =>
+                    group.allocations.every(
+                      (allocation) => s.progress.prep[allocation.key],
+                    ),
+                  )}
+                  onClick={() =>
+                    categoryGroups.forEach((group) =>
+                      group.allocations.forEach((allocation) =>
+                        toggle("prep", allocation.key, true),
+                      ),
+                    )
+                  }
+                >
+                  <Check size={16} />
+                  {tr("prepCompleteCategory", { category: tr(category.title) })}
+                </Button>
               </header>
               <div className="prep-category-groups">
                 {categoryGroups.map((group) => {

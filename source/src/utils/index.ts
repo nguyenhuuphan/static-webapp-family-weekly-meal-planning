@@ -1,4 +1,5 @@
 import { DAYS, type Plan, type Meal, type State, type Timer } from "src/types";
+import { isCookingPreparation } from "src/helpers/preparation";
 export const round = (n: number) =>
   Math.round((n + Number.EPSILON) * 100) / 100;
 export const ingredientKey = (i: { name: string; unit: string }) =>
@@ -53,6 +54,8 @@ export const scaleText = (t: string, f: number) =>
     (_, n, u) => `${round(Number(n) * f)} ${u}`,
   );
 export const isPrepared = (s: State, m: Meal) =>
-  m.prep.every((_, i) => s.progress.prep[m.id + ":" + i]);
+  m.prep.every(
+    (_, i) => isCookingPreparation(m, i) || s.progress.prep[m.id + ":" + i],
+  );
 export const timerSeconds = (t: Timer, now = Date.now()) =>
   t ? Math.max(0, Math.ceil((t.end - now) / 1000)) : 0;

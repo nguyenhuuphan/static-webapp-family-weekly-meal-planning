@@ -338,6 +338,10 @@ export const vi = {
   unitTbsp: "muỗng canh",
   stepKindPrep: "sơ chế",
   stepKindCook: "nấu",
+  prepCategoryProduce: "Rau củ & rau thơm",
+  prepCategoryProtein: "Thịt cá & trứng",
+  prepCategoryPantry: "Gia vị & nước xốt",
+  prepCategoryOther: "Sơ chế khác",
   prepBatchTitle: "Sơ chế chung. Chia phần từng món.",
   prepBatchDescription:
     "Gom nguyên liệu có thể làm cùng nhau, cắt thái một lần rồi chia phần và ướp riêng cho từng món.",

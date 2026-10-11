@@ -29,6 +29,13 @@ const operationKeys = {
   reviewIndividually: "prepReviewIndividually",
 } satisfies Record<PrepOperation, MessageKey>;
 
+const categories = [
+  { key: "Produce", title: "prepCategoryProduce" },
+  { key: "Protein", title: "prepCategoryProtein" },
+  { key: "Pantry", title: "prepCategoryPantry" },
+  { key: "Other", title: "prepCategoryOther" },
+] satisfies { key: string; title: MessageKey }[];
+
 const PrepDay: React.FC = () => {
   const { t: tr, content: ct, number, unit } = useI18n();
   const { s, plan, factor, prepTotal, prepDone, t, navigate, toggle } =
@@ -70,110 +77,151 @@ const PrepDay: React.FC = () => {
         </p>
       </div>
       <div className="prep-batch-list">
-        {groups.map((group, groupIndex) => {
-          const done = group.allocations.filter(
-            (allocation) => s.progress.prep[allocation.key],
-          ).length;
-          const allDone = done === group.allocations.length;
-          const name = group.ingredient
-            ? ct(group.ingredient)
-            : group.operation === "prepareSauces"
-              ? tr("prepSaucesTitle")
-              : group.operation === "prepareMixed"
-                ? tr("prepMixedTitle")
-                : ct(group.allocations[0].meal.main);
+        {categories.map((category) => {
+          const categoryGroups = groups.filter((group) =>
+            category.key === "Other"
+              ? !["Produce", "Protein", "Pantry"].includes(group.category)
+              : group.category === category.key,
+          );
+          if (!categoryGroups.length) return null;
           return (
             <section
-              key={group.key}
-              className={`panel prep-batch ${allDone ? "prepared" : ""}`}
-              aria-labelledby={`prep-group-${groupIndex}`}
+              className="prep-category"
+              key={category.key}
+              aria-labelledby={`prep-category-${category.key}`}
             >
-              <div className="prep-batch-heading">
-                <div>
-                  <span className="eyebrow">
-                    {group.ingredient
-                      ? ct(group.category)
-                      : tr("prepRecipeSpecific")}
-                  </span>
-                  <h2 id={`prep-group-${groupIndex}`}>{name}</h2>
-                </div>
-                {group.quantity !== null && group.unit && (
-                  <strong className="prep-batch-quantity">
-                    {number(group.quantity)} <span>{unit(group.unit)}</span>
-                  </strong>
-                )}
-                <span className={`pill ${allDone ? "green" : "amber"}`}>
-                  {allDone ? (
-                    <>
-                      <Check size={13} />
-                      {tr("prepared")}
-                    </>
-                  ) : (
-                    tr("prepPortionProgress", {
-                      count: done,
-                      total: group.allocations.length,
-                    })
-                  )}
+              <header className="prep-category-heading">
+                <h2 id={`prep-category-${category.key}`}>
+                  {tr(category.title)}
+                </h2>
+                <span className="pill amber">
+                  {tr("prepBatchCount", { count: categoryGroups.length })}
                 </span>
-              </div>
-              <p className="prep-batch-operation">
-                {tr(operationKeys[group.operation])}
-              </p>
-              {group.operation === "reviewIndividually" && (
-                <p className="caption">{tr("prepUnknownHelp")}</p>
-              )}
-              <div className="prep-allocations">
-                {group.allocations.map((allocation) => (
-                  <div
-                    className={`prep-allocation ${s.progress.prep[allocation.key] ? "checked" : ""}`}
-                    key={allocation.key}
-                  >
-                    <div className="prep-allocation-heading">
-                      {allocation.quantity !== null && group.unit && (
-                        <strong className="prep-portion-quantity">
-                          {number(allocation.quantity)} {unit(group.unit)}
-                        </strong>
+              </header>
+              <div className="prep-category-groups">
+                {categoryGroups.map((group) => {
+                  const groupIndex = groups.indexOf(group);
+                  const done = group.allocations.filter(
+                    (allocation) => s.progress.prep[allocation.key],
+                  ).length;
+                  const allDone = done === group.allocations.length;
+                  const name = group.ingredient
+                    ? ct(group.ingredient)
+                    : group.operation === "prepareSauces"
+                      ? tr("prepSaucesTitle")
+                      : group.operation === "prepareMixed"
+                        ? tr("prepMixedTitle")
+                        : ct(group.allocations[0].meal.main);
+                  return (
+                    <section
+                      key={group.key}
+                      className={`panel prep-batch ${allDone ? "prepared" : ""}`}
+                      aria-labelledby={`prep-group-${groupIndex}`}
+                    >
+                      <div className="prep-batch-heading">
+                        <div>
+                          <span className="eyebrow">
+                            {group.ingredient
+                              ? ct(group.category)
+                              : tr("prepRecipeSpecific")}
+                          </span>
+                          <h3 id={`prep-group-${groupIndex}`}>{name}</h3>
+                        </div>
+                        {group.quantity !== null && group.unit && (
+                          <strong className="prep-batch-quantity">
+                            {number(group.quantity)}{" "}
+                            <span>{unit(group.unit)}</span>
+                          </strong>
+                        )}
+                        <span className={`pill ${allDone ? "green" : "amber"}`}>
+                          {allDone ? (
+                            <>
+                              <Check size={13} />
+                              {tr("prepared")}
+                            </>
+                          ) : (
+                            tr("prepPortionProgress", {
+                              count: done,
+                              total: group.allocations.length,
+                            })
+                          )}
+                        </span>
+                      </div>
+                      <p className="prep-batch-operation">
+                        {tr(operationKeys[group.operation])}
+                      </p>
+                      {group.operation === "reviewIndividually" && (
+                        <p className="caption">{tr("prepUnknownHelp")}</p>
                       )}
-                      <MealDetails meal={allocation.meal} factor={factor} />
-                    </div>
-                    <label className="prep-row">
-                      <input
-                        type="checkbox"
-                        checked={!!s.progress.prep[allocation.key]}
-                        aria-label={tr("prepTaskLabel", {
-                          day: ct(allocation.meal.day),
-                          type: ct(allocation.meal.type),
-                          count: allocation.taskIndex + 1,
-                        })}
-                        onChange={(event) =>
-                          toggle("prep", allocation.key, event.target.checked)
-                        }
-                      />
-                      <span>{t(allocation.task.text)}</span>
-                    </label>
-                  </div>
-                ))}
+                      <div className="prep-allocations">
+                        {group.allocations.map((allocation) => (
+                          <div
+                            className={`prep-allocation ${s.progress.prep[allocation.key] ? "checked" : ""}`}
+                            key={allocation.key}
+                          >
+                            <div className="prep-allocation-heading">
+                              {allocation.quantity !== null && group.unit && (
+                                <strong className="prep-portion-quantity">
+                                  {number(allocation.quantity)}{" "}
+                                  {unit(group.unit)}
+                                </strong>
+                              )}
+                              <MealDetails
+                                meal={allocation.meal}
+                                factor={factor}
+                              />
+                            </div>
+                            <label className="prep-row">
+                              <input
+                                type="checkbox"
+                                checked={!!s.progress.prep[allocation.key]}
+                                aria-label={tr("prepTaskLabel", {
+                                  day: ct(allocation.meal.day),
+                                  type: ct(allocation.meal.type),
+                                  count: allocation.taskIndex + 1,
+                                })}
+                                onChange={(event) =>
+                                  toggle(
+                                    "prep",
+                                    allocation.key,
+                                    event.target.checked,
+                                  )
+                                }
+                              />
+                              <span>{t(allocation.task.text)}</span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      {group.allocations.length > 1 && (
+                        <label className="prep-batch-complete">
+                          <input
+                            type="checkbox"
+                            checked={allDone}
+                            ref={(input) => {
+                              if (input)
+                                input.indeterminate = done > 0 && !allDone;
+                            }}
+                            aria-label={tr("prepCompleteGroupLabel", {
+                              ingredient: name,
+                            })}
+                            onChange={(event) =>
+                              group.allocations.forEach((allocation) =>
+                                toggle(
+                                  "prep",
+                                  allocation.key,
+                                  event.target.checked,
+                                ),
+                              )
+                            }
+                          />
+                          {tr("prepCompleteGroup")}
+                        </label>
+                      )}
+                    </section>
+                  );
+                })}
               </div>
-              {group.allocations.length > 1 && (
-                <label className="prep-batch-complete">
-                  <input
-                    type="checkbox"
-                    checked={allDone}
-                    ref={(input) => {
-                      if (input) input.indeterminate = done > 0 && !allDone;
-                    }}
-                    aria-label={tr("prepCompleteGroupLabel", {
-                      ingredient: name,
-                    })}
-                    onChange={(event) =>
-                      group.allocations.forEach((allocation) =>
-                        toggle("prep", allocation.key, event.target.checked),
-                      )
-                    }
-                  />
-                  {tr("prepCompleteGroup")}
-                </label>
-              )}
             </section>
           );
         })}

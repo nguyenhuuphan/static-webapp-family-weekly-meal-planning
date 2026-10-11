@@ -333,6 +333,10 @@ export const en = {
   unitTbsp: "tbsp",
   stepKindPrep: "prep",
   stepKindCook: "steps",
+  prepCategoryProduce: "Vegetables & herbs",
+  prepCategoryProtein: "Meat, seafood & eggs",
+  prepCategoryPantry: "Seasonings & sauces",
+  prepCategoryOther: "Other preparations",
   prepBatchTitle: "Prep together. Portion by meal.",
   prepBatchDescription:
     "Group compatible ingredients, do the shared cutting once, then prepare each meal's portion separately.",

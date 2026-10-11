@@ -2435,7 +2435,25 @@ html[lang="vi"] .welcome h2 {
   flex-wrap: wrap;
   gap: 16px;
 }
-.prep-batch-heading h2 {
+.prep-category-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 0;
+  margin-bottom: 16px;
+  border-bottom: 3px solid #e9cf73;
+}
+.prep-category-heading h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 30px);
+}
+.prep-category-groups {
+  display: grid;
+  gap: 20px;
+}
+.prep-batch-heading h3 {
   margin: 4px 0;
   font-size: 24px;
 }
@@ -2557,7 +2575,7 @@ html[lang="vi"] .welcome h2 {
   cursor: pointer;
 }
 @media (max-width: 600px) {
-  .prep-batch-heading h2 {
+  .prep-batch-heading h3 {
     font-size: 21px;
   }
   .prep-batch-quantity {

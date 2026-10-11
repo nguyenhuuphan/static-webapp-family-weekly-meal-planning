@@ -84,6 +84,26 @@ describe("ingredient preparation groups", () => {
     const group = screen.getByRole("region", {
       name: "Pork shoulder, boneless",
     });
+    const vegetables = screen.getByRole("region", {
+      name: "Vegetables & herbs",
+    });
+    const proteins = screen.getByRole("region", {
+      name: "Meat, seafood & eggs",
+    });
+    const seasonings = screen.getByRole("region", {
+      name: "Seasonings & sauces",
+    });
+    expect(
+      within(proteins).getByRole("region", { name: "Pork shoulder, boneless" }),
+    ).toBe(group);
+    expect(
+      within(vegetables).queryByRole("region", {
+        name: "Pork shoulder, boneless",
+      }),
+    ).toBeNull();
+    expect(
+      within(seasonings).getByRole("region", { name: "Sauces & seasonings" }),
+    ).toBeTruthy();
     expect(within(group).getByText("600")).toBeTruthy();
     const all = within(group).getByRole("checkbox", {
       name: "Mark all portions prepared: Pork shoulder, boneless",

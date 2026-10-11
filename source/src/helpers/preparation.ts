@@ -145,7 +145,11 @@ export function groupPreparation(plan: Plan, servings: number): PrepGroup[] {
         operation,
         quantity: quantity === null ? null : 0,
         unit: measure,
-        category: name ? currentIngredient!.category : "Other",
+        category: name
+          ? currentIngredient!.category
+          : operation === "prepareSauces"
+            ? "Pantry"
+            : "Other",
         allocations: [],
       };
       if (quantity !== null) group.quantity! += quantity;
@@ -155,7 +159,12 @@ export function groupPreparation(plan: Plan, servings: number): PrepGroup[] {
   }
   // Vegetables first, then raw proteins, followed by individually measured sauces.
   // Preserve recipe order inside each category without sorting translated labels.
-  const rank: Record<string, number> = { Produce: 0, Protein: 1, Other: 2 };
+  const rank: Record<string, number> = {
+    Produce: 0,
+    Protein: 1,
+    Pantry: 2,
+    Other: 3,
+  };
   return [...groups.values()].sort(
     (a, b) => (rank[a.category] ?? 2) - (rank[b.category] ?? 2),
   );

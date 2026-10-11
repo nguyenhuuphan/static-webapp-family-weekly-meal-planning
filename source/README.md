@@ -1,6 +1,6 @@
 # Weekday Table · React edition
 
-React 19 + TypeScript + Vite. Minimalist English family meal planner with 10 Monday–Friday lunch/dinner slots. No backend, no API keys, no account, no runtime CDN requests.
+React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No backend, no API keys, no account, no runtime CDN requests.
 
 ## Deploy the ready-made build
 
@@ -27,6 +27,7 @@ Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` an
 | `src/containers/SafetyManagement` | SafetyGuide |
 | `src/helpers` | State hydration, initialization and recipe replacement |
 | `src/hooks` | Planner controller and screen context |
+| `src/i18n` | Typed language catalogues, recipe translations, Intl formatting and language preference |
 | `src/layout` | AppLayout and Sidebar |
 | `src/mocks` | Fresh meal-plan fixture for development/tests |
 | `src/modules/shared-main/components` | Shared Button and Heading |
@@ -42,6 +43,7 @@ Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` an
 
 ## Included features
 
+- English/Vietnamese interface and built-in recipe translations, with a persistent language selector. See [localization architecture](../docs/localization.md) to add languages.
 - 10 meals with all Sunday-prep, portion labels, storage/thawing and daily cooking instructions.
 - Shopping list derived from ingredient data, search, buy checkboxes, at-home exclusions and printing.
 - Preparation checklist and manual thaw/readiness confirmations.
@@ -73,4 +75,4 @@ Timers keep the deadline across refresh/view changes. There are no OS notificati
 
 Vitest tests cover quantity aggregation/scaling, schema validation, timer math, old-state hydration, targeted recipe reset, and React interactions in jsdom: shopping/owned flags, prep, cooking, readiness, completion, timer, recipe edit/copy, servings/default restore, advanced JSON, import and export. `npm run build` runs TypeScript checks then produces minified static assets.
 
-Real native-browser visual QA was not available in the build environment. Check the deployed site on desktop/mobile, especially print/download behavior and layout, before relying on it. The package is deploy-ready but has not been published to a Netlify account by the builder.
+Localization tests also cover translation completeness, quantity preservation, browser/saved preferences, unavailable storage, and language switching while shopping, preparing, cooking and editing. Chrome headless checks cover Vietnamese layouts at widths 320–1440 and shopping/settings/editor on mobile, with no horizontal page overflow or runtime exceptions. Print/download behavior and the deployed Netlify site still need deployment-specific checks; this change has not been published to Netlify.

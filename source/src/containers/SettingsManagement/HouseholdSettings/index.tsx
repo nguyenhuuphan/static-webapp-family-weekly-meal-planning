@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import {
   ArrowRight,
   Users,
@@ -14,6 +15,7 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 
 interface IProps {}
 const HouseholdSettings: React.FC<IProps> = () => {
+  const { t: tr, source, content: ct } = useI18n();
   const {
     s,
     plan,
@@ -33,20 +35,25 @@ const HouseholdSettings: React.FC<IProps> = () => {
   return (
     <>
       <Heading
-        eyebrow="YOUR KITCHEN, YOUR WAY"
-        title="Make room for your favourites."
-        description="Edit recipes, adjust your household and keep a backup. No account or backend needed."
+        eyebrow={tr("yourKitchenYourWay")}
+        title={tr("makeRoomForYourFavourites")}
+        description={tr(
+          "editRecipesAdjustYourHouseholdAndKeepABackupNoAccountOr",
+        )}
       />
+      <p className="caption">
+        {tr("languageHelp")} {tr("sourceRecipeHelp")}
+      </p>
       <div className="settings-grid">
         <section className="panel">
           <span className="tile-icon">
             <Users size={22} />
           </span>
-          <h2>Your household</h2>
+          <h2>{tr("yourHousehold")}</h2>
           <label>
-            People per meal
+            {tr("peoplePerMeal")}
             <input
-              aria-label="People per meal"
+              aria-label={tr("peoplePerMeal")}
               type="number"
               min="1"
               max="12"
@@ -57,7 +64,9 @@ const HouseholdSettings: React.FC<IProps> = () => {
                 if (
                   n !== s.servings &&
                   confirm(
-                    "Change servings? All progress resets because prepared quantities may no longer match.",
+                    tr(
+                      "changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch",
+                    ),
                   )
                 )
                   update((x) => ({
@@ -70,27 +79,23 @@ const HouseholdSettings: React.FC<IProps> = () => {
             />
           </label>
           <p className="caption">
-            Ingredients and bracketed instruction amounts scale together. Egg
-            counts may be fractional; round appropriately. Larger portions can
-            take longer.
+            {tr(
+              "ingredientsAndBracketedInstructionAmountsScaleTogetherEggCountsMayBeFractional",
+            )}
           </p>
           <label>
-            Week beginning · Monday
+            {tr("weekBeginningMonday")}
             <input
-              aria-label="Week beginning"
+              aria-label={tr("weekBeginning")}
               type="date"
               value={s.weekStart}
               onChange={(e) => {
                 const v = e.target.value;
                 if (!isMonday(v)) {
-                  setToast("Please choose a Monday.");
+                  setToast(source("pleaseChooseAMonday"));
                   return;
                 }
-                if (
-                  confirm(
-                    "Start a new week with this menu and fresh checklists?",
-                  )
-                )
+                if (confirm(tr("startANewWeekWithThisMenuAndFreshChecklists")))
                   update((x) => ({
                     ...x,
                     weekStart: v,
@@ -102,28 +107,27 @@ const HouseholdSettings: React.FC<IProps> = () => {
           </label>
           <Button onClick={resetProgress}>
             <RotateCcw size={15} />
-            Reset weekly progress
+            {tr("resetWeeklyProgress")}
           </Button>
         </section>
         <section className="panel">
           <span className="tile-icon">
             <Download size={22} />
           </span>
-          <h2>Your data, kept simple.</h2>
+          <h2>{tr("yourDataKeptSimple")}</h2>
           <p>
-            Saved in this browser only. No automatic sync between devices.
-            Export to back up or share with family.
+            {tr("savedInThisBrowserOnlyNoAutomaticSyncBetweenDevicesExportTo")}
           </p>
           <div className="actions">
             <Button primary onClick={exportJSON}>
               <Download size={16} />
-              Export JSON
+              {tr("exportJson")}
             </Button>
             <label className="file-button">
               <Upload size={16} />
-              Import JSON
+              {tr("importJson")}
               <input
-                aria-label="Import JSON"
+                aria-label={tr("importJson")}
                 type="file"
                 accept=".json,application/json"
                 onChange={(e) => {
@@ -134,30 +138,33 @@ const HouseholdSettings: React.FC<IProps> = () => {
             </label>
           </div>
           <p className="caption">
-            Backups include edited recipes and servings, not checklists or
-            timers. Import replaces the current menu after confirmation.
+            {tr(
+              "backupsIncludeEditedRecipesAndServingsNotChecklistsOrTimersImportReplaces",
+            )}
           </p>
           <Button
             className="danger"
             onClick={() => {
               if (
                 confirm(
-                  "Restore the original ten meals? Your recipe edits and progress will be replaced.",
+                  tr(
+                    "restoreTheOriginalTenMealsYourRecipeEditsAndProgressWillBe",
+                  ),
                 )
               )
                 applyPlan(structuredClone(defaults), defaults.servings);
             }}
           >
             <RotateCcw size={15} />
-            Restore original menu
+            {tr("restoreOriginalMenu")}
           </Button>
         </section>
       </div>
       <section className="panel">
         <div className="section-title">
           <div>
-            <h2>Edit your recipes</h2>
-            <p>Names, ingredients and step-by-step guides. All in one place.</p>
+            <h2>{tr("editYourRecipes")}</h2>
+            <p>{tr("namesIngredientsAndStepByStepGuidesAllInOnePlace")}</p>
           </div>
           <Button
             onClick={() => {
@@ -166,19 +173,19 @@ const HouseholdSettings: React.FC<IProps> = () => {
               setAdvanced(true);
             }}
           >
-            Advanced JSON
+            {tr("advancedJson")}
           </Button>
         </div>
         <div className="recipe-list">
           {plan.meals.map((m) => (
             <button key={m.id} onClick={() => edit(m)}>
               <span className="recipe-label">
-                {m.day.slice(0, 3)}
-                <small>{m.type}</small>
+                {ct(m.day)}
+                <small>{ct(m.type)}</small>
               </span>
               <span>
-                <strong>{m.main}</strong>
-                <small>{m.side}</small>
+                <strong>{ct(m.main)}</strong>
+                <small>{ct(m.side)}</small>
               </span>
               <Pencil size={16} />
             </button>
@@ -188,10 +195,11 @@ const HouseholdSettings: React.FC<IProps> = () => {
       <div className="notice">
         <ShieldCheck size={19} />
         <p>
-          Recipe edits reset affected progress. User-edited storage and cooking
-          instructions are not verified safe.{" "}
+          {tr(
+            "recipeEditsResetAffectedProgressUserEditedStorageAndCookingInstructionsAre",
+          )}{" "}
           <button className="text-button" onClick={() => navigate("safety")}>
-            Read safety notes
+            {tr("readSafetyNotes")}
             <ArrowRight size={14} />
           </button>
         </p>

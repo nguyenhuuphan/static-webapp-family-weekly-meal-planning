@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import {
   CalendarDays,
   ShoppingBag,
@@ -27,6 +28,7 @@ const NAV = [
 ] as const;
 interface IProps {}
 const Sidebar: React.FC<IProps> = () => {
+  const { t: tr, content: ct } = useI18n();
   const { navigate, view, editId, advanced } = useMealPlanner();
   return (
     <aside className="sidebar">
@@ -42,16 +44,18 @@ const Sidebar: React.FC<IProps> = () => {
           <Leaf size={24} strokeWidth={1.5} />
         </span>
         <div>
-          Weekday Table<small>A FAMILY KITCHEN</small>
+          {tr("weekdayTable")}
+          <small>{tr("aFamilyKitchen")}</small>
         </div>
       </a>
-      <div className="nav-label">YOUR WEEK</div>
-      <nav aria-label="Main navigation">
+      <div className="nav-label">{tr("yourWeek")}</div>
+      <nav aria-label={tr("mainNavigation")}>
         {NAV.map(([id, label]) => {
           const Icon = ICONS[id];
           return (
             <button
               key={id}
+              aria-label={ct(label)}
               className={view === id && !editId && !advanced ? "active" : ""}
               aria-current={
                 view === id && !editId && !advanced ? "page" : undefined
@@ -59,7 +63,7 @@ const Sidebar: React.FC<IProps> = () => {
               onClick={() => navigate(id)}
             >
               <Icon size={19} />
-              <span>{label}</span>
+              <span>{ct(label)}</span>
               {id === "week" && <small>10</small>}
             </button>
           );
@@ -69,19 +73,19 @@ const Sidebar: React.FC<IProps> = () => {
         <div>
           <Leaf size={17} />
           <p>
-            A little care,
+            {tr("aLittleCare")}
             <br />
-            every day.
+            {tr("everyDay")}
           </p>
         </div>
         <button onClick={() => navigate("safety")}>
           <ShieldCheck size={15} />
-          Safety & storage
+          {tr("safetyStorage")}
         </button>
         <span>
-          Local to this browser.
+          {tr("localToThisBrowser")}
           <br />
-          No account. No automatic sync.
+          {tr("noAccountNoAutomaticSync")}
         </span>
       </div>
     </aside>

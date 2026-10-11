@@ -1,80 +1,76 @@
+import { useI18n } from "src/i18n";
 import { ArrowRight, Snowflake, ShieldCheck } from "lucide-react";
 
 import { Heading } from "src/modules/shared-main/components";
 
 interface IProps {}
 const SafetyGuide: React.FC<IProps> = () => {
+  const { t: tr } = useI18n();
   return (
     <>
       <Heading
-        eyebrow="A LITTLE CARE GOES A LONG WAY"
-        title="A safe, thoughtful kitchen."
-        description="Manual prep and readiness records don’t certify your food. Check actual storage conditions and cooking temperatures."
+        eyebrow={tr("aLittleCareGoesALongWay")}
+        title={tr("aSafeThoughtfulKitchen")}
+        description={tr(
+          "manualPrepAndReadinessRecordsDonTCertifyYourFoodCheckActual",
+        )}
       />
       <div className="settings-grid">
         <section className="panel">
           <Snowflake className="tile-icon" />
-          <h2>Store & thaw</h2>
+          <h2>{tr("storeThaw")}</h2>
           <ul>
-            <li>Fridge ≤4°C. Freezer ≤−18°C.</li>
+            <li>{tr("fridge4CFreezer18C")}</li>
             <li>
-              Keep Monday proteins refrigerated; promptly freeze Tuesday–Friday
-              proteins after Sunday prep.
+              {tr(
+                "keepMondayProteinsRefrigeratedPromptlyFreezeTuesdayFridayProteinsAfterSundayPrep",
+              )}
             </li>
             <li>
-              Move next-day proteins and sauces to the fridge each morning, in
-              thin sealed portions on a leakproof tray.
+              {tr("moveNextDayProteinsAndSaucesToTheFridgeEachMorningIn")}
             </li>
             <li>
-              Keep frozen vegetables frozen until cooking. Thick protein
-              portions may need more thawing time.
+              {tr(
+                "keepFrozenVegetablesFrozenUntilCookingThickProteinPortionsMayNeedMore",
+              )}
             </li>
             <li>
-              Never thaw on the counter. Freezing does not reset prior
-              refrigeration time or make spoiled food safe.
+              {tr(
+                "neverThawOnTheCounterFreezingDoesNotResetPriorRefrigerationTime",
+              )}
             </li>
-            <li>Keep eggs intact in their carton in the refrigerator.</li>
+            <li>{tr("keepEggsIntactInTheirCartonInTheRefrigerator")}</li>
           </ul>
         </section>
         <section className="panel">
           <ShieldCheck className="tile-icon" />
-          <h2>Handle & cook</h2>
+          <h2>{tr("handleCook")}</h2>
           <ul>
             <li>
-              Wash hands and utensils after raw food. Keep raw protein separate
-              from ready-to-eat cucumber.
+              {tr("washHandsAndUtensilsAfterRawFoodKeepRawProteinSeparateFrom")}
             </li>
             <li>
-              Do not wash raw poultry, beef or pork: splashes can spread
-              bacteria.
+              {tr("doNotWashRawPoultryBeefOrPorkSplashesCanSpreadBacteria")}
             </li>
+            <li>{tr("perishablesShouldNotBeOutLongerThan2HoursTotalOr1")}</li>
+            <li>{tr("chicken74CGroundMeatAndEggDishes71CFish63")}</li>
             <li>
-              Perishables should not be out longer than 2 hours total, or 1 hour
-              above 32°C.
+              {tr(
+                "shrimpMustBeFullyOpaqueCheckMeatTemperatureInTheThickestPart",
+              )}
             </li>
-            <li>
-              Chicken 74°C; ground meat and egg dishes 71°C; fish 63°C;
-              whole-cut pork/beef 63°C + 3-minute rest.
-            </li>
-            <li>
-              Shrimp must be fully opaque. Check meat temperature in the
-              thickest part; time/colour are not guarantees.
-            </li>
-            <li>
-              Rice is separate; do not leave cooked rice on the counter for
-              hours.
-            </li>
+            <li>{tr("riceIsSeparateDoNotLeaveCookedRiceOnTheCounterFor")}</li>
           </ul>
         </section>
       </div>
       <section className="panel sources">
-        <h2>Reference guidance</h2>
+        <h2>{tr("referenceGuidance")}</h2>
         <a
           href="https://www.foodsafety.gov/food-safety-charts/cold-food-storage-charts"
           target="_blank"
           rel="noreferrer"
         >
-          FoodSafety.gov · Cold food storage
+          {tr("foodsafetyGovColdFoodStorage")}
           <ArrowRight size={14} />
         </a>
         <a
@@ -82,7 +78,7 @@ const SafetyGuide: React.FC<IProps> = () => {
           target="_blank"
           rel="noreferrer"
         >
-          FoodSafety.gov · Cooking temperatures
+          {tr("foodsafetyGovCookingTemperatures")}
           <ArrowRight size={14} />
         </a>
         <a
@@ -90,12 +86,13 @@ const SafetyGuide: React.FC<IProps> = () => {
           target="_blank"
           rel="noreferrer"
         >
-          USDA · Safe thawing
+          {tr("usdaSafeThawing")}
           <ArrowRight size={14} />
         </a>
         <p className="caption">
-          These organisations have not reviewed this app or user edits. Check
-          allergies, package labels and your ingredients’ condition.
+          {tr(
+            "theseOrganisationsHaveNotReviewedThisAppOrUserEditsCheckAllergies",
+          )}
         </p>
       </section>
     </>

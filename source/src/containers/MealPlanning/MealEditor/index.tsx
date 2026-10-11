@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import { useState } from "react";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import type { Meal, Ingredient, Step, Unit } from "src/types";
@@ -10,6 +11,7 @@ interface IProps {
   onCancel: () => void;
 }
 const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
+  const { t: tr, content: ct, unit, error: translateError } = useI18n();
   const [draft, setDraft] = useState<Meal>(structuredClone(meal)),
     [error, setError] = useState("");
   const field = (k: keyof Meal, v: unknown) =>
@@ -41,7 +43,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
     }
     if (
       confirm(
-        "Save changes? Shopping checks and this meal’s prep, readiness and completion will reset. Prepared food does not change automatically.",
+        tr("saveChangesShoppingChecksAndThisMealSPrepReadinessAndCompletion"),
       )
     )
       onSave(draft);
@@ -51,37 +53,35 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
       <div className="page-heading">
         <div>
           <div className="eyebrow">
-            Make it yours · {meal.day} {meal.type}
+            {tr("makeItYours")} {ct(meal.day)} {ct(meal.type)}
           </div>
-          <h1>Edit your meal.</h1>
-          <p>
-            Amounts describe {plan.servings} base servings. Keep shopping,
-            preparation and cooking instructions consistent.
-          </p>
+          <h1>{tr("editYourMeal")}</h1>
+          <p>{tr("baseServingsHelp", { count: plan.servings })}</p>
+          <p className="caption">{tr("sourceRecipeHelp")}</p>
         </div>
         <button onClick={onCancel}>
           <ArrowLeft size={16} />
-          Cancel
+          {tr("cancel")}
         </button>
       </div>
       <div className="panel">
         <div className="field-grid">
           <label>
-            Main dish
+            {tr("mainDish")}
             <input
-              value={draft.main}
+              value={ct(draft.main)}
               onChange={(e) => field("main", e.target.value)}
             />
           </label>
           <label>
-            Side or soup
+            {tr("sideOrSoup")}
             <input
-              value={draft.side}
+              value={ct(draft.side)}
               onChange={(e) => field("side", e.target.value)}
             />
           </label>
           <label>
-            Cooking estimate · minutes
+            {tr("cookingEstimateMinutes")}
             <input
               type="number"
               min="1"
@@ -94,7 +94,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
       </div>
       <section className="panel">
         <div className="section-title">
-          <h2>Ingredients</h2>
+          <h2>{tr("ingredients")}</h2>
           <button
             className="small"
             onClick={() =>
@@ -105,24 +105,24 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
             }
           >
             <Plus size={16} />
-            Add ingredient
+            {tr("addIngredient")}
           </button>
         </div>
         <div className="ingredient-rows">
           {draft.ingredients.map((i, n) => (
             <div className="ingredient-row" key={n}>
               <label>
-                Name
+                {tr("name")}
                 <input
-                  aria-label={`Ingredient ${n + 1} name`}
-                  value={i.name}
+                  aria-label={tr("ingredientNameLabel", { count: n + 1 })}
+                  value={ct(i.name)}
                   onChange={(e) => ingredient(n, "name", e.target.value)}
                 />
               </label>
               <label>
-                Amount
+                {tr("amount")}
                 <input
-                  aria-label={`Ingredient ${n + 1} quantity`}
+                  aria-label={tr("ingredientQuantityLabel", { count: n + 1 })}
                   type="number"
                   min="0.01"
                   step="any"
@@ -131,21 +131,23 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                 />
               </label>
               <label>
-                Unit
+                {tr("unit")}
                 <select
-                  aria-label={`Ingredient ${n + 1} unit`}
+                  aria-label={tr("ingredientUnitLabel", { count: n + 1 })}
                   value={i.unit}
                   onChange={(e) =>
                     ingredient(n, "unit", e.target.value as Unit)
                   }
                 >
                   {["g", "ml", "each", "tsp", "tbsp"].map((u) => (
-                    <option key={u}>{u}</option>
+                    <option key={u} value={u}>
+                      {unit(u)}
+                    </option>
                   ))}
                 </select>
               </label>
               <label>
-                Category
+                {tr("category")}
                 <select
                   value={i.category}
                   onChange={(e) => ingredient(n, "category", e.target.value)}
@@ -153,13 +155,15 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                   {[
                     ...new Set(["Protein", "Produce", "Pantry", i.category]),
                   ].map((c) => (
-                    <option key={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {ct(c)}
+                    </option>
                   ))}
                 </select>
               </label>
               <button
                 className="icon-button danger"
-                aria-label={`Remove ingredient ${n + 1}`}
+                aria-label={tr("removeIngredientLabel", { count: n + 1 })}
                 onClick={() =>
                   field(
                     "ingredients",
@@ -177,10 +181,9 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
         <section className="panel" key={kind}>
           <div className="section-title">
             <div>
-              <h2>{kind === "prep" ? "Preparation" : "Cooking"} steps</h2>
+              <h2>{tr(kind === "prep" ? "prepSteps" : "cookSteps")}</h2>
               <p className="caption">
-                Write [300 g] or [2 tsp] to scale amounts with household size.
-                Zero minutes means no timer.
+                {tr("write300GOr2TspToScaleAmountsWithHouseholdSize")}
               </p>
             </div>
             <button
@@ -190,24 +193,30 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
               }
             >
               <Plus size={16} />
-              Add step
+              {tr("addStep")}
             </button>
           </div>
           {draft[kind].map((s, n) => (
             <div className="edit-step" key={n}>
               <span className="number">{n + 1}</span>
               <label>
-                Instruction
+                {tr("instruction")}
                 <textarea
-                  aria-label={`${kind} step ${n + 1}`}
-                  value={s.text}
+                  aria-label={tr("instructionLabel", {
+                    kind: tr(kind === "prep" ? "stepKindPrep" : "stepKindCook"),
+                    count: n + 1,
+                  })}
+                  value={ct(s.text)}
                   onChange={(e) => step(kind, n, "text", e.target.value)}
                 />
               </label>
               <label className="minutes-field">
-                Timer · min
+                {tr("timerMin")}
                 <input
-                  aria-label={`${kind} timer ${n + 1}`}
+                  aria-label={tr("timerLabel", {
+                    kind: tr(kind === "prep" ? "stepKindPrep" : "stepKindCook"),
+                    count: n + 1,
+                  })}
                   type="number"
                   min="0"
                   max="240"
@@ -219,7 +228,10 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
               </label>
               <button
                 className="icon-button danger"
-                aria-label={`Remove ${kind} step ${n + 1}`}
+                aria-label={tr("removeStepLabel", {
+                  kind: tr(kind === "prep" ? "stepKindPrep" : "stepKindCook"),
+                  count: n + 1,
+                })}
                 onClick={() =>
                   field(
                     kind,
@@ -234,37 +246,38 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
         </section>
       ))}
       <section className="panel">
-        <h2>Storage & thawing</h2>
+        <h2>{tr("storageThawing")}</h2>
         <div className="field-grid">
           <label>
-            Storage instructions
+            {tr("storageInstructions")}
             <textarea
-              value={draft.storage}
+              value={ct(draft.storage)}
               onChange={(e) => field("storage", e.target.value)}
             />
           </label>
           <label>
-            Thawing instructions
+            {tr("thawingInstructions")}
             <textarea
-              value={draft.thaw}
+              value={ct(draft.thaw)}
               onChange={(e) => field("thaw", e.target.value)}
             />
           </label>
         </div>
         <div className="notice warning">
-          Edited recipes are user-entered. This app validates data structure,
-          not food safety or cooking consistency.
+          {tr(
+            "editedRecipesAreUserEnteredThisAppValidatesDataStructureNotFood",
+          )}
         </div>
       </section>
       <div className="save-bar">
         {error && (
           <p className="error" role="alert">
-            {error}
+            {translateError(error)}
           </p>
         )}
         <button className="primary" onClick={save}>
           <Save size={17} />
-          Save meal
+          {tr("saveMeal")}
         </button>
       </div>
     </>

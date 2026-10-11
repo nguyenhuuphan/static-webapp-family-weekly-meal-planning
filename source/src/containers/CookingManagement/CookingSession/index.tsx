@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import {
   ShoppingBag,
   ArrowRight,
@@ -18,6 +19,7 @@ import { fmt } from "src/utils/formatTime";
 
 interface IProps {}
 const CookingSession: React.FC<IProps> = () => {
+  const { t: tr, source, content: ct, number: num, unit } = useI18n();
   const {
     s,
     plan,
@@ -38,16 +40,18 @@ const CookingSession: React.FC<IProps> = () => {
   return (
     <>
       <Heading
-        eyebrow="ONE MEAL, ONE STEP AT A TIME"
-        title="Let’s make something good."
-        description="Choose your meal, check your portions, then follow the prepared-ingredient guide."
+        eyebrow={tr("oneMealOneStepAtATime")}
+        title={tr("letSMakeSomethingGood")}
+        description={tr(
+          "chooseYourMealCheckYourPortionsThenFollowThePreparedIngredientGuide",
+        )}
       />
       <div className="cook-layout">
         <aside className="meal-picker">
-          <span className="eyebrow">CHOOSE YOUR MEAL</span>
+          <span className="eyebrow">{tr("chooseYourMeal")}</span>
           {DAYS.map((d) => (
             <div key={d}>
-              <h4>{d}</h4>
+              <h4>{ct(d)}</h4>
               {plan.meals
                 .filter((m) => m.day === d)
                 .sort((a, b) => (a.type === "Lunch" ? -1 : 1))
@@ -58,8 +62,8 @@ const CookingSession: React.FC<IProps> = () => {
                     onClick={() => setSelected(m.id)}
                   >
                     <span>
-                      {m.type}
-                      <small>{m.main}</small>
+                      {ct(m.type)}
+                      <small>{ct(m.main)}</small>
                     </span>
                     {s.progress.done[m.id] ? (
                       <CheckCircle2 size={16} />
@@ -74,23 +78,24 @@ const CookingSession: React.FC<IProps> = () => {
         <div>
           <section className="panel cook-header">
             <div className="eyebrow">
-              {meal.day} · {meal.type} · {s.servings} servings
+              {ct(meal.day)} · {ct(meal.type)} ·{" "}
+              {tr("servingsCount", { count: s.servings })}
             </div>
-            <h2>{meal.main}</h2>
-            <p>{meal.side}</p>
+            <h2>{ct(meal.main)}</h2>
+            <p>{ct(meal.side)}</p>
             <details>
               <summary>
                 <ShoppingBag size={15} />
-                Containers & ingredients
+                {tr("containersIngredients")}
               </summary>
               <div className="ingredient-chips">
                 {meal.ingredients.map((i, n) => (
                   <span key={n}>
-                    {round(i.qty * factor)} {i.unit} · {i.name}
+                    {num(round(i.qty * factor))} {unit(i.unit)} · {ct(i.name)}
                   </span>
                 ))}
               </div>
-              <p className="caption">{meal.thaw}</p>
+              <p className="caption">{ct(meal.thaw)}</p>
             </details>
             <label className="readiness">
               <input
@@ -98,19 +103,20 @@ const CookingSession: React.FC<IProps> = () => {
                 checked={!!s.progress.ready[meal.id]}
                 onChange={(e) => toggle("ready", meal.id, e.target.checked)}
               />
-              I checked: safely stored, fully thawed and ready to cook.
+              {tr("iCheckedSafelyStoredFullyThawedAndReadyToCook")}
             </label>
             {!isPrepared(s, meal) && (
               <div className="notice warning">
                 <Info size={18} />
                 <p>
-                  Preparation is not fully confirmed. You can read ahead, but
-                  finish prep before marking the meal complete.{" "}
+                  {tr(
+                    "preparationIsNotFullyConfirmedYouCanReadAheadButFinishPrep",
+                  )}{" "}
                   <button
                     className="text-button"
                     onClick={() => navigate("prep")}
                   >
-                    Review prep
+                    {tr("reviewPrep")}
                     <ArrowRight size={13} />
                   </button>
                 </p>
@@ -118,19 +124,21 @@ const CookingSession: React.FC<IProps> = () => {
             )}
             {factor !== 1 && (
               <div className="notice warning">
-                Quantities are scaled, but time is not. Use batches if needed
-                and check doneness.
+                {tr("quantitiesAreScaledButTimeIsNotUseBatchesIfNeededAnd")}
               </div>
             )}
           </section>
           <section className="panel cooking-step">
             <div className="step-meta">
               <span className="eyebrow">
-                STEP {pos + 1} OF {meal.steps.length}
+                {tr("stepProgress", {
+                  current: pos + 1,
+                  total: meal.steps.length,
+                })}
               </span>
               <span>
                 <Flame size={15} />
-                Follow heat instructions
+                {tr("followHeatInstructions")}
               </span>
             </div>
             <progress value={pos + 1} max={meal.steps.length} />
@@ -145,12 +153,12 @@ const CookingSession: React.FC<IProps> = () => {
                         ? fmt(seconds)
                         : `${step.minutes}:00`}
                     </strong>
-                    <small>Suggested timer · check doneness separately</small>
+                    <small>{tr("suggestedTimerCheckDonenessSeparately")}</small>
                   </span>
                 </div>
                 <Button onClick={startTimer}>
                   <Play size={14} />
-                  Start timer
+                  {tr("startTimer")}
                 </Button>
               </div>
             )}
@@ -168,7 +176,7 @@ const CookingSession: React.FC<IProps> = () => {
                 }
               >
                 <ArrowLeft size={16} />
-                Back
+                {tr("back")}
               </Button>
               {pos < meal.steps.length - 1 ? (
                 <Button
@@ -183,7 +191,7 @@ const CookingSession: React.FC<IProps> = () => {
                     }))
                   }
                 >
-                  Next step
+                  {tr("nextStep")}
                   <ArrowRight size={16} />
                 </Button>
               ) : (
@@ -192,21 +200,19 @@ const CookingSession: React.FC<IProps> = () => {
                   disabled={!ready || s.progress.done[meal.id]}
                   onClick={() => {
                     toggle("done", meal.id, true);
-                    setToast("A good meal, well made. Enjoy!");
+                    setToast(source("aGoodMealWellMadeEnjoy"));
                   }}
                 >
                   <Check size={17} />
-                  {s.progress.done[meal.id] ? "Meal complete" : "Finish meal"}
+                  {s.progress.done[meal.id]
+                    ? tr("mealComplete")
+                    : tr("finishMeal")}
                 </Button>
               )}
             </div>
             <div className="doneness">
               <ShieldCheck size={17} />
-              <p>
-                Chicken 74°C · ground meat/egg dishes 71°C · fish 63°C ·
-                whole-cut pork/beef 63°C + 3-minute rest · shrimp fully opaque.
-                A timer is not a safety check.
-              </p>
+              <p>{tr("chicken74CGroundMeatEggDishes71CFish63C")}</p>
             </div>
           </section>
         </div>

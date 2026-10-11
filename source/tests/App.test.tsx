@@ -169,7 +169,9 @@ describe("React feature parity", () => {
       { target: { value: "4" } },
     );
     nav("Shopping");
-    expect(screen.getByText("1000 g")).toBeTruthy();
+    expect(
+      screen.getByText(`${new Intl.NumberFormat("en-GB").format(1000)} g`),
+    ).toBeTruthy();
     nav("Settings");
     fireEvent.click(
       screen.getByRole("button", { name: "Restore original menu" }),

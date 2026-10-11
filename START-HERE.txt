@@ -16,8 +16,13 @@ Local development: in source, npm ci then npm run dev.
 Git deploy from this repository: base directory source; build npm run build;
 publish directory dist (relative to source). Root netlify.toml sets these values.
 
-This package has been compiled and tested automatically. Native-browser
-visual QA and deployment to your Netlify account have not been performed.
+This package has been compiled and tested automatically. Vietnamese layouts
+were checked in headless Chrome at widths 320–1440. Deployment to your Netlify
+account and deployment-specific print/download checks have not been performed.
+
+English and Vietnamese: use the language selector in the page header.
+The selection is remembered without resetting recipes, progress or timers.
+Adding another language: see docs/localization.md.
 
 Source conventions: containers/Feature/Screen/index.tsx, React.FC<IProps>,
 src/... aliases, typed Redux Toolkit store, services, hooks and SCSS.

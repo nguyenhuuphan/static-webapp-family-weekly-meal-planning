@@ -1,20 +1,23 @@
+import { useI18n } from "src/i18n";
 import { Leaf } from "lucide-react";
 interface IProps {
   error?: string;
 }
-const LoadingState: React.FC<IProps> = ({ error }) =>
-  error ? (
+const LoadingState: React.FC<IProps> = ({ error }) => {
+  const { t: tr, error: translateError } = useI18n();
+  return error ? (
     <main className="loading">
       <Leaf />
-      <h1>A little setup needed.</h1>
-      <p>{error}</p>
-      <a href="./">Try again</a>
+      <h1>{tr("aLittleSetupNeeded")}</h1>
+      <p>{translateError(error)}</p>
+      <a href="./">{tr("tryAgain")}</a>
     </main>
   ) : (
     <main className="loading">
       <Leaf className="pulse" />
-      <h1>Setting your table…</h1>
-      <p>Good things are coming to your kitchen.</p>
+      <h1>{tr("settingYourTable")}</h1>
+      <p>{tr("goodThingsAreComingToYourKitchen")}</p>
     </main>
   );
+};
 export default LoadingState;

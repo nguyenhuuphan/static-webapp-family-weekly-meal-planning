@@ -5,6 +5,7 @@ import { usePlannerController } from "src/hooks/usePlannerController";
 import { MealPlannerContext } from "src/hooks/useMealPlanner";
 import AppLayout from "src/layout/AppLayout";
 import LoadingState from "src/components/LoadingState";
+import { I18nProvider } from "src/i18n";
 const PlannerRoot: React.FC = () => {
   const { error, model } = usePlannerController();
   if (error || !model) return <LoadingState error={error} />;
@@ -17,9 +18,11 @@ const PlannerRoot: React.FC = () => {
 const App: React.FC = () => {
   const [store] = useState(createPlannerStore);
   return (
-    <Provider store={store}>
-      <PlannerRoot />
-    </Provider>
+    <I18nProvider>
+      <Provider store={store}>
+        <PlannerRoot />
+      </Provider>
+    </I18nProvider>
   );
 };
 export default App;

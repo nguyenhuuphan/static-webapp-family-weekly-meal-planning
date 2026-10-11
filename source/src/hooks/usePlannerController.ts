@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "src/i18n";
 import type { Meal, Plan, State, View, Progress } from "src/types";
 import {
   freshState,
   hydrateState,
   aggregate,
   ingredientKey,
-  scaleText,
   isPrepared,
   timerSeconds,
   freshProgress,
@@ -21,6 +21,7 @@ import {
   progressReset,
 } from "src/redux/plannerSlice";
 export function usePlannerController() {
+  const { t: tr, instruction, source } = useI18n();
   const { current: state, defaults } = useAppSelector((s) => s.planner);
   const dispatch = useAppDispatch(),
     store = useAppStore();
@@ -106,7 +107,7 @@ export function usePlannerController() {
     dispatch(progressToggled({ group, key, value }));
   }
   function resetProgress() {
-    if (confirm("Start fresh checklists? Your edited recipes will stay.")) {
+    if (confirm(tr("resetConfirm"))) {
       dispatch(progressReset());
       setToast("Fresh progress. Same favourite recipes.");
     }
@@ -150,14 +151,11 @@ export function usePlannerController() {
       if (file.size > 1000000)
         throw Error("Please choose a JSON file smaller than 1 MB.");
       const p = parseBackup(JSON.parse(await file.text()));
-      if (
-        confirm(
-          "Replace this plan and reset checklists? Export your current plan first if needed.",
-        )
-      )
-        applyPlan(p.plan, p.servings);
+      if (confirm(tr("importConfirm"))) applyPlan(p.plan, p.servings);
     } catch (e) {
-      setToast((e as Error).message);
+      setToast(
+        e instanceof SyntaxError ? source("invalidJson") : (e as Error).message,
+      );
     }
   }
   if (!state || !defaults) return { error, model: null };
@@ -182,10 +180,9 @@ export function usePlannerController() {
     needs = shopping.filter((i) => !s.progress.owned[ingredientKey(i)]),
     bought = needs.filter((i) => s.progress.shopping[ingredientKey(i)]).length,
     seconds = timerSeconds(s.timer, now),
-    t = (v: string) => scaleText(v, factor);
+    t = (v: string) => instruction(v, factor);
   const startTimer = () => {
-    if (s.timer && seconds > 0 && !confirm("Replace the running timer?"))
-      return;
+    if (s.timer && seconds > 0 && !confirm(tr("replaceTimerConfirm"))) return;
     update((x) => ({
       ...x,
       timer: {

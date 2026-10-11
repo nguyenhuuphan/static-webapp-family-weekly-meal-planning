@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import TableIllustration from "src/assets/TableIllustration";
 import {
   CalendarDays,
@@ -15,43 +16,46 @@ import {
   Leaf,
 } from "lucide-react";
 import { DAYS } from "src/types";
-import { isPrepared, dateLabel } from "src/domain";
+import { isPrepared } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 
 interface IProps {}
 const WeeklyMenu: React.FC<IProps> = () => {
+  const { t: tr, content: ct, number: num, date: localizedDate } = useI18n();
   const { s, plan, doneCount, edit, navigate, cook, toggle } = useMealPlanner();
   return (
     <>
       <Heading
-        eyebrow="YOUR WEEKDAY KITCHEN, SIMPLIFIED"
-        title="A little planning. A lot more ease."
-        description="Ten comforting meals. One thoughtful shopping list. A calmer rhythm for your family."
+        eyebrow={tr("yourWeekdayKitchenSimplified")}
+        title={tr("aLittlePlanningALotMoreEase")}
+        description={tr(
+          "tenComfortingMealsOneThoughtfulShoppingListACalmerRhythmForYour",
+        )}
       >
         <Button onClick={() => navigate("shop")} primary>
           <ShoppingBag size={17} />
-          Start shopping
+          {tr("startShopping")}
         </Button>
       </Heading>
       <section className="welcome">
         <div className="welcome-copy">
           <span className="pill">
             <Sun size={13} />
-            Your five-day rhythm
+            {tr("yourFiveDayRhythm")}
           </span>
           <h2>
-            Less deciding.
+            {tr("lessDeciding")}
             <br />
-            More enjoying.
+            {tr("moreEnjoying")}
           </h2>
           <p>
-            Prep on Sunday, cook through Friday.
+            {tr("prepOnSundayCookThroughFriday")}
             <br />
-            We’ll keep the next step close at hand.
+            {tr("weLlKeepTheNextStepCloseAtHand")}
           </p>
           <button onClick={() => navigate("prep")}>
-            Open your prep guide <ArrowRight size={17} />
+            {tr("openYourPrepGuide")} <ArrowRight size={17} />
           </button>
         </div>
         <TableIllustration />
@@ -62,8 +66,8 @@ const WeeklyMenu: React.FC<IProps> = () => {
             <CalendarDays size={20} />
           </span>
           <div>
-            <strong>10 meals</strong>
-            <small>Monday through Friday</small>
+            <strong>{tr("mealCount", { count: plan.meals.length })}</strong>
+            <small>{tr("mondayThroughFriday")}</small>
           </div>
         </div>
         <div>
@@ -71,8 +75,8 @@ const WeeklyMenu: React.FC<IProps> = () => {
             <Users size={20} />
           </span>
           <div>
-            <strong>{s.servings} people</strong>
-            <small>At your family table</small>
+            <strong>{tr("peopleCount", { count: s.servings })}</strong>
+            <small>{tr("atYourFamilyTable")}</small>
           </div>
         </div>
         <div>
@@ -80,130 +84,187 @@ const WeeklyMenu: React.FC<IProps> = () => {
             <CheckCircle2 size={20} />
           </span>
           <div>
-            <strong>{doneCount} / 10 enjoyed</strong>
-            <small>A little progress every day</small>
+            <strong>
+              {tr("enjoyedCount", {
+                count: doneCount,
+                total: plan.meals.length,
+              })}
+            </strong>
+            <small>{tr("aLittleProgressEveryDay")}</small>
           </div>
         </div>
       </div>
       <div className="weekly-workspace">
-      <section className="weekly-schedule" aria-label="Weekly meal plan">
-      <div className="section-title">
-        <div>
-          <span className="eyebrow">WHAT’S COOKING</span>
-          <h2>Your week, at a glance.</h2>
-        </div>
-        <span className="caption">
-          Lunch + dinner · rice handled separately
-        </span>
-      </div>
-      <div className="week-grid">
-        {DAYS.map((day, index) => (
-          <section className="day-block" key={day}>
-            <div className="day-title">
-              <span className="day-number">0{index + 1}</span>
-              <div>
-                <h3>{day}</h3>
-                <span>{dateLabel(s.weekStart, day)}</span>
-              </div>
+        <section className="weekly-schedule" aria-label={tr("weeklyMealPlan")}>
+          <div className="section-title">
+            <div>
+              <span className="eyebrow">{tr("whatSCooking")}</span>
+              <h2>{tr("yourWeekAtAGlance")}</h2>
             </div>
-            <div className="day-meals">
-              {(["Lunch", "Dinner"] as const).map((type) => {
-                const m = plan.meals.find(
-                  (x) => x.day === day && x.type === type,
-                )!;
-                const done = s.progress.done[m.id];
-                return (
-                  <article
-                    className={`meal-card ${done ? "complete" : ""}`}
-                    key={m.id}
-                  >
-                    <div className="card-meta">
-                      <span>
-                        {type === "Lunch" ? (
-                          <Sun size={14} />
-                        ) : (
-                          <Utensils size={14} />
-                        )}{" "}
-                        {type}
-                      </span>
-                      <span>
-                        <Clock size={13} />
-                        {m.minutes} min
-                      </span>
-                    </div>
-                    <h3>{m.main}</h3>
-                    <p>{m.side}</p>
-                    <div className="card-bottom">
-                      <span
-                        className={`pill ${done || (isPrepared(s, m) && s.progress.ready[m.id]) ? "green" : "amber"}`}
+            <span className="caption">
+              {tr("lunchDinnerRiceHandledSeparately")}
+            </span>
+          </div>
+          <div className="week-grid">
+            {DAYS.map((day, index) => (
+              <section className="day-block" key={day}>
+                <div className="day-title">
+                  <span className="day-number">0{index + 1}</span>
+                  <div>
+                    <h3>{ct(day)}</h3>
+                    <span>{localizedDate(s.weekStart, day)}</span>
+                  </div>
+                </div>
+                <div className="day-meals">
+                  {(["Lunch", "Dinner"] as const).map((type) => {
+                    const m = plan.meals.find(
+                      (x) => x.day === day && x.type === type,
+                    )!;
+                    const done = s.progress.done[m.id];
+                    return (
+                      <article
+                        className={`meal-card ${done ? "complete" : ""}`}
+                        key={m.id}
                       >
-                        {done ? (
-                          <>
-                            <Check size={12} />
-                            Enjoyed
-                          </>
-                        ) : isPrepared(s, m) && s.progress.ready[m.id] ? (
-                          "Ready to cook"
-                        ) : isPrepared(s, m) ? (
-                          "Check thawing"
-                        ) : (
-                          "Prep needed"
+                        <div className="card-meta">
+                          <span>
+                            {type === "Lunch" ? (
+                              <Sun size={14} />
+                            ) : (
+                              <Utensils size={14} />
+                            )}{" "}
+                            {ct(type)}
+                          </span>
+                          <span>
+                            <Clock size={13} />
+                            {tr("minutesCount", { count: m.minutes })}
+                          </span>
+                        </div>
+                        <h3>{ct(m.main)}</h3>
+                        <p>{ct(m.side)}</p>
+                        <div className="card-bottom">
+                          <span
+                            className={`pill ${done || (isPrepared(s, m) && s.progress.ready[m.id]) ? "green" : "amber"}`}
+                          >
+                            {done ? (
+                              <>
+                                <Check size={12} />
+                                {tr("enjoyed")}
+                              </>
+                            ) : isPrepared(s, m) && s.progress.ready[m.id] ? (
+                              tr("readyToCook")
+                            ) : isPrepared(s, m) ? (
+                              tr("checkThawing")
+                            ) : (
+                              tr("prepNeeded")
+                            )}
+                          </span>
+                          <div className="actions">
+                            <button
+                              className="icon-button"
+                              aria-label={tr("editMealLabel", {
+                                day: ct(day),
+                                type: ct(type),
+                              })}
+                              onClick={() => edit(m)}
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              className="text-button"
+                              onClick={() => cook(m)}
+                            >
+                              {tr("cook")}
+                              <ArrowRight size={16} />
+                            </button>
+                          </div>
+                        </div>
+                        {done && (
+                          <button
+                            className="undo caption"
+                            onClick={() => toggle("done", m.id, false)}
+                          >
+                            {tr("undoCompletion")}
+                          </button>
                         )}
-                      </span>
-                      <div className="actions">
-                        <button
-                          className="icon-button"
-                          aria-label={`Edit ${day} ${type}`}
-                          onClick={() => edit(m)}
-                        >
-                          <Pencil size={15} />
-                        </button>
-                        <button className="text-button" onClick={() => cook(m)}>
-                          Cook
-                          <ArrowRight size={16} />
-                        </button>
-                      </div>
-                    </div>
-                    {done && (
-                      <button
-                        className="undo caption"
-                        onClick={() => toggle("done", m.id, false)}
-                      >
-                        Undo completion
-                      </button>
-                    )}
-                  </article>
-                );
-              })}
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        </section>
+        <aside className="week-companion" aria-label={tr("kitchenOverview")}>
+          <section className="companion-progress">
+            <span className="eyebrow">{tr("oneMealAtATime")}</span>
+            <h2>{tr("aWeekWellSpent")}</h2>
+            <div className="progress-total">
+              <strong>{num(doneCount)}</strong>
+              <span>{tr("of10MealsEnjoyed")}</span>
             </div>
+            <progress
+              value={doneCount}
+              max={10}
+              aria-label={tr("mealsEnjoyedThisWeek")}
+            />
+            <p>
+              {doneCount === 10
+                ? tr("aFullWeekOfGoodFoodBeautifullyDone")
+                : tr("yourNextGoodMealStartsWithOneSmallStep")}
+            </p>
           </section>
-        ))}
-      </div>
-      </section>
-      <aside className="week-companion" aria-label="Kitchen overview">
-        <section className="companion-progress">
-          <span className="eyebrow">ONE MEAL AT A TIME</span>
-          <h2>A week well spent.</h2>
-          <div className="progress-total"><strong>{doneCount}</strong><span>of 10 meals enjoyed</span></div>
-          <progress value={doneCount} max={10} aria-label="Meals enjoyed this week" />
-          <p>{doneCount === 10 ? "A full week of good food. Beautifully done." : "Your next good meal starts with one small step."}</p>
-        </section>
-        <section className="kitchen-shortcuts">
-          <span className="eyebrow">FROM PLAN TO PLATE</span>
-          <h2>Your kitchen rhythm</h2>
-          <button onClick={() => navigate("shop")}><span className="shortcut-icon"><ShoppingBag size={20} /></span><span><strong>Shopping list</strong><small>Gather your ingredients</small></span><ArrowRight size={17} /></button>
-          <button onClick={() => navigate("prep")}><span className="shortcut-icon"><ChefHat size={20} /></span><span><strong>Prep guide</strong><small>Get ready for the week</small></span><ArrowRight size={17} /></button>
-          <button onClick={() => navigate("cook")}><span className="shortcut-icon"><Utensils size={20} /></span><span><strong>Start cooking</strong><small>Follow your cooking steps</small></span><ArrowRight size={17} /></button>
-        </section>
-        <div className="companion-note"><Leaf size={24} /><p>Good food.<br />A little less hurry.</p><span>A little planning leaves more room for being together.</span></div>
-      </aside>
+          <section className="kitchen-shortcuts">
+            <span className="eyebrow">{tr("fromPlanToPlate")}</span>
+            <h2>{tr("yourKitchenRhythm")}</h2>
+            <button onClick={() => navigate("shop")}>
+              <span className="shortcut-icon">
+                <ShoppingBag size={20} />
+              </span>
+              <span>
+                <strong>{tr("shoppingList")}</strong>
+                <small>{tr("gatherYourIngredients")}</small>
+              </span>
+              <ArrowRight size={17} />
+            </button>
+            <button onClick={() => navigate("prep")}>
+              <span className="shortcut-icon">
+                <ChefHat size={20} />
+              </span>
+              <span>
+                <strong>{tr("prepGuide")}</strong>
+                <small>{tr("getReadyForTheWeek")}</small>
+              </span>
+              <ArrowRight size={17} />
+            </button>
+            <button onClick={() => navigate("cook")}>
+              <span className="shortcut-icon">
+                <Utensils size={20} />
+              </span>
+              <span>
+                <strong>{tr("startCooking")}</strong>
+                <small>{tr("followYourCookingSteps")}</small>
+              </span>
+              <ArrowRight size={17} />
+            </button>
+          </section>
+          <div className="companion-note">
+            <Leaf size={24} />
+            <p>
+              {tr("goodFood")}
+              <br />
+              {tr("aLittleLessHurry")}
+            </p>
+            <span>{tr("aLittlePlanningLeavesMoreRoomForBeingTogether")}</span>
+          </div>
+        </aside>
       </div>
       <div className="notice">
         <Info size={18} />
         <p>
-          Cooking times assume thawed, prepared ingredients and two burners.
-          They’re estimates, not doneness checks. Saturdays and Sundays are
-          yours to keep flexible.
+          {tr(
+            "cookingTimesAssumeThawedPreparedIngredientsAndTwoBurnersTheyReEstimates",
+          )}
         </p>
       </div>
     </>

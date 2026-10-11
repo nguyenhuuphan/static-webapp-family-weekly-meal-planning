@@ -1,6 +1,7 @@
+import { LanguageSwitcher, useI18n } from "src/i18n";
 import { CalendarDays, Leaf, Clock, X, CheckCircle2 } from "lucide-react";
 
-import { dateLabel, replaceMeal } from "src/domain";
+import { replaceMeal } from "src/domain";
 import { Button } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { fmt } from "src/utils/formatTime";
@@ -15,6 +16,13 @@ import Editor from "src/containers/MealPlanning/MealEditor";
 import Sidebar from "src/layout/Sidebar";
 interface IProps {}
 const AppLayout: React.FC<IProps> = () => {
+  const {
+    t: tr,
+    source,
+    content: ct,
+    date: localizedDate,
+    error: translateError,
+  } = useI18n();
   const {
     s,
     plan,
@@ -37,21 +45,24 @@ const AppLayout: React.FC<IProps> = () => {
         <header className="topbar">
           <span className="mobile-brand">
             <Leaf size={17} />
-            Weekday Table
+            {tr("weekdayTable")}
           </span>
           <span className="week-label">
             <CalendarDays size={14} />
-            Week of {dateLabel(s.weekStart, "Monday")}
+            {tr("weekOf")} {localizedDate(s.weekStart, "Monday")}
           </span>
-          <span className="saved">
-            <i />
-            {storageError ? "Changes not saved" : "Saved on this device"}
-          </span>
+          <div className="topbar-tools">
+            <LanguageSwitcher />
+            <span className="saved">
+              <i />
+              {storageError ? tr("changesNotSaved") : tr("savedOnThisDevice")}
+            </span>
+          </div>
         </header>
         <div className="page-content">
           {storageError && (
             <div className="notice warning" role="alert">
-              {storageError}
+              {ct(storageError)}
             </div>
           )}
           {editing ? (
@@ -64,27 +75,24 @@ const AppLayout: React.FC<IProps> = () => {
                 onSave={(m) => {
                   update((x) => replaceMeal(x, m.id, m));
                   setEditId(null);
-                  setToast("Meal saved. Review your preparation and storage.");
+                  setToast(source("mealSavedReviewYourPreparationAndStorage"));
                 }}
               />
               <section className="panel">
-                <h2>Use another recipe pair</h2>
-                <p>
-                  Copy a main dish and side into this slot. Review storage and
-                  thawing for its new day.
-                </p>
+                <h2>{tr("useAnotherRecipePair")}</h2>
+                <p>{tr("copyAMainDishAndSideIntoThisSlotReviewStorageAnd")}</p>
                 <div className="actions">
                   <select
-                    aria-label="Recipe pair to copy"
+                    aria-label={tr("recipePairToCopy")}
                     value={swapId}
                     onChange={(e) => setSwapId(e.target.value)}
                   >
-                    <option value="">Choose a recipe pair…</option>
+                    <option value="">{tr("chooseARecipePair")}</option>
                     {plan.meals
                       .filter((m) => m.id !== editing.id)
                       .map((m) => (
                         <option key={m.id} value={m.id}>
-                          {m.main} + {m.side}
+                          {ct(m.main)} + {ct(m.side)}
                         </option>
                       ))}
                   </select>
@@ -95,7 +103,9 @@ const AppLayout: React.FC<IProps> = () => {
                       if (!src) return;
                       if (
                         confirm(
-                          "Replace this recipe pair? Progress resets. Review storage for its new date; existing prepared food will not change.",
+                          tr(
+                            "replaceThisRecipePairProgressResetsReviewStorageForItsNewDate",
+                          ),
                         )
                       ) {
                         const copy = {
@@ -111,12 +121,12 @@ const AppLayout: React.FC<IProps> = () => {
                         setEditId(null);
                         setSwapId("");
                         setToast(
-                          "Recipe replaced. Review storage and quantities.",
+                          source("recipeReplacedReviewStorageAndQuantities"),
                         );
                       }
                     }}
                   >
-                    Replace pair
+                    {tr("replacePair")}
                   </Button>
                 </div>
               </section>
@@ -139,9 +149,9 @@ const AppLayout: React.FC<IProps> = () => {
           <footer>
             <span>
               <Leaf size={13} />
-              Weekday Table · Made for everyday life.
+              {tr("weekdayTableMadeForEverydayLife")}
             </span>
-            <span>1 tsp = 5 ml · 1 tbsp = 15 ml · rice time separate</span>
+            <span>{tr("1Tsp5Ml1Tbsp15MlRiceTimeSeparate")}</span>
           </footer>
         </div>
       </main>
@@ -152,16 +162,18 @@ const AppLayout: React.FC<IProps> = () => {
         >
           <Clock size={20} />
           <div>
-            <strong>{seconds === 0 ? "Timer finished" : fmt(seconds)}</strong>
+            <strong>
+              {seconds === 0 ? tr("timerFinished") : fmt(seconds)}
+            </strong>
             <span>
-              {plan.meals.find((m) => m.id === s.timer?.mealId)?.main} · step{" "}
-              {s.timer.step + 1}
-              {seconds === 0 ? " · check doneness" : ""}
+              {ct(plan.meals.find((m) => m.id === s.timer?.mealId)?.main || "")}{" "}
+              {tr("stepMessage")} {s.timer.step + 1}
+              {seconds === 0 ? tr("checkDoneness") : ""}
             </span>
           </div>
           <button
             className="icon-button"
-            aria-label="Dismiss timer"
+            aria-label={tr("dismissTimer")}
             onClick={() => update((x) => ({ ...x, timer: null }))}
           >
             <X size={17} />
@@ -171,10 +183,10 @@ const AppLayout: React.FC<IProps> = () => {
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />
-          <span>{toast}</span>
+          <span>{translateError(toast)}</span>
           <button
             className="icon-button"
-            aria-label="Dismiss notification"
+            aria-label={tr("dismissNotification")}
             onClick={() => setToast("")}
           >
             <X size={16} />

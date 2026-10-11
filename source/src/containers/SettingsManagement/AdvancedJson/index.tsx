@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import { ArrowLeft } from "lucide-react";
 
 import { parseBackup } from "src/domain";
@@ -6,26 +7,29 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 
 interface IProps {}
 const AdvancedJson: React.FC<IProps> = () => {
+  const { t: tr, source, error: translateError } = useI18n();
   const { applyPlan, setAdvanced, json, setJson, jsonError, setJsonError } =
     useMealPlanner();
   return (
     <>
       <Heading
-        eyebrow="ADVANCED EDITOR"
-        title="One simple JSON file."
-        description="Ten unique weekday lunch/dinner slots. Saving replaces the plan and resets progress."
+        eyebrow={tr("advancedEditor")}
+        title={tr("oneSimpleJsonFile")}
+        description={tr(
+          "tenUniqueWeekdayLunchDinnerSlotsSavingReplacesThePlanAndResets",
+        )}
       >
         <Button onClick={() => setAdvanced(false)}>
           <ArrowLeft size={16} />
-          Back
+          {tr("back")}
         </Button>
       </Heading>
       <section className="panel">
         <label>
-          Meal-plan JSON
+          {tr("mealPlanJson")}
           <textarea
             className="json-editor"
-            aria-label="Meal-plan JSON"
+            aria-label={tr("mealPlanJson")}
             value={json}
             onChange={(e) => setJson(e.target.value)}
             spellCheck={false}
@@ -33,7 +37,7 @@ const AdvancedJson: React.FC<IProps> = () => {
         </label>
         {jsonError && (
           <p className="error" role="alert">
-            {jsonError}
+            {translateError(jsonError)}
           </p>
         )}
         <Button
@@ -41,14 +45,18 @@ const AdvancedJson: React.FC<IProps> = () => {
           onClick={() => {
             try {
               const p = parseBackup(JSON.parse(json));
-              if (confirm("Replace the menu and reset progress?"))
+              if (confirm(tr("replaceTheMenuAndResetProgress")))
                 applyPlan(p.plan, p.servings);
             } catch (e) {
-              setJsonError((e as Error).message);
+              setJsonError(
+                e instanceof SyntaxError
+                  ? source("invalidJson")
+                  : (e as Error).message,
+              );
             }
           }}
         >
-          Validate & save
+          {tr("validateSave")}
         </Button>
       </section>
     </>

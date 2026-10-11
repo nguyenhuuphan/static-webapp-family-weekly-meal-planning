@@ -1,3 +1,4 @@
+import { useI18n } from "src/i18n";
 import { ShoppingBag, Printer, X, Search } from "lucide-react";
 
 import { ingredientKey } from "src/domain";
@@ -6,41 +7,54 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 
 interface IProps {}
 const ShoppingList: React.FC<IProps> = () => {
+  const { t: tr, content: ct, number: num, unit } = useI18n();
   const { s, needs, bought, shopping, toggle, search, setSearch } =
     useMealPlanner();
+  const normalize = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/gi, "d")
+      .toLowerCase();
+  const matches = (name: string) =>
+    [name, ct(name)].some((value) =>
+      normalize(value).includes(normalize(search)),
+    );
   return (
     <>
       <Heading
-        eyebrow="ONE TRIP, EVERYTHING COVERED"
-        title="A good week starts here."
-        description="Usable quantities, neatly gathered. Buy boneless meat, peeled shrimp and a little extra produce for trimming."
+        eyebrow={tr("oneTripEverythingCovered")}
+        title={tr("aGoodWeekStartsHere")}
+        description={tr(
+          "usableQuantitiesNeatlyGatheredBuyBonelessMeatPeeledShrimpAndALittle",
+        )}
       >
         <Button onClick={() => window.print()}>
           <Printer size={17} />
-          Print list
+          {tr("printList")}
         </Button>
       </Heading>
       <div className="progress-panel">
         <div>
           <strong>
-            {bought} of {needs.length} items picked up
+            {tr("shoppingProgress", { count: bought, total: needs.length })}
           </strong>
-          <span>{s.servings} servings per meal</span>
+          <span>{tr("servingsPerMealCount", { count: s.servings })}</span>
         </div>
         <progress value={bought} max={needs.length || 1} />
       </div>
       <div className="search-field">
         <Search size={17} />
         <input
-          aria-label="Search shopping list"
-          placeholder="Find an ingredient…"
+          aria-label={tr("searchShoppingList")}
+          placeholder={tr("findAnIngredient")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         {search && (
           <button
             className="icon-button"
-            aria-label="Clear search"
+            aria-label={tr("clearSearch")}
             onClick={() => setSearch("")}
           >
             <X size={16} />
@@ -50,16 +64,16 @@ const ShoppingList: React.FC<IProps> = () => {
       <div className="shopping-grid">
         {[...new Set(shopping.map((i) => i.category))].map((category) => {
           const items = shopping.filter(
-            (i) =>
-              i.category === category &&
-              i.name.toLowerCase().includes(search.toLowerCase()),
+            (i) => i.category === category && matches(i.name),
           );
           if (!items.length) return null;
           return (
             <section className="panel" key={category}>
               <div className="section-title">
-                <h2>{category}</h2>
-                <span className="pill">{items.length} items</span>
+                <h2>{ct(category)}</h2>
+                <span className="pill">
+                  {tr("itemCount", { count: items.length })}
+                </span>
               </div>
               {items.map((i) => {
                 const k = ingredientKey(i),
@@ -78,17 +92,17 @@ const ShoppingList: React.FC<IProps> = () => {
                         onChange={(e) =>
                           toggle("shopping", k, e.target.checked)
                         }
-                        aria-label={`Bought ${i.name}`}
+                        aria-label={tr("boughtLabel", { name: ct(i.name) })}
                       />
                       <span>
-                        <strong>{i.name}</strong>
+                        <strong>{ct(i.name)}</strong>
                         <small>
-                          {i.meals.length} meal{i.meals.length === 1 ? "" : "s"}
+                          {tr("mealCount", { count: i.meals.length })}
                         </small>
                       </span>
                     </label>
                     <span className="quantity">
-                      {i.qty} {i.unit}
+                      {num(i.qty)} {unit(i.unit)}
                     </span>
                     <label className="pantry-check">
                       <input
@@ -96,7 +110,7 @@ const ShoppingList: React.FC<IProps> = () => {
                         checked={!!owned}
                         onChange={(e) => toggle("owned", k, e.target.checked)}
                       />
-                      At home
+                      {tr("atHome")}
                     </label>
                   </div>
                 );
@@ -105,25 +119,22 @@ const ShoppingList: React.FC<IProps> = () => {
           );
         })}
       </div>
-      {!shopping.some((i) =>
-        i.name.toLowerCase().includes(search.toLowerCase()),
-      ) && <div className="panel empty">No ingredients match “{search}”.</div>}
+      {!shopping.some((i) => matches(i.name)) && (
+        <div className="panel empty">
+          {tr("noSearchResults", { query: search })}
+        </div>
+      )}
       <div className="notice">
         <ShoppingBag size={20} />
         <p>
-          <strong>Don’t forget the basics.</strong> Rice (about 1.5–2 kg for two
-          adults), clean water, food-safe containers, labels and a thermometer.
-          “At home” means the full listed quantity is available. Optional chili
-          can be omitted.
+          <strong>{tr("donTForgetTheBasics")}</strong>{" "}
+          {tr("riceAbout152KgForTwoAdultsCleanWaterFood")}
         </p>
       </div>
       <details className="panel">
-        <summary>Buying whole vegetables?</summary>
+        <summary>{tr("buyingWholeVegetables")}</summary>
         <p>
-          For the default two servings, buy approximately 450–500 g winter
-          melon, 450–500 g pumpkin, 500–600 g chayote, 650–750 g cabbage, plus
-          extra leafy greens for trimming. Ask for the listed edible fillet and
-          peeled-shrimp weights. Weigh cleaned portions during prep.
+          {tr("forTheDefaultTwoServingsBuyApproximately450500GWinterMelon")}
         </p>
       </details>
     </>

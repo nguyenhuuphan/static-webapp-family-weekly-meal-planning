@@ -2422,3 +2422,165 @@ html[lang="vi"] .welcome h2 {
     appearance: auto;
   }
 }
+.prep-batch-list {
+  display: grid;
+  gap: 24px;
+}
+.prep-batch {
+  overflow: visible;
+}
+.prep-batch-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.prep-batch-heading h2 {
+  margin: 4px 0;
+  font-size: 24px;
+}
+.prep-batch-quantity {
+  margin-left: auto;
+  font-size: 32px;
+  white-space: nowrap;
+}
+.prep-batch-quantity span {
+  font-size: 18px;
+}
+.prep-batch-operation {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff5cc;
+  font-weight: 600;
+}
+.prep-allocations {
+  display: grid;
+  gap: 12px;
+}
+.prep-allocation {
+  padding: 16px;
+  border: 1px solid #e7e2d5;
+  border-radius: 14px;
+  background: #fff;
+  min-width: 0;
+}
+.prep-allocation.checked {
+  border-color: #99b49c;
+  background: #f5faf3;
+}
+.prep-allocation-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.prep-portion-quantity {
+  font-size: 22px;
+}
+.prep-meal-details {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+}
+.prep-meal-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid #dfd7b7;
+  border-radius: 10px;
+  background: #fff9e5;
+  cursor: pointer;
+  max-width: 100%;
+}
+.prep-meal-trigger span {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+.prep-meal-trigger strong {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+.prep-meal-trigger:hover,
+.prep-meal-trigger:focus-visible {
+  background: #ffedaa;
+  outline: 2px solid #92782e;
+  outline-offset: 2px;
+}
+.prep-meal-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: min(380px, 65vw);
+  max-height: 60vh;
+  overflow: auto;
+  z-index: 40;
+  padding: 20px;
+  border: 1px solid #d8cca6;
+  border-radius: 14px;
+  background: #fffdf5;
+  box-shadow: 0 12px 35px #352c2433;
+}
+.prep-meal-popover[hidden] {
+  display: none;
+}
+.prep-meal-popover h3 {
+  font-size: 21px;
+  margin: 12px 0 6px;
+}
+.prep-meal-popover h4 {
+  margin: 16px 0 8px;
+}
+.prep-meal-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.prep-meal-popover ul {
+  padding-left: 20px;
+}
+.prep-meal-popover li {
+  margin-bottom: 6px;
+}
+.prep-batch-complete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid #e7e2d5;
+  font-weight: 600;
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .prep-batch-heading h2 {
+    font-size: 21px;
+  }
+  .prep-batch-quantity {
+    font-size: 28px;
+  }
+  .prep-allocation {
+    padding: 12px;
+  }
+  .prep-meal-popover {
+    position: fixed;
+    top: 20vh;
+    left: 20px;
+    right: 20px;
+    width: auto;
+    padding: 14px;
+  }
+}
+@media print {
+  .prep-meal-popover {
+    display: none !important;
+  }
+  .prep-meal-trigger {
+    display: flex !important;
+    border: 0;
+  }
+}

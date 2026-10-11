@@ -47,3 +47,9 @@ For the planned AI feature, store the generated content's language explicitly. I
 Use the provider's Intl formatters for visible numbers and dates. Date-only week values use UTC internally for stable calendar arithmetic and are not shifted by browser timezone. Measurement tokens stay machine-readable (`[300 g]`, `[2 tsp]`) in stored instructions; rendering applies recipe translations, scales quantities, then formats numbers and unit labels. Search matches both original and translated ingredient names, with Vietnamese diacritics ignored.
 
 Netlify hosting and build settings remain unchanged. `npm run build` outputs `source/dist`. Deploy the build output or use the existing Git deployment.
+
+## Preparation groups
+
+`helpers/preparation.ts` derives ingredient groups from reviewed compatibility profiles independently of the UI language. Shared cutting is shown above individual recipe allocations; seasoning and storage instructions remain separate. Different cuts of the same ingredient stay in separate groups. Totals and allocations scale with servings, while progress retains the existing `mealId:taskIndex` keys for backup compatibility.
+
+Profiles apply only when the original instruction and ingredient quantity/unit match. New or edited instructions remain individual rather than guessing whether preparation is compatible. For future AI recipes, add validated structured preparation metadata (ingredient references, cut, operation and allocations) rather than parsing generated prose. The supplied backup schema remains unchanged.

@@ -338,6 +338,50 @@ export const vi = {
   unitTbsp: "muỗng canh",
   stepKindPrep: "sơ chế",
   stepKindCook: "nấu",
+  prepBatchTitle: "Sơ chế chung. Chia phần từng món.",
+  prepBatchDescription:
+    "Gom nguyên liệu có thể làm cùng nhau, cắt thái một lần rồi chia phần và ướp riêng cho từng món.",
+  prepBatchCount: "{count} nhóm sơ chế",
+  prepBatchCount_other: "{count} nhóm sơ chế",
+  prepBatchHelp:
+    "Làm bước sơ chế chung trước, sau đó chia phần và ướp theo từng món bên dưới. Rê chuột, dùng bàn phím hoặc chạm vào tên món để xem nguyên liệu và cách bảo quản.",
+  prepSaucesTitle: "Nước xốt & gia vị",
+  prepMixedTitle: "Các phần sơ chế khác",
+  prepRecipeSpecific: "Theo từng món",
+  prepPortionProgress: "Đã chuẩn bị {count} / {total} phần",
+  prepCompleteGroup: "Đã sơ chế hoàn tất tất cả các phần trong nhóm",
+  prepCompleteGroupLabel: "Đánh dấu đã sơ chế tất cả các phần: {ingredient}",
+  prepMealDetailsLabel: "Chi tiết món: {name}",
+  prepCloseDetails: "Đóng chi tiết món",
+  prepUnknownHelp:
+    "Hướng dẫn này mới hoặc đã được chỉnh sửa. Giữ riêng và thực hiện theo công thức bên dưới.",
+  prepSliceThin:
+    "Thái lát dày 3–4 mm cùng một lần, sau đó chia phần trước khi ướp.",
+  prepCutChicken:
+    "Cắt miếng 2 cm cùng một lần, sau đó chia phần trước khi ướp.",
+  prepPortionShrimp:
+    "Làm sạch tôm cùng một lần, sau đó chia các phần bên dưới.",
+  prepPortionGroundPork:
+    "Cân từng phần riêng; chỉ ướp theo hướng dẫn của từng món.",
+  prepPortionFish: "Cắt khúc 2 cm và thấm khô. Ướp theo hướng dẫn của món.",
+  prepSliceMelon: "Gọt vỏ, bỏ hạt và thái lát dày 5 mm.",
+  prepWashGreens: "Rửa sạch và để ráo.",
+  prepBlanchGreens:
+    "Rửa, cắt và chần theo hướng dẫn bên dưới; làm nguội trước khi đóng hộp.",
+  prepSliceCabbage: "Rửa sạch và cắt miếng 3 cm.",
+  prepShredCabbage: "Rửa sạch và thái sợi 1 cm; chần theo hướng dẫn bên dưới.",
+  prepSlicePumpkin: "Gọt vỏ, bỏ hạt và thái lát dày 5 mm.",
+  prepSliceChayote:
+    "Gọt vỏ và thái lát dày 5 mm; chần theo hướng dẫn bên dưới.",
+  prepTrimBeans: "Tước xơ, cắt đoạn 3–4 cm; chần theo hướng dẫn bên dưới.",
+  prepCutTomato: "Rửa sạch và bổ múi cau.",
+  prepSliceAromatics: "Rửa và thái nhỏ; giữ riêng cho từng món.",
+  prepKeepEggs: "Giữ nguyên trứng đến khi nấu.",
+  prepPrepareSauces:
+    "Đong và ghi nhãn gia vị riêng cho từng món. Không trộn chung các phần nước xốt.",
+  prepPrepareMixed:
+    "Sơ chế riêng các nguyên liệu theo từng công thức bên dưới.",
+  prepReviewIndividually: "Thực hiện theo hướng dẫn sơ chế gốc của món.",
   mainField: "món chính",
   sideField: "món phụ",
   storageField: "bảo quản",

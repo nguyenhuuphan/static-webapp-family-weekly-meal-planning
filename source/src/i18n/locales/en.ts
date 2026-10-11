@@ -333,6 +333,53 @@ export const en = {
   unitTbsp: "tbsp",
   stepKindPrep: "prep",
   stepKindCook: "steps",
+  prepBatchTitle: "Prep together. Portion by meal.",
+  prepBatchDescription:
+    "Group compatible ingredients, do the shared cutting once, then prepare each meal's portion separately.",
+  prepBatchCount: "{count} prep group",
+  prepBatchCount_other: "{count} prep groups",
+  prepBatchHelp:
+    "Start with the shared preparation, then divide and season each portion as listed. Hover, focus or tap a meal to see its ingredients and storage details.",
+  prepSaucesTitle: "Sauces & seasonings",
+  prepMixedTitle: "Other recipe preparations",
+  prepRecipeSpecific: "By recipe",
+  prepPortionProgress: "{count} / {total} portions prepared",
+  prepCompleteGroup: "All portions in this group are fully prepared",
+  prepCompleteGroupLabel: "Mark all portions prepared: {ingredient}",
+  prepMealDetailsLabel: "Meal details: {name}",
+  prepCloseDetails: "Close meal details",
+  prepUnknownHelp:
+    "This instruction is new or edited. Keep it separate and follow the recipe below.",
+  prepSliceThin: "Slice 3–4 mm thick together, then divide before seasoning.",
+  prepCutChicken:
+    "Cut into 2 cm pieces together, then divide before seasoning.",
+  prepPortionShrimp:
+    "Clean the shrimp together, then divide into the portions listed below.",
+  prepPortionGroundPork:
+    "Weigh separate portions; season only as each recipe instructs.",
+  prepPortionFish:
+    "Cut into 2 cm portions and pat dry. Follow the recipe for seasoning.",
+  prepSliceMelon: "Peel, remove seeds and cut into 5 mm slices.",
+  prepWashGreens: "Wash thoroughly and drain.",
+  prepBlanchGreens:
+    "Wash, cut and blanch as instructed below; cool before packing.",
+  prepSliceCabbage: "Wash and cut into 3 cm pieces.",
+  prepShredCabbage:
+    "Wash and cut into 1 cm strips; blanch as instructed below.",
+  prepSlicePumpkin: "Peel, remove seeds and cut into 5 mm slices.",
+  prepSliceChayote:
+    "Peel and cut into 5 mm slices; blanch as instructed below.",
+  prepTrimBeans:
+    "Trim and cut into 3–4 cm lengths; blanch as instructed below.",
+  prepCutTomato: "Wash and cut into wedges.",
+  prepSliceAromatics: "Wash and slice; keep separately for the recipe.",
+  prepKeepEggs: "Keep eggs intact until cooking.",
+  prepPrepareSauces:
+    "Measure and label each recipe's seasonings separately. Do not combine the sauces.",
+  prepPrepareMixed:
+    "Prepare each recipe's ingredients separately as listed below.",
+  prepReviewIndividually:
+    "Follow this recipe's original preparation instructions.",
   mainField: "main",
   sideField: "side",
   storageField: "storage",

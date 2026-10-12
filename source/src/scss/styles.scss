@@ -2890,3 +2890,48 @@ select:focus-visible {
   gap: 8px;
   margin-bottom: 10px;
 }
+
+.calendar-controls,
+.meal-outcome {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.meal-outcome {
+  width: 100%;
+  align-items: flex-start;
+}
+.meal-outcome h3,
+.meal-outcome > p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.meal-outcome label {
+  display: grid;
+  gap: 6px;
+  flex: 1 1 140px;
+}
+.meal-outcome input {
+  width: 100%;
+  min-height: 44px;
+}
+.scheduled-food {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+.saved-food-card {
+  scroll-margin-top: 100px;
+}
+.saved-food-card > label {
+  display: grid;
+  gap: 6px;
+  margin-block: 12px;
+}
+.saved-food-card > label.readiness {
+  display: flex;
+  align-items: flex-start;
+}
+.batch-status {
+  margin-block: 12px;
+}

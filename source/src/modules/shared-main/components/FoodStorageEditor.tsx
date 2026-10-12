@@ -7,7 +7,9 @@ import { Button } from ".";
 export default function FoodStorageEditor({
   value,
   onChange,
+  cookedOnly = false,
 }: {
+  cookedOnly?: boolean;
   value?: FoodStorage;
   onChange: (next: FoodStorage) => void;
 }) {
@@ -51,7 +53,8 @@ export default function FoodStorageEditor({
       <label>
         {text("Trạng thái thực phẩm", "Food state")}
         <select
-          value={stage}
+          disabled={cookedOnly}
+          value={cookedOnly ? "cooked" : stage}
           onChange={(e) => setStage(e.target.value as typeof stage)}
         >
           {(["unknown", "raw", "cooked"] as const).map((v) => (
@@ -114,7 +117,7 @@ export default function FoodStorageEditor({
               value,
               type,
               at ? new Date(at).toISOString() : new Date().toISOString(),
-              stage,
+              cookedOnly ? "cooked" : stage,
               place,
             );
             onChange(next);

@@ -19,20 +19,28 @@ export default function CalendarMeals({
           <span className="pill">
             {f.status === "used"
               ? text("Đã dùng", "Used")
-              : f.kind === "prepared"
-                ? text("Đồ đã chuẩn bị", "Prepared food")
-                : text("Bữa thêm", "Additional meal")}
+              : f.kind === "cooked"
+                ? text("Đồ đã nấu", "Cooked food")
+                : f.kind === "prepared"
+                  ? text("Đồ đã chuẩn bị", "Prepared food")
+                  : text("Bữa thêm", "Additional meal")}
           </span>
           <h4>
-            {ct(f.meal.main)} · {f.servings} {text("phần", "portions")}
+            {ct(f.meal.main)} ·{" "}
+            {f.status === "used" && f.kind === "cooked"
+              ? f.eatenServings
+              : f.servings}{" "}
+            {text("phần", "portions")}
           </h4>
           <a
             href={`#food-${f.id}`}
             onClick={() =>
-              setTimeout(
-                () => document.getElementById(`food-${f.id}`)?.focus(),
-                0,
-              )
+              setTimeout(() => {
+                const target = document.getElementById(`food-${f.id}`);
+                const details = target?.closest("details");
+                if (details) details.open = true;
+                target?.focus();
+              }, 0)
             }
           >
             {text("Xem / sắp xếp phần này", "View / arrange this food")}

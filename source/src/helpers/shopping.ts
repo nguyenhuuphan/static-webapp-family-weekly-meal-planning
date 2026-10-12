@@ -68,7 +68,13 @@ export function shoppingRequirements(state: State) {
       food.date > endDate
     )
       continue;
-    const credits = savedFoodCredits(food, food.servings);
+    const credits =
+      food.kind === "cooked"
+        ? food.meal.ingredients.map((i) => ({
+            ...i,
+            qty: (i.qty * food.servings) / food.baseServings,
+          }))
+        : savedFoodCredits(food, food.servings);
     const factor = food.servings / food.baseServings;
     const id = "saved-" + food.id;
     portions[id] = food.servings;
@@ -105,8 +111,12 @@ export function committedPurchases(state: State): Record<string, number> {
     });
   for (const food of state.savedFood || [])
     if (
-      food.sourceWeek === state.weekStart &&
+      (food.sourceWeek === state.weekStart ||
+        food.creditSources?.some(
+          (source) => source.week === state.weekStart,
+        )) &&
       food.kind === "prepared" &&
+      !food.acquisitionAccounted &&
       food.status !== "assigned"
     )
       add(

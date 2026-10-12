@@ -1,3 +1,5 @@
+import { finishSavedFood } from "src/helpers/cooking";
+import CookedFoodCard from "./CookedFoodCard";
 import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
 import { useState } from "react";
@@ -34,6 +36,7 @@ function FoodCard({ food }: { food: SavedFood }) {
     : text("Chưa có lịch ăn", "Not scheduled");
   const tasks = Object.entries(food.preparedTasks);
   const factor = food.servings / food.baseServings;
+  if (food.kind === "cooked") return <CookedFoodCard food={food} />;
   return (
     <article className="saved-food-card" id={`food-${food.id}`} tabIndex={-1}>
       <h3>
@@ -285,7 +288,7 @@ function FoodCard({ food }: { food: SavedFood }) {
                 ),
               )
             )
-              change({ status: "used" });
+              update((s) => finishSavedFood(s, food.id));
           }}
         >
           {text(

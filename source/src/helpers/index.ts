@@ -88,6 +88,31 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   };
   for (const sources of Object.values(v.mealCreditSources || {}))
     validateSources(sources);
+  for (const [id, batch] of Object.entries(v.cookingBatches || {})) {
+    if (
+      !batch ||
+      !v.plan.meals.some((m) => m.id === id) ||
+      !Number.isInteger(batch.servings) ||
+      batch.servings < 1 ||
+      batch.servings > 12 ||
+      !Number.isFinite(Date.parse(batch.startedAt))
+    )
+      throw Error("Invalid cooking batch.");
+  }
+  for (const result of Object.values(v.mealResults || {})) {
+    if (
+      !result ||
+      !Number.isInteger(result.cooked) ||
+      result.cooked < 1 ||
+      result.cooked > 12 ||
+      !Number.isInteger(result.eaten) ||
+      result.eaten < 0 ||
+      result.eaten > result.cooked ||
+      result.remaining !== result.cooked - result.eaten ||
+      !Number.isFinite(Date.parse(result.at))
+    )
+      throw Error("Invalid meal result.");
+  }
   const mealServings = Object.fromEntries(
     Object.entries(v.mealServings || {}).filter(
       ([id, count]) =>
@@ -149,7 +174,7 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       !food ||
       typeof food.id !== "string" ||
       ids.has(food.id) ||
-      !["prepared", "recipe"].includes(food.kind) ||
+      !["prepared", "recipe", "cooked"].includes(food.kind) ||
       !["pending", "scheduled", "used", "discarded", "assigned"].includes(
         food.status,
       ) ||
@@ -190,6 +215,14 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       )
         throw Error("Invalid saved preparation record.");
     }
+    if (
+      food.kind === "cooked" &&
+      (!food.cookedAt ||
+        !Number.isFinite(Date.parse(food.cookedAt)) ||
+        food.acquisitionAccounted !== true ||
+        food.storage?.stage !== "cooked")
+    )
+      throw Error("Invalid cooked leftovers.");
     if (food.creditSources) validateSources(food.creditSources);
     if (food.storage) validateFoodStorage(food.storage);
     ids.add(food.id);
@@ -278,7 +311,15 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   };
 }
 export function resetForMeal(s: State, id: string): State {
+  if (s.cookingBatches?.[id])
+    throw Error("Finish this cooking batch before editing its recipe.");
   const next = structuredClone(s);
+  // Retain actual past consumption when a completed slot is reused for a new recipe.
+  if (next.stockUses?.[id]) {
+    next.stockUses["history-" + crypto.randomUUID()] = next.stockUses[id];
+    delete next.stockUses[id];
+  }
+  if (next.mealResults) delete next.mealResults[id];
   for (const k of Object.keys(next.progress.prep))
     if (k.startsWith(id + ":")) delete next.progress.prep[k];
   for (const key of Object.keys(next.preparedTasks || {}))

@@ -17,7 +17,9 @@ export function validatePreparationLinks(meal: Meal): string[] {
     }
     const seen = new Set<string>();
     for (const ref of task.ingredients) {
-      const item = meal.ingredients?.find((i) => i?.id === ref?.ingredientId);
+      const item = Array.isArray(meal.ingredients)
+        ? meal.ingredients.find((i) => i?.id === ref?.ingredientId)
+        : undefined;
       if (
         !ref ||
         !item ||

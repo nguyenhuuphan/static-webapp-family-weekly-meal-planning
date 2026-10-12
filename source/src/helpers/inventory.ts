@@ -31,11 +31,16 @@ export function consumeMeal(state: State, id: string, count?: number): State {
     });
     const key = ingredientKey(item);
     const available = availableAcquisitions(state, key);
-    use.home[key] = Math.min(item.qty, available.home);
-    use.purchased[key] = Math.min(
-      Math.max(0, item.qty - use.home[key]),
-      available.purchased,
+    const fromHome = Math.min(
+      item.qty,
+      Math.max(0, available.home - (use.home[key] || 0)),
     );
+    const fromPurchased = Math.min(
+      Math.max(0, item.qty - fromHome),
+      Math.max(0, available.purchased - (use.purchased[key] || 0)),
+    );
+    use.home[key] = (use.home[key] || 0) + fromHome;
+    use.purchased[key] = (use.purchased[key] || 0) + fromPurchased;
     use.ingredients.push(item);
   }
   next.stockUses = { ...next.stockUses, [id]: use };

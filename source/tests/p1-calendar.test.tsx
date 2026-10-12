@@ -46,3 +46,31 @@ it("browses a seven-day calendar without resetting current progress", async () =
   const next = startWeek(s, "2026-10-19", {});
   expect(next.weekArchive?.[s.weekStart].plan).toEqual(s.plan);
 });
+
+it("maps source ingredient IDs when merging the same recipe from a custom import", () => {
+  let s = freshState(structuredClone(plan));
+  const meal = s.plan.meals[0];
+  meal.prep.forEach((_, i) => {
+    s.progress.prep[`${meal.id}:${i}`] = true;
+  });
+  s = changePortions(s, meal.id, 1);
+  const foodId = s.savedFood![0].id;
+  s = changePortions(s, meal.id, 2);
+  const food = s.savedFood![0];
+  const ids = new Map(
+    food.meal.ingredients.map((i) => [i.id, "import-" + i.id]),
+  );
+  food.meal.ingredients.forEach((i) => {
+    i.id = ids.get(i.id)!;
+  });
+  food.meal.prep.forEach((step) =>
+    step.ingredients?.forEach((ref) => {
+      ref.ingredientId = ids.get(ref.ingredientId)!;
+    }),
+  );
+  const merged = mergeFood(s, foodId, meal.id);
+  expect(
+    merged.mealCredits?.[meal.id].find((i) => i.id === meal.ingredients[0].id)
+      ?.qty,
+  ).toBe(meal.ingredients[0].qty / 2);
+});

@@ -7,6 +7,7 @@ import {
   committedPurchases,
   shoppingRequirements,
 } from "src/helpers/shopping";
+import { beginCooking, undoCooking } from "src/helpers/cooking";
 import { retainPrepared, startWeek } from "src/helpers/scheduling";
 import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
@@ -195,13 +196,23 @@ export function usePlannerController() {
   }
   function update(fn: (s: State) => State) {
     const current = store.getState().planner.current;
-    if (current) dispatch(stateChanged(fn(current)));
+    if (current) {
+      try {
+        dispatch(stateChanged(fn(current)));
+      } catch (error) {
+        setToast((error as Error).message);
+      }
+    }
   }
   function toggle(
     group: Exclude<keyof Progress, "cook">,
     key: string,
     value: boolean,
   ) {
+    if (group === "done" && !value) {
+      update((s) => undoCooking(s, key));
+      return;
+    }
     dispatch(progressToggled({ group, key, value }));
   }
   function resetProgress() {
@@ -215,8 +226,19 @@ export function usePlannerController() {
       ...retainPrepared(s),
       mealServings: {},
       mealCredits: {},
+      mealCreditSources: {},
+      mealCreditWeeks: {},
+      mealAllocatedPortions: {},
+      mealStorage: {},
+      mealResults: {},
+      cookingBatches: {},
+      stockUses: Object.fromEntries(
+        Object.entries(s.stockUses || {}).map(([key, use]) => [
+          key.startsWith("history-") ? key : "history-" + crypto.randomUUID(),
+          use,
+        ]),
+      ),
       preparedTasks: {},
-      purchased: {},
       plan,
       servings,
       progress: freshProgress(),
@@ -293,7 +315,9 @@ export function usePlannerController() {
       plan.meals.find((m) => m.id === selected && mealPortions(s, m) > 0) ||
       plan.meals.find((m) => mealPortions(s, m) > 0) ||
       plan.meals[0],
-    factor = mealPortions(s, meal) / plan.servings,
+    factor =
+      (s.cookingBatches?.[meal.id]?.servings ?? mealPortions(s, meal)) /
+      plan.servings,
     editing = plan.meals.find((m) => m.id === editId),
     pos = Math.min(
       Math.max(0, s.progress.cook[meal.id] || 0),
@@ -343,7 +367,7 @@ export function usePlannerController() {
     )
       return;
     update((x) => ({
-      ...x,
+      ...beginCooking(x, meal.id),
       timers: [...(x.timers || []), ...(x.timer ? [x.timer] : [])].filter(
         (timer) => !(timer.mealId === meal.id && timer.step === stepIndex),
       ),

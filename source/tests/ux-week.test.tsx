@@ -6,5 +6,14 @@ it("accepts a Wednesday and starts its Monday week", async () => {
   fireEvent.change(screen.getByLabelText("Week beginning"), {
     target: { value: "2026-11-04" },
   });
+  expect(readState().weekStart).not.toBe("2026-11-02");
+  fireEvent.click(
+    screen.getByRole("checkbox", {
+      name: "I checked the actual remaining stock",
+    }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Confirm stocktake and start week" }),
+  );
   expect(readState().weekStart).toBe("2026-11-02");
 });

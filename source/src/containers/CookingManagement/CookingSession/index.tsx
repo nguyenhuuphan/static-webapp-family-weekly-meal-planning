@@ -1,3 +1,5 @@
+import MealOutcome from "./MealOutcome";
+import { beginCooking, cancelCooking } from "src/helpers/cooking";
 import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
 import { useI18n, useText } from "src/i18n";
 import { currentMealLabel, movedFromOriginal } from "src/helpers/mealLabels";
@@ -141,6 +143,44 @@ const CookingSession: React.FC<IProps> = () => {
               {tr("servingsCount", { count: mealPortions(s, meal) })}
             </div>
             <h2>{ct(meal.main)}</h2>
+            {!s.progress.done[meal.id] && (
+              <div className="batch-status">
+                {s.cookingBatches?.[meal.id] ? (
+                  <div>
+                    <p role="status">
+                      {text("Mẻ đang nấu", "Cooking batch")}:{" "}
+                      {s.cookingBatches[meal.id].servings}{" "}
+                      {text(
+                        "phần. Ghi số đã ăn khi hoàn tất.",
+                        "portions. Record portions eaten when finishing.",
+                      )}
+                    </p>
+                    <Button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            text(
+                              "Chỉ hủy nếu chưa nấu thực tế. Hủy trạng thái đang nấu và các timer của mẻ?",
+                              "Cancel only if cooking has not actually begun. Clear this batch and its timers?",
+                            ),
+                          )
+                        )
+                          update((s) => cancelCooking(s, meal.id));
+                      }}
+                    >
+                      {text("Chưa nấu: hủy mẻ", "Not cooked yet: cancel batch")}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => update((s) => beginCooking(s, meal.id))}
+                  >
+                    {text("Bắt đầu nấu mẻ này", "Start this cooking batch")}
+                  </Button>
+                )}
+              </div>
+            )}
+
             <p>{ct(meal.side)}</p>
             {movedFromOriginal(meal) && (
               <p className="notice warning">
@@ -237,7 +277,7 @@ const CookingSession: React.FC<IProps> = () => {
                     aria-pressed={pos === index}
                     onClick={() =>
                       update((state) => ({
-                        ...state,
+                        ...beginCooking(state, meal.id),
                         progress: {
                           ...state.progress,
                           cook: { ...state.progress.cook, [meal.id]: index },
@@ -312,19 +352,7 @@ const CookingSession: React.FC<IProps> = () => {
                   </Button>
                 </p>
               )}
-              <Button
-                primary
-                disabled={!ready || !!s.progress.done[meal.id]}
-                onClick={() => {
-                  toggle("done", meal.id, true);
-                  setToast(source("aGoodMealWellMadeEnjoy"));
-                }}
-              >
-                <Check size={17} />
-                {s.progress.done[meal.id]
-                  ? tr("mealComplete")
-                  : tr("finishMeal")}
-              </Button>
+              <MealOutcome />
             </div>
             <div className="doneness">
               <ShieldCheck size={17} />

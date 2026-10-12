@@ -20,6 +20,11 @@ export default function ScheduleControls({ meal }: { meal: Meal }) {
         {text("Người ăn", "Diners")}
         <select
           aria-label={`${text("Người ăn", "Diners")}: ${ct(meal.day)} · ${ct(meal.type)}`}
+          disabled={
+            !!s.cookingBatches?.[meal.id] ||
+            s.timer?.mealId === meal.id ||
+            s.timers?.some((t) => t.mealId === meal.id)
+          }
           value={mealPortions(s, meal)}
           onChange={(e) =>
             update((s) => changePortions(s, meal.id, Number(e.target.value)))
@@ -34,6 +39,14 @@ export default function ScheduleControls({ meal }: { meal: Meal }) {
           ))}
         </select>
       </label>
+      {s.cookingBatches?.[meal.id] && (
+        <p role="status">
+          {text(
+            "Mẻ đang nấu giữ nguyên số phần. Ghi số đã ăn và phần dư khi hoàn tất.",
+            "Cooking keeps its batch size. Record portions eaten and leftovers when finishing.",
+          )}
+        </p>
+      )}
       <Button aria-expanded={open} onClick={() => setOpen(!open)}>
         {text("Đổi lịch", "Move meal")}
       </Button>

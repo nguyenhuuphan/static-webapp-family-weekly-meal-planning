@@ -335,6 +335,24 @@ const WeeklyMenu: React.FC<IProps> = () => {
                             </button>
                           </div>
                         </div>
+                        {(readOnly
+                          ? archive?.mealResults?.[m.id]
+                          : s.mealResults?.[m.id]) &&
+                          (() => {
+                            const result = (
+                              readOnly
+                                ? archive?.mealResults?.[m.id]
+                                : s.mealResults?.[m.id]
+                            )!;
+                            return (
+                              <p className="caption">
+                                {text("Đã nấu", "Cooked")}: {result.cooked} ·{" "}
+                                {text("Đã ăn", "Eaten")}: {result.eaten} ·{" "}
+                                {text("Còn lại", "Remaining")}:{" "}
+                                {result.remaining}
+                              </p>
+                            );
+                          })()}
                         {!readOnly && <ScheduleControls meal={m} />}
                         <CalendarMeals date={date} type={type} />
                         {done && !readOnly && (

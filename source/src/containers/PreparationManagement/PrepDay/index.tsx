@@ -95,6 +95,7 @@ const PrepDay: React.FC = () => {
           {tr("safetyNotes")}
         </Button>
       </Heading>
+      <p className="caption" id="prep-completion-help">{text("Chỉ đánh dấu hoàn tất khi phần đó đã sơ chế, chia đúng lượng, ướp theo món và cất đúng nơi. Làm dở thì để chưa đánh dấu; có thể mở lại bất kỳ nhóm nào.", "Mark a portion complete after preparing, dividing, seasoning as directed and storing it. Leave unfinished portions unchecked; you can reopen any group.")}</p>
       <div className="progress-panel">
         <div>
           <strong>
@@ -354,6 +355,7 @@ const PrepDay: React.FC = () => {
                               <label className="prep-row">
                                 <input
                                   type="checkbox"
+                                aria-describedby="prep-completion-help"
                                   checked={!!s.progress.prep[allocation.key]}
                                   aria-label={tr("prepTaskLabel", {
                                     day: ct(allocation.meal.day),

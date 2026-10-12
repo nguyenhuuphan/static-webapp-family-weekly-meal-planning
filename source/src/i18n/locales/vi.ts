@@ -1,5 +1,6 @@
 import type { Messages } from "./en";
 export const vi = {
+  backupRestored: "Đã khôi phục bản sao và tiến độ đã lưu.",
   prepCookingSteps: "Hướng dẫn nấu ăn",
   cookTimerStep: "Hẹn giờ bước {count}",
   prepRemaining: "Còn lại",
@@ -206,10 +207,10 @@ export const vi = {
   yourDataKeptSimple: "Dữ liệu của bạn, thật đơn giản.",
   savedInThisBrowserOnlyNoAutomaticSyncBetweenDevicesExportTo:
     "Chỉ lưu trong trình duyệt này. Không tự đồng bộ giữa các thiết bị. Xuất bản sao để lưu hoặc chia sẻ với gia đình.",
-  exportJson: "Xuất JSON",
-  importJson: "Nhập JSON",
+  exportJson: "Tải bản sao",
+  importJson: "Chọn bản sao để khôi phục",
   backupsIncludeEditedRecipesAndServingsNotChecklistsOrTimersImportReplaces:
-    "Bản sao gồm công thức đã sửa và số người, không gồm tiến độ hay hẹn giờ. Nhập tệp sẽ thay thực đơn hiện tại sau khi xác nhận.",
+    "Bản sao gồm công thức, khẩu phần, tuần, lượng có sẵn, tiến độ và hẹn giờ. Vẫn hỗ trợ bản sao cũ chỉ có công thức.",
   restoreTheOriginalTenMealsYourRecipeEditsAndProgressWillBe:
     "Khôi phục mười bữa gốc? Các chỉnh sửa công thức và tiến độ sẽ bị thay thế.",
   restoreOriginalMenu: "Khôi phục thực đơn gốc",

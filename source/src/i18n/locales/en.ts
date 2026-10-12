@@ -1,4 +1,5 @@
 export const en = {
+  backupRestored: "Backup restored, including saved progress.",
   prepCookingSteps: "Cooking instructions",
   cookTimerStep: "Start timer for step {count}",
   prepRemaining: "Remaining",
@@ -203,10 +204,10 @@ export const en = {
   yourDataKeptSimple: "Your data, kept simple.",
   savedInThisBrowserOnlyNoAutomaticSyncBetweenDevicesExportTo:
     "Saved in this browser only. No automatic sync between devices. Export to back up or share with family.",
-  exportJson: "Export JSON",
-  importJson: "Import JSON",
+  exportJson: "Download backup",
+  importJson: "Choose backup to restore",
   backupsIncludeEditedRecipesAndServingsNotChecklistsOrTimersImportReplaces:
-    "Backups include edited recipes and servings, not checklists or timers. Import replaces the current menu after confirmation.",
+    "Backups include recipes, servings, week, pantry quantities, checklists and timers. Older recipe-only backups are still supported.",
   restoreTheOriginalTenMealsYourRecipeEditsAndProgressWillBe:
     "Restore the original ten meals? Your recipe edits and progress will be replaced.",
   restoreOriginalMenu: "Restore original menu",

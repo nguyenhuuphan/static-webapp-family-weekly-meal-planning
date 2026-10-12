@@ -44,7 +44,7 @@ describe("React feature parity", () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => {});
-    fireEvent.click(screen.getByRole("button", { name: "Export JSON" }));
+    fireEvent.click(screen.getByRole("button", { name: "Download backup" }));
     expect(create).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
   });
@@ -208,9 +208,12 @@ describe("React feature parity", () => {
     Object.defineProperty(file, "text", {
       value: async () => JSON.stringify({ plan, servings: 3 }),
     });
-    fireEvent.change(screen.getByLabelText("Import JSON"), {
+    fireEvent.change(screen.getByLabelText("Choose backup to restore"), {
       target: { files: [file] },
     });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Restore this backup" }),
+    );
     await screen.findByRole("heading", {
       name: "A little planning. A lot more ease.",
     });

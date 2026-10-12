@@ -34,10 +34,16 @@ const HouseholdSettings: React.FC<IProps> = () => {
     setToast,
     soundEnabled,
     enableSound,
+    pendingImport,
+    setPendingImport,
+    restoreBackup,
   } = useMealPlanner();
   const text = useText();
   const [servingsDraft, setServingsDraft] = useState(String(s.servings));
-  const validServings = Number.isInteger(Number(servingsDraft)) && Number(servingsDraft) >= 1 && Number(servingsDraft) <= 12;
+  const validServings =
+    Number.isInteger(Number(servingsDraft)) &&
+    Number(servingsDraft) >= 1 &&
+    Number(servingsDraft) <= 12;
   return (
     <>
       <Heading
@@ -53,14 +59,45 @@ const HouseholdSettings: React.FC<IProps> = () => {
       <div className="settings-grid">
         <section className="panel">
           <h2>{text("Thông báo hẹn giờ", "Timer alerts")}</h2>
-          <label><input type="checkbox" checked={soundEnabled} onChange={async (event) => {
-            if (!await enableSound(event.target.checked)) setToast(text("Trình duyệt chưa hỗ trợ âm báo.", "Audio alerts are unavailable in this browser."));
-          }} />{text("Bật âm báo trong phiên này", "Enable sound in this session")}</label>
-          <p className="caption">{text("Sau khi tải lại trang, hãy bật lại âm báo. Thông báo nền tùy thuộc trình duyệt.", "After reloading, re-enable sound. Background notifications depend on your browser.")}</p>
-          {typeof Notification !== "undefined" && <Button onClick={async () => {
-            const permission = await Notification.requestPermission();
-            setToast(permission === "granted" ? text("Đã bật thông báo.", "Notifications enabled.") : text("Chưa cấp quyền thông báo. Hẹn giờ vẫn hiển thị trong ứng dụng.", "Notifications are not allowed. The timer remains visible in the app."));
-          }}>{text("Cho phép thông báo hẹn giờ", "Allow timer notifications")}</Button>}
+          <label>
+            <input
+              type="checkbox"
+              checked={soundEnabled}
+              onChange={async (event) => {
+                if (!(await enableSound(event.target.checked)))
+                  setToast(
+                    text(
+                      "Trình duyệt chưa hỗ trợ âm báo.",
+                      "Audio alerts are unavailable in this browser.",
+                    ),
+                  );
+              }}
+            />
+            {text("Bật âm báo trong phiên này", "Enable sound in this session")}
+          </label>
+          <p className="caption">
+            {text(
+              "Sau khi tải lại trang, hãy bật lại âm báo. Thông báo nền tùy thuộc trình duyệt.",
+              "After reloading, re-enable sound. Background notifications depend on your browser.",
+            )}
+          </p>
+          {typeof Notification !== "undefined" && (
+            <Button
+              onClick={async () => {
+                const permission = await Notification.requestPermission();
+                setToast(
+                  permission === "granted"
+                    ? text("Đã bật thông báo.", "Notifications enabled.")
+                    : text(
+                        "Chưa cấp quyền thông báo. Hẹn giờ vẫn hiển thị trong ứng dụng.",
+                        "Notifications are not allowed. The timer remains visible in the app.",
+                      ),
+                );
+              }}
+            >
+              {text("Cho phép thông báo hẹn giờ", "Allow timer notifications")}
+            </Button>
+          )}
         </section>
         <section className="panel">
           <span className="tile-icon">
@@ -79,12 +116,34 @@ const HouseholdSettings: React.FC<IProps> = () => {
               aria-invalid={!validServings}
             />
           </label>
-          <p>{text("Khẩu phần mới sẽ điều chỉnh lượng nguyên liệu và đặt lại tiến độ.", "Applying new servings adjusts quantities and resets progress.")}</p>
-          <Button disabled={!validServings || Number(servingsDraft) === s.servings} onClick={() => {
-            if (confirm(tr("changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch"))) {
-              update((x) => ({ ...x, servings: Number(servingsDraft), progress: freshProgress(), timer: null, timers: [] }));
-            }
-          }}>{text("Áp dụng khẩu phần", "Apply servings")}</Button>
+          <p>
+            {text(
+              "Khẩu phần mới sẽ điều chỉnh lượng nguyên liệu và đặt lại tiến độ.",
+              "Applying new servings adjusts quantities and resets progress.",
+            )}
+          </p>
+          <Button
+            disabled={!validServings || Number(servingsDraft) === s.servings}
+            onClick={() => {
+              if (
+                confirm(
+                  tr(
+                    "changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch",
+                  ),
+                )
+              ) {
+                update((x) => ({
+                  ...x,
+                  servings: Number(servingsDraft),
+                  progress: freshProgress(),
+                  timer: null,
+                  timers: [],
+                }));
+              }
+            }}
+          >
+            {text("Áp dụng khẩu phần", "Apply servings")}
+          </Button>
           <p className="caption">
             {tr(
               "ingredientsAndBracketedInstructionAmountsScaleTogetherEggCountsMayBeFractional",
@@ -100,18 +159,24 @@ const HouseholdSettings: React.FC<IProps> = () => {
                 const v = e.target.value;
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
                 const date = new Date(v + "T12:00:00");
-                date.setDate(date.getDate() - (date.getDay() + 6) % 7);
+                date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
                 const monday = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
                 if (confirm(tr("startANewWeekWithThisMenuAndFreshChecklists")))
                   update((x) => ({
                     ...x,
                     weekStart: monday,
                     progress: freshProgress(),
-                    timer: null, timers: [],
+                    timer: null,
+                    timers: [],
                   }));
               }}
             />
-            <small>{text("Chọn ngày bất kỳ; ứng dụng sẽ lấy thứ Hai của tuần đó.", "Choose any day; the app uses the Monday of that week.")}</small>
+            <small>
+              {text(
+                "Chọn ngày bất kỳ; ứng dụng sẽ lấy thứ Hai của tuần đó.",
+                "Choose any day; the app uses the Monday of that week.",
+              )}
+            </small>
           </label>
           <Button onClick={resetProgress}>
             <RotateCcw size={15} />
@@ -145,6 +210,53 @@ const HouseholdSettings: React.FC<IProps> = () => {
               />
             </label>
           </div>
+          {pendingImport && (
+            <section
+              className="notice"
+              aria-label={text("Xem trước bản sao", "Backup preview")}
+            >
+              <div>
+                <h3>
+                  {text(
+                    "Xem trước trước khi khôi phục",
+                    "Review before restoring",
+                  )}
+                </h3>
+                <p>
+                  {pendingImport.plan.name} · {pendingImport.plan.meals.length}{" "}
+                  {text("bữa", "meals")} · {pendingImport.servings}{" "}
+                  {text("người", "people")}
+                </p>
+                <p>
+                  {text("Tuần", "Week")}: {pendingImport.weekStart} ·{" "}
+                  {
+                    Object.values(pendingImport.progress.done).filter(Boolean)
+                      .length
+                  }{" "}
+                  {text("bữa đã hoàn tất", "completed meals")}
+                </p>
+                <ul>
+                  {pendingImport.plan.meals.map((meal) => (
+                    <li key={meal.id}>
+                      {ct(meal.day)} · {ct(meal.type)} · {ct(meal.main)}
+                    </li>
+                  ))}
+                </ul>
+                <p>
+                  {text(
+                    "Khôi phục sẽ thay thế kế hoạch và tiến độ hiện tại. Hãy tải bản sao hiện tại nếu cần giữ lại.",
+                    "Restoring replaces your current plan and progress. Download your current backup first if needed.",
+                  )}
+                </p>
+                <Button primary onClick={restoreBackup}>
+                  {text("Khôi phục bản sao này", "Restore this backup")}
+                </Button>
+                <Button onClick={() => setPendingImport(null)}>
+                  {tr("cancel")}
+                </Button>
+              </div>
+            </section>
+          )}
           <p className="caption">
             {tr(
               "backupsIncludeEditedRecipesAndServingsNotChecklistsOrTimersImportReplaces",

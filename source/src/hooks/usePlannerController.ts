@@ -24,13 +24,24 @@ import {
   progressReset,
 } from "src/redux/plannerSlice";
 export function usePlannerController() {
-  const hadRememberedMeal = useRef((() => { try { return !!localStorage.getItem("planner:selected"); } catch { return false; } })());
+  const hadRememberedMeal = useRef(
+    (() => {
+      try {
+        return !!localStorage.getItem("planner:selected");
+      } catch {
+        return false;
+      }
+    })(),
+  );
   const { t: tr, instruction, source } = useI18n();
   const { current: state, defaults } = useAppSelector((s) => s.planner);
   const dispatch = useAppDispatch(),
     store = useAppStore();
   const [view, setView] = usePersistentState<View>("planner:view", "week");
-  const [selected, setSelected] = usePersistentState("planner:selected", "mon-lunch");
+  const [selected, setSelected] = usePersistentState(
+    "planner:selected",
+    "mon-lunch",
+  );
   const [editId, setEditId] = useState<string | null>(null),
     [advanced, setAdvanced] = useState(false),
     [json, setJson] = useState(""),
@@ -41,7 +52,11 @@ export function usePlannerController() {
     [now, setNow] = useState(Date.now()),
     [search, setSearch] = useState(""),
     [swapId, setSwapId] = useState("");
-  const alarm = useTimerAlarm([...(state?.timers || []), ...(state?.timer ? [state.timer] : [])], now);
+  const [pendingImport, setPendingImport] = useState<State | null>(null);
+  const alarm = useTimerAlarm(
+    [...(state?.timers || []), ...(state?.timer ? [state.timer] : [])],
+    now,
+  );
   useEffect(() => {
     let active = true;
     queryMealPlan()
@@ -57,9 +72,25 @@ export function usePlannerController() {
           );
         }
         setSelected((id) => {
-          if (hadRememberedMeal.current && initial.plan.meals.some((meal) => meal.id === id)) return id;
-          const day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
-          return initial.plan.meals.find((meal) => meal.day === day && !initial.progress.done[meal.id])?.id || initial.plan.meals[0].id;
+          if (
+            hadRememberedMeal.current &&
+            initial.plan.meals.some((meal) => meal.id === id)
+          )
+            return id;
+          const day = [
+            "Sunday",
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+          ][new Date().getDay()];
+          return (
+            initial.plan.meals.find(
+              (meal) => meal.day === day && !initial.progress.done[meal.id],
+            )?.id || initial.plan.meals[0].id
+          );
         });
         dispatch(initialized({ current: initial, defaults: p }));
       })
@@ -91,18 +122,42 @@ export function usePlannerController() {
     return () => clearTimeout(id);
   }, [toast]);
   const shopping = useMemo(
-    () => state ? aggregate(state.plan, state.servings).map((item) => ({ ...item, toBuy: Math.max(0, Math.round((item.qty - (state.pantry?.[ingredientKey(item)] || 0)) * 100) / 100) })) : [],
+    () =>
+      state
+        ? aggregate(state.plan, state.servings).map((item) => ({
+            ...item,
+            toBuy: Math.max(
+              0,
+              Math.round(
+                (item.qty - (state.pantry?.[ingredientKey(item)] || 0)) * 100,
+              ) / 100,
+            ),
+          }))
+        : [],
     [state?.plan, state?.servings, state?.pantry],
   );
   useEffect(() => {
     if (!state) return;
     const key = `planner:scroll:${view}:${selected}`;
     let saved = 0;
-    try { saved = Number(localStorage.getItem(key)) || 0; } catch { /* Optional. */ }
+    try {
+      saved = Number(localStorage.getItem(key)) || 0;
+    } catch {
+      /* Optional. */
+    }
     const id = setTimeout(() => window.scrollTo(0, saved), 0);
-    const remember = () => { try { localStorage.setItem(key, String(window.scrollY)); } catch { /* Optional. */ } };
+    const remember = () => {
+      try {
+        localStorage.setItem(key, String(window.scrollY));
+      } catch {
+        /* Optional. */
+      }
+    };
     window.addEventListener("scroll", remember);
-    return () => { clearTimeout(id); window.removeEventListener("scroll", remember); };
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener("scroll", remember);
+    };
   }, [view, selected, !!state]);
   function navigate(v: View) {
     setView(v);
@@ -137,7 +192,8 @@ export function usePlannerController() {
       plan,
       servings,
       progress: freshProgress(),
-      timer: null, timers: [],
+      timer: null,
+      timers: [],
     }));
     setSelected(plan.meals[0].id);
     navigate("week");
@@ -146,16 +202,9 @@ export function usePlannerController() {
   function exportJSON() {
     if (!state) return;
     const url = URL.createObjectURL(
-      new Blob(
-        [
-          JSON.stringify(
-            { plan: state.plan, servings: state.servings },
-            null,
-            2,
-          ),
-        ],
-        { type: "application/json" },
-      ),
+      new Blob([JSON.stringify({ backupVersion: 2, ...state }, null, 2)], {
+        type: "application/json",
+      }),
     );
     const a = document.createElement("a");
     a.href = url;
@@ -169,8 +218,13 @@ export function usePlannerController() {
     try {
       if (file.size > 1000000)
         throw Error("Please choose a JSON file smaller than 1 MB.");
-      const p = parseBackup(JSON.parse(await file.text()));
-      if (confirm(tr("importConfirm"))) applyPlan(p.plan, p.servings);
+      const raw = JSON.parse(await file.text());
+      const p = parseBackup(raw);
+      setPendingImport(
+        raw.progress
+          ? hydrateState(raw, p.plan)
+          : { ...freshState(p.plan), servings: p.servings },
+      );
     } catch (e) {
       setToast(
         e instanceof SyntaxError ? source("invalidJson") : (e as Error).message,
@@ -203,16 +257,27 @@ export function usePlannerController() {
         ).length,
       0,
     ),
-    needs = shopping.filter((i) => !s.progress.owned[ingredientKey(i)] && i.toBuy > 0),
+    needs = shopping.filter(
+      (i) => !s.progress.owned[ingredientKey(i)] && i.toBuy > 0,
+    ),
     bought = needs.filter((i) => s.progress.shopping[ingredientKey(i)]).length,
     seconds = timerSeconds(s.timer, now),
     t = (v: string) => instruction(v, factor);
   const startTimer = (stepIndex = pos) => {
-    const existing = [...(s.timers || []), ...(s.timer ? [s.timer] : [])].find((timer) => timer.mealId === meal.id && timer.step === stepIndex);
-    if (existing && timerSeconds(existing, now) > 0 && !confirm(tr("replaceTimerConfirm"))) return;
+    const existing = [...(s.timers || []), ...(s.timer ? [s.timer] : [])].find(
+      (timer) => timer.mealId === meal.id && timer.step === stepIndex,
+    );
+    if (
+      existing &&
+      timerSeconds(existing, now) > 0 &&
+      !confirm(tr("replaceTimerConfirm"))
+    )
+      return;
     update((x) => ({
       ...x,
-      timers: [...(x.timers || []), ...(x.timer ? [x.timer] : [])].filter((timer) => !(timer.mealId === meal.id && timer.step === stepIndex)),
+      timers: [...(x.timers || []), ...(x.timer ? [x.timer] : [])].filter(
+        (timer) => !(timer.mealId === meal.id && timer.step === stepIndex),
+      ),
       timer: {
         mealId: meal.id,
         step: stepIndex,
@@ -228,6 +293,16 @@ export function usePlannerController() {
   return {
     error,
     model: {
+      pendingImport,
+      setPendingImport,
+      restoreBackup: () => {
+        if (!pendingImport) return;
+        update(() => pendingImport);
+        setSelected(pendingImport.plan.meals[0].id);
+        setPendingImport(null);
+        navigate("week");
+        setToast(tr("backupRestored"));
+      },
       ...alarm,
       s,
       plan,

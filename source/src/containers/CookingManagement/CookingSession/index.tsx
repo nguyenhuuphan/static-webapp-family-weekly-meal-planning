@@ -1,4 +1,4 @@
-import { useI18n } from "src/i18n";
+import { useI18n, useText } from "src/i18n";
 import { isCookingPreparation } from "src/helpers/preparation";
 import {
   ShoppingBag,
@@ -18,6 +18,7 @@ import { fmt } from "src/utils/formatTime";
 
 interface IProps {}
 const CookingSession: React.FC<IProps> = () => {
+  const text = useText();
   const { t: tr, source, content: ct, number: num, unit } = useI18n();
   const {
     s,
@@ -174,6 +175,14 @@ const CookingSession: React.FC<IProps> = () => {
               ))}
             </ol>
             <div className="step-controls">
+              {!ready && !s.progress.done[meal.id] && <p role="status">
+                {!isPrepared(s, meal)
+                  ? text("Còn phần chưa sơ chế. Hãy xem lại sơ chế trước khi hoàn thành bữa ăn.", "Some portions still need preparation. Review prep before finishing this meal.")
+                  : text("Hãy xác nhận thực phẩm đã bảo quản đúng và rã đông ở đầu trang.", "Confirm safe storage and thawing at the top of this page.")}
+                <Button onClick={() => !isPrepared(s, meal) ? navigate("prep") : document.querySelector<HTMLInputElement>(".readiness input")?.focus()}>
+                  {text("Kiểm tra ngay", "Review now")}
+                </Button>
+              </p>}
               <Button
                 primary
                 disabled={!ready || !!s.progress.done[meal.id]}

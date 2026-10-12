@@ -42,6 +42,7 @@ const AppLayout: React.FC<IProps> = () => {
     exportJSON,
     canUndo,
     undoLastAction,
+    dismissUndo,
     recoveryRaw,
     hasLastGood,
     downloadRecovery,
@@ -395,6 +396,13 @@ const AppLayout: React.FC<IProps> = () => {
           <Button onClick={undoLastAction}>
             {text("Hoàn tác thao tác vừa rồi", "Undo last action")}
           </Button>
+          <button
+            className="icon-button"
+            aria-label={tr("dismissNotification")}
+            onClick={dismissUndo}
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
       {toast && (

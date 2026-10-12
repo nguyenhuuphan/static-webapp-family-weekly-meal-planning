@@ -67,6 +67,11 @@ export function usePlannerController() {
     before: State;
     after: State;
   } | null>(null);
+  useEffect(() => {
+    if (!undoEntry) return;
+    const timeout = window.setTimeout(() => setUndoEntry(null), 8000);
+    return () => window.clearTimeout(timeout);
+  }, [undoEntry]);
   const expectedRaw = useRef<string | null>(null);
   const conflictBlocked = useRef(false);
   const [externalChange, setExternalChange] = useState<{
@@ -544,6 +549,7 @@ export function usePlannerController() {
       },
       canUndo: !!undoEntry && state === undoEntry.after,
       undoLastAction,
+      dismissUndo: () => setUndoEntry(null),
       recoveryRaw,
       hasLastGood,
       downloadRecovery: () =>

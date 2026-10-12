@@ -69,7 +69,7 @@ describe("React feature parity", () => {
     await boot();
     expect(
       within(screen.getByRole("main")).getAllByRole("button", { name: "Cook" }),
-    ).toHaveLength(10);
+    ).toHaveLength(11);
     nav("Shopping");
     expect(screen.getByText("500 g")).toBeTruthy();
     fireEvent.click(

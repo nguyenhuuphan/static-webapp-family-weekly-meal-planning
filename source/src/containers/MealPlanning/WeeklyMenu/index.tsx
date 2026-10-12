@@ -1,5 +1,4 @@
-import { useI18n } from "src/i18n";
-import TableIllustration from "src/assets/TableIllustration";
+import { useI18n, useText } from "src/i18n";
 import {
   CalendarDays,
   ShoppingBag,
@@ -23,7 +22,12 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 interface IProps {}
 const WeeklyMenu: React.FC<IProps> = () => {
   const { t: tr, content: ct, number: num, date: localizedDate } = useI18n();
-  const { s, plan, doneCount, edit, navigate, cook, toggle } = useMealPlanner();
+  const { s, plan, doneCount, edit, navigate, cook, toggle, bought, needs, prepDone, prepTotal } = useMealPlanner();
+  const text = useText();
+  const today = new Date();
+  const todayDay = DAYS[today.getDay() - 1];
+  const nextMeal = plan.meals.find((m) => m.day === todayDay && !s.progress.done[m.id]) || plan.meals.find((m) => !s.progress.done[m.id]);
+  const nextView = bought < needs.length ? "shop" : prepDone < prepTotal ? "prep" : "cook";
   return (
     <>
       <Heading
@@ -33,33 +37,17 @@ const WeeklyMenu: React.FC<IProps> = () => {
           "tenComfortingMealsOneThoughtfulShoppingListACalmerRhythmForYour",
         )}
       >
-        <Button onClick={() => navigate("shop")} primary>
+        <Button onClick={() => nextView === "cook" && nextMeal ? cook(nextMeal) : navigate(nextView)} primary>
           <ShoppingBag size={17} />
-          {tr("startShopping")}
+          {nextView === "shop" ? tr("startShopping") : nextView === "prep" ? tr("prepGuide") : tr("startCooking")}
         </Button>
       </Heading>
-      <section className="welcome">
-        <div className="welcome-copy">
-          <span className="pill">
-            <Sun size={13} />
-            {tr("yourFiveDayRhythm")}
-          </span>
-          <h2>
-            {tr("lessDeciding")}
-            <br />
-            {tr("moreEnjoying")}
-          </h2>
-          <p>
-            {tr("prepOnSundayCookThroughFriday")}
-            <br />
-            {tr("weLlKeepTheNextStepCloseAtHand")}
-          </p>
-          <button onClick={() => navigate("prep")}>
-            {tr("openYourPrepGuide")} <ArrowRight size={17} />
-          </button>
-        </div>
-        <TableIllustration />
-      </section>
+      {nextMeal && <section className="panel">
+        <span className="eyebrow">{text("Bữa ăn tiếp theo", "Your next meal")}</span>
+        <h2>{ct(nextMeal.day)} · {ct(nextMeal.type)} — {ct(nextMeal.main)}</h2>
+        <p>{ct(nextMeal.side)}</p>
+        <Button primary onClick={() => cook(nextMeal)}>{tr("cook")} <ArrowRight size={16} /></Button>
+      </section>}
       <div className="metric-grid">
         <div>
           <span className="metric-icon">

@@ -54,6 +54,13 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  stockUses?: Record<string, StockUse>;
+  stockHistory?: {
+    weekStart: string;
+    purchased: State["purchased"];
+    uses: Record<string, StockUse>;
+    checkedAt: string;
+  }[];
   lastMealServings?: Record<string, number>;
   mealCredits?: Record<string, Ingredient[]>;
   mealCreditWeeks?: Record<string, string>;
@@ -71,6 +78,11 @@ export type State = {
   progress: Progress;
   timer: Timer;
   timers?: NonNullable<Timer>[];
+};
+export type StockUse = {
+  home: Record<string, number>;
+  purchased: Record<string, number>;
+  ingredients: Ingredient[];
 };
 export type SavedFood = {
   sourceWeek?: string;

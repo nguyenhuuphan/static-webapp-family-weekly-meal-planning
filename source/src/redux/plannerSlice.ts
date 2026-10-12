@@ -1,4 +1,8 @@
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  current as snapshot,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import type { State, Plan, Progress } from "src/types";
 import {
   availableAcquisitions,
@@ -6,6 +10,8 @@ import {
   shoppingRequirements,
 } from "src/helpers/shopping";
 import { aggregate, ingredientKey, mealPortions } from "src/utils";
+import { consumeMeal } from "src/helpers/inventory";
+import { reconcileShopping } from "src/helpers/shopping";
 import { freshProgress } from "src/helpers";
 interface IPlannerState {
   current: State | null;
@@ -26,7 +32,13 @@ const plannerSlice = createSlice({
     ) => {
       if (!state.current) return;
       const { group, key, value } = action.payload;
+      if (group === "done") {
+        if (value) state.current = consumeMeal(snapshot(state.current), key);
+        else if (state.current.stockUses) delete state.current.stockUses[key];
+      }
       state.current.progress[group][key] = value;
+      if (group === "done")
+        state.current = reconcileShopping(snapshot(state.current));
       if (group === "prep") {
         const current = state.current;
         current.preparedTasks ??= {};

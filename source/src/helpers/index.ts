@@ -35,6 +35,20 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
         } else if (typeof value === "boolean") progress[k][id] = value;
       }
   }
+  for (const use of Object.values(v.stockUses || {})) {
+    if (
+      !use ||
+      !use.home ||
+      !use.purchased ||
+      !Array.isArray(use.ingredients) ||
+      [...Object.values(use.home), ...Object.values(use.purchased)].some(
+        (n) => !Number.isFinite(n) || n < 0,
+      )
+    )
+      throw Error("Invalid stock usage record.");
+  }
+  if (v.stockHistory !== undefined && !Array.isArray(v.stockHistory))
+    throw Error("Invalid stock history.");
   const mealServings = Object.fromEntries(
     Object.entries(v.mealServings || {}).filter(
       ([id, count]) =>

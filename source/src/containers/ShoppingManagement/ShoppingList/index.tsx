@@ -2,6 +2,8 @@ import { useI18n, useText } from "src/i18n";
 import { usePersistentState } from "src/hooks/usePersistentState";
 import { ShoppingBag, Printer, X, Search } from "lucide-react";
 
+import { updateHomeStock } from "src/helpers/inventory";
+import { availableAcquisitions } from "src/helpers/shopping";
 import { ingredientKey } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -204,31 +206,20 @@ const ShoppingList: React.FC<IProps> = () => {
                         type="number"
                         min="0"
                         step="any"
-                        defaultValue={s.pantry?.[k] || 0}
+                        defaultValue={availableAcquisitions(s, k).home}
                         aria-label={`${text("Lượng có sẵn", "Amount at home")}: ${ct(i.name)} (${unit(i.unit)})`}
-                        key={`${k}:${s.pantry?.[k] || 0}`}
+                        key={`${k}:${availableAcquisitions(s, k).home}`}
                         onBlur={(event) => {
                           const amount = Number(event.target.value);
                           if (!Number.isFinite(amount) || amount < 0) {
-                            event.target.value = String(s.pantry?.[k] || 0);
+                            event.target.value = String(
+                              availableAcquisitions(s, k).home,
+                            );
                             return;
                           }
-                          if (amount === (s.pantry?.[k] || 0)) return;
-                          update((state) => ({
-                            ...state,
-                            pantry: { ...state.pantry, [k]: amount },
-                            progress: {
-                              ...state.progress,
-                              owned: {
-                                ...state.progress.owned,
-                                [k]: amount >= i.qty,
-                              },
-                              shopping: {
-                                ...state.progress.shopping,
-                                [k]: false,
-                              },
-                            },
-                          }));
+                          if (amount === availableAcquisitions(s, k).home)
+                            return;
+                          update((state) => updateHomeStock(state, k, amount));
                         }}
                       />
                     </label>
@@ -238,14 +229,9 @@ const ShoppingList: React.FC<IProps> = () => {
                         checked={!!owned}
                         onChange={(event) => {
                           const owned = event.target.checked;
-                          update((state) => ({
-                            ...state,
-                            pantry: { ...state.pantry, [k]: owned ? i.qty : 0 },
-                            progress: {
-                              ...state.progress,
-                              owned: { ...state.progress.owned, [k]: owned },
-                            },
-                          }));
+                          update((state) =>
+                            updateHomeStock(state, k, owned ? i.qty : 0),
+                          );
                         }}
                       />
                       {tr("atHome")}

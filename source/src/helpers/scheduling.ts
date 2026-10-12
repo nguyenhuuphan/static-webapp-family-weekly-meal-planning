@@ -1,3 +1,4 @@
+import { stocktakeCandidates } from "./inventory";
 import type { State, SavedFood } from "src/types";
 import {
   shoppingRequirements,
@@ -116,11 +117,30 @@ export function retainPrepared(state: State): State {
   return next;
 }
 
-export function startWeek(state: State, weekStart: string): State {
+export function startWeek(
+  state: State,
+  weekStart: string,
+  checkedStock?: Record<string, number>,
+): State {
   const next = retainPrepared(state);
   return {
     ...next,
     weekStart,
+    pantry:
+      checkedStock ||
+      Object.fromEntries(
+        stocktakeCandidates(next).map((i) => [i.key, i.estimated]),
+      ),
+    stockUses: {},
+    stockHistory: [
+      ...(state.stockHistory || []),
+      {
+        weekStart: state.weekStart,
+        purchased: state.purchased || {},
+        uses: state.stockUses || {},
+        checkedAt: new Date().toISOString(),
+      },
+    ],
     mealServings: {},
     lastMealServings: {},
     mealCredits: {},

@@ -15,6 +15,7 @@ import { isMonday } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 
+import Stocktake from "./Stocktake";
 interface IProps {}
 const HouseholdSettings: React.FC<IProps> = () => {
   const { t: tr, source, content: ct } = useI18n();
@@ -40,6 +41,7 @@ const HouseholdSettings: React.FC<IProps> = () => {
     restoreBackup,
   } = useMealPlanner();
   const text = useText();
+  const [pendingWeek, setPendingWeek] = useState<string | null>(null);
   const [servingsDraft, setServingsDraft] = useState(String(s.servings));
   const validServings =
     Number.isInteger(Number(servingsDraft)) &&
@@ -57,6 +59,13 @@ const HouseholdSettings: React.FC<IProps> = () => {
       <p className="caption">
         {tr("languageHelp")} {tr("sourceRecipeHelp")}
       </p>
+      {pendingWeek && (
+        <Stocktake
+          key={pendingWeek}
+          week={pendingWeek}
+          close={() => setPendingWeek(null)}
+        />
+      )}
       <div className="settings-grid">
         <section className="panel">
           <h2>{text("Thông báo hẹn giờ", "Timer alerts")}</h2>
@@ -159,8 +168,7 @@ const HouseholdSettings: React.FC<IProps> = () => {
                 const date = new Date(v + "T12:00:00");
                 date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
                 const monday = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-                if (confirm(tr("startANewWeekWithThisMenuAndFreshChecklists")))
-                  update((x) => startWeek(x, monday));
+                if (monday !== s.weekStart) setPendingWeek(monday);
               }}
             />
             <small>

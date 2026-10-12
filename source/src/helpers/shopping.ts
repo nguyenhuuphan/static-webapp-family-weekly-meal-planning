@@ -35,27 +35,29 @@ export function savedFoodCredits(food: SavedFood, count: number): Ingredient[] {
 }
 
 export function shoppingRequirements(state: State) {
-  const meals = state.plan.meals.map((meal) => {
-    const factor = mealPortions(state, meal) / state.plan.servings;
-    return {
-      ...meal,
-      ingredients: meal.ingredients
-        .map((i) => ({
-          ...i,
-          qty: factor
-            ? Math.max(
-                0,
-                i.qty -
-                  (state.mealCredits?.[meal.id]?.find(
-                    (c) => ingredientKey(c) === ingredientKey(i),
-                  )?.qty || 0) /
-                    factor,
-              )
-            : 0,
-        }))
-        .filter((i) => i.qty > 0),
-    };
-  });
+  const meals = state.plan.meals
+    .filter((meal) => !state.progress.done[meal.id])
+    .map((meal) => {
+      const factor = mealPortions(state, meal) / state.plan.servings;
+      return {
+        ...meal,
+        ingredients: meal.ingredients
+          .map((i) => ({
+            ...i,
+            qty: factor
+              ? Math.max(
+                  0,
+                  i.qty -
+                    (state.mealCredits?.[meal.id]?.find(
+                      (c) => ingredientKey(c) === ingredientKey(i),
+                    )?.qty || 0) /
+                      factor,
+                )
+              : 0,
+          }))
+          .filter((i) => i.qty > 0),
+      };
+    });
   const portions = { ...state.mealServings };
   const end = new Date(state.weekStart + "T12:00:00");
   end.setDate(end.getDate() + 6);
@@ -122,13 +124,23 @@ export function availableAcquisitions(
   key: string,
   committed = committedPurchases(state),
 ) {
-  const home = state.pantry?.[key] || 0;
+  const consumedHome = Object.values(state.stockUses || {}).reduce(
+    (n, use) => n + (use.home[key] || 0),
+    0,
+  );
+  const consumedPurchased = Object.values(state.stockUses || {}).reduce(
+    (n, use) => n + (use.purchased[key] || 0),
+    0,
+  );
+  const home = Math.max(0, (state.pantry?.[key] || 0) - consumedHome);
   const used = committed[key] || 0;
   return {
     home: Math.max(0, home - used),
     purchased: Math.max(
       0,
-      (state.purchased?.[key]?.qty || 0) - Math.max(0, used - home),
+      (state.purchased?.[key]?.qty || 0) -
+        consumedPurchased -
+        Math.max(0, used - home),
     ),
   };
 }

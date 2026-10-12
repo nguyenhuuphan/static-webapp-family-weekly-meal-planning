@@ -1,5 +1,18 @@
 import type { Messages } from "./en";
 export const vi = {
+  prepCookingSteps: "Hướng dẫn nấu ăn",
+  cookTimerStep: "Hẹn giờ bước {count}",
+  prepRemaining: "Còn lại",
+  prepAll: "Tất cả nhóm",
+  prepGroupsProgress: "Đã hoàn tất {count} / {total} nhóm",
+  prepSharedAction: "1. Sơ chế chung",
+  prepDivideAction: "2. Chia phần, ướp & bảo quản",
+  prepOriginalInstruction: "Hướng dẫn sơ chế đầy đủ",
+  prepPortionDone: "Đã chuẩn bị và cất phần này",
+  prepUndo: "Hoàn tác lần đánh dấu vừa rồi",
+  prepEmpty: "Đã hoàn tất tất cả nhóm.",
+  prepGroupDetails: "Xem sơ chế: {ingredient}",
+
   readyToCook: "Sẵn sàng nấu",
   checkThawing: "Kiểm tra rã đông",
   prepNeeded: "Cần sơ chế",
@@ -11,7 +24,7 @@ export const vi = {
   settingYourTable: "Đang chuẩn bị bàn ăn…",
   goodThingsAreComingToYourKitchen:
     "Những điều ngon lành đang đến với căn bếp của bạn.",
-  oneMealOneStepAtATime: "TỪNG BỮA ĂN, TỪNG BƯỚC NHỎ",
+  oneMealOneStepAtATime: "TRỌN VẸN HƯỚNG DẪN MỖI BỮA",
   letSMakeSomethingGood: "Cùng nấu một bữa ngon nhé.",
   chooseYourMealCheckYourPortionsThenFollowThePreparedIngredientGuide:
     "Chọn bữa ăn, kiểm tra khẩu phần rồi làm theo hướng dẫn với nguyên liệu đã sơ chế.",

@@ -185,6 +185,7 @@ describe("bilingual meal planner", () => {
     await boot();
     switchLanguage("vi");
     navigation("Sơ chế");
+    fireEvent.click(screen.getByRole("button", { name: "Mở rộng tất cả" }));
     expect(screen.getAllByText(/Cắt 300 g thịt heo/)).toHaveLength(2);
     const task = screen.getByRole("checkbox", {
       name: "Sơ chế Bữa trưa Thứ Hai, việc 1",

@@ -106,6 +106,7 @@ describe("React feature parity", () => {
   it("prep checklist updates and clears readiness when unchecked", async () => {
     await boot();
     nav("Prep Day");
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
     const first = screen.getByRole("checkbox", { name: "Monday Lunch prep 1" });
     fireEvent.click(first);
     expect((first as HTMLInputElement).checked).toBe(true);
@@ -125,15 +126,21 @@ describe("React feature parity", () => {
     );
     await boot(s);
     nav("Cook");
-    fireEvent.click(screen.getByRole("button", { name: "Start timer" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Start timer for step 3" }),
+    );
     await waitFor(() =>
       expect(
         JSON.parse(localStorage.getItem(STORAGE_KEY)!).timer.end,
       ).toBeGreaterThan(Date.now()),
     );
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).timer.step).toBe(2);
     fireEvent.click(screen.getByRole("button", { name: "Dismiss timer" }));
-    for (let i = 0; i < plan.meals[0].steps.length - 1; i++)
-      fireEvent.click(screen.getByRole("button", { name: "Next step" }));
+    expect(screen.queryByRole("button", { name: "Next step" })).toBeNull();
+    expect(
+      document.querySelectorAll(".cooking-instructions > li"),
+    ).toHaveLength(plan.meals[0].steps.length);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).timer).toBeNull();
     expect(
       (screen.getByRole("button", { name: "Finish meal" }) as HTMLButtonElement)
         .disabled,

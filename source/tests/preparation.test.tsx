@@ -65,7 +65,7 @@ describe("ingredient preparation groups", () => {
       groups.find((item) => item.key === "individual:mon-lunch:0"),
     ).toBeTruthy();
   });
-  it("supports bulk progress and hover, click and Escape meal details", async () => {
+  it("supports focused groups, visible storage, completion, undo and remaining filter", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
@@ -86,94 +86,48 @@ describe("ingredient preparation groups", () => {
     const group = screen.getByRole("region", {
       name: "Pork shoulder, boneless",
     });
-    const vegetables = screen.getByRole("region", {
-      name: "Vegetables & herbs",
-    });
-    const proteins = screen.getByRole("region", {
-      name: "Meat, seafood & eggs",
-    });
+    expect(within(group).queryByRole("checkbox")).toBeNull();
     fireEvent.click(
-      within(proteins).getByRole("button", {
-        name: "Collapse: Meat, seafood & eggs",
+      within(group).getByRole("button", {
+        name: "Show preparation: Pork shoulder, boneless",
       }),
     );
-    expect(
-      within(proteins).queryByRole("region", {
-        name: "Pork shoulder, boneless",
-      }),
-    ).toBeNull();
-    expect(within(vegetables).getAllByRole("checkbox").length).toBeGreaterThan(
-      0,
+    expect(group.querySelector(".prep-storage-inline")?.textContent).toContain(
+      plan.meals[0].storage,
     );
-    fireEvent.click(
-      within(proteins).getByRole("button", {
-        name: "Expand: Meat, seafood & eggs",
-      }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
-    expect(screen.queryByRole("checkbox")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
-    expect(
-      within(proteins)
-        .getByRole("button", { name: "Collapse: Meat, seafood & eggs" })
-        .getAttribute("aria-expanded"),
-    ).toBe("true");
-    expect(
-      screen.queryByRole("region", { name: "Seasonings & sauces" }),
-    ).toBeNull();
-    expect(
-      within(proteins).getByRole("region", { name: "Pork shoulder, boneless" }),
-    ).toBe(group);
-    expect(
-      within(vegetables).queryByRole("region", {
-        name: "Pork shoulder, boneless",
-      }),
-    ).toBeNull();
-    fireEvent.click(
-      within(vegetables).getByRole("button", {
-        name: "Complete category: Vegetables & herbs",
-      }),
-    );
-    expect(
-      within(vegetables)
-        .getAllByRole("checkbox")
-        .every((input) => (input as HTMLInputElement).checked),
-    ).toBe(true);
-    expect(
-      within(proteins)
-        .getAllByRole("checkbox")
-        .some((input) => (input as HTMLInputElement).checked),
-    ).toBe(false);
-    expect(within(group).getByText("600")).toBeTruthy();
-    const all = within(group).getByRole("checkbox", {
-      name: "Mark all portions prepared: Pork shoulder, boneless",
-    });
-    fireEvent.click(all);
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-    expect(saved.progress.prep["mon-lunch:0"]).toBe(true);
-    expect(saved.progress.prep["thu-dinner:0"]).toBe(true);
-    fireEvent.click(
-      within(group).getByRole("checkbox", { name: "Monday Lunch prep 1" }),
-    );
-    expect((all as HTMLInputElement).indeterminate).toBe(true);
     const trigger = within(group).getAllByRole("button", {
       name: /Meal details:/,
     })[0];
     fireEvent.mouseEnter(trigger.parentElement!);
-    expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    const details = within(group).getByRole("region", {
-      name: /Meal details:/,
-    });
-    expect(
-      within(details).getByRole("heading", { name: "Ingredients" }),
-    ).toBeTruthy();
-    fireEvent.mouseLeave(trigger.parentElement!);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     fireEvent.click(trigger);
-    fireEvent.mouseLeave(trigger.parentElement!);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     fireEvent.keyDown(trigger, { key: "Escape" });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(
+      within(group).getByRole("checkbox", {
+        name: "Mark all portions prepared: Pork shoulder, boneless",
+      }),
+    );
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(saved.progress.prep["mon-lunch:0"]).toBe(true);
+    expect(saved.progress.prep["thu-dinner:0"]).toBe(true);
+    expect(within(group).queryByRole("checkbox")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remaining" }));
+    expect(
+      screen.queryByRole("region", { name: "Pork shoulder, boneless" }),
+    ).toBeNull();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Undo last completion" }),
+    );
+    expect(
+      screen.getByRole("region", { name: "Pork shoulder, boneless" }),
+    ).toBeTruthy();
+    expect(
+      JSON.parse(localStorage.getItem(STORAGE_KEY)!).progress.prep[
+        "mon-lunch:0"
+      ],
+    ).toBe(false);
     fireEvent.click(
       within(screen.getByRole("navigation")).getByRole("button", {
         name: "Cook",
@@ -184,7 +138,6 @@ describe("ingredient preparation groups", () => {
         name: "Prepare sauces & seasonings before cooking",
       }),
     ).toBeTruthy();
-    expect(screen.getByText(/no advance preparation is needed/)).toBeTruthy();
   });
   it("excludes cooking-only seasonings from preparation readiness but keeps edited instructions", () => {
     const state = freshState(structuredClone(plan));

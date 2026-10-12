@@ -2631,3 +2631,62 @@ html[lang="vi"] .welcome h2 {
     border: 0;
   }
 }
+
+// Preparation workspace and continuous cooking instructions.
+.prep-group-body[hidden] {
+  display: none;
+}
+.prep-group-body h4 {
+  margin: 20px 0 10px;
+}
+.prep-batch > button {
+  margin-top: 12px;
+}
+.prep-storage-inline {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f1f5f0;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+.prep-storage-inline svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.prep-storage-inline p,
+.prep-portion-instruction {
+  margin: 0;
+  line-height: 1.65;
+}
+.prep-collapse-controls [aria-pressed="true"] {
+  background: #fff0b8;
+  border-color: #92782e;
+}
+.cooking-instructions {
+  margin: 0;
+  padding-left: 30px;
+}
+.cooking-instructions > li {
+  padding: 20px 0 24px 10px;
+  border-bottom: 1px solid #e7e2d5;
+}
+.cooking-instructions > li::marker {
+  font-weight: 700;
+  color: #716029;
+}
+.cooking-instructions .step-text {
+  font-size: clamp(18px, 2vw, 23px);
+  margin: 0 0 14px;
+}
+@media (max-width: 600px) {
+  .cooking-instructions .step-timer {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+@media print {
+  .prep-group-body[hidden] {
+    display: block;
+  }
+}

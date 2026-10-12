@@ -3,13 +3,11 @@ import { isCookingPreparation } from "src/helpers/preparation";
 import {
   ShoppingBag,
   ArrowRight,
-  ArrowLeft,
   Check,
   Clock,
   ShieldCheck,
   Play,
   CheckCircle2,
-  Flame,
   Info,
 } from "lucide-react";
 import { DAYS } from "src/types";
@@ -26,14 +24,11 @@ const CookingSession: React.FC<IProps> = () => {
     plan,
     factor,
     meal,
-    pos,
-    step,
     ready,
     seconds,
     t,
     startTimer,
     navigate,
-    update,
     toggle,
     setSelected,
     setToast,
@@ -145,86 +140,53 @@ const CookingSession: React.FC<IProps> = () => {
             )}
           </section>
           <section className="panel cooking-step">
-            <div className="step-meta">
-              <span className="eyebrow">
-                {tr("stepProgress", {
-                  current: pos + 1,
-                  total: meal.steps.length,
-                })}
-              </span>
-              <span>
-                <Flame size={15} />
-                {tr("followHeatInstructions")}
-              </span>
-            </div>
-            <progress value={pos + 1} max={meal.steps.length} />
-            <div className="step-text">{t(step.text)}</div>
-            {step.minutes > 0 && (
-              <div className="step-timer">
-                <div>
-                  <Clock size={20} />
-                  <span>
-                    <strong>
-                      {s.timer?.mealId === meal.id && s.timer.step === pos
-                        ? fmt(seconds)
-                        : `${step.minutes}:00`}
-                    </strong>
-                    <small>{tr("suggestedTimerCheckDonenessSeparately")}</small>
-                  </span>
-                </div>
-                <Button onClick={startTimer}>
-                  <Play size={14} />
-                  {tr("startTimer")}
-                </Button>
-              </div>
-            )}
+            <h3>{tr("prepCookingSteps")}</h3>
+            <ol className="cooking-instructions">
+              {meal.steps.map((step, index) => (
+                <li key={`${meal.id}:${index}`}>
+                  <div className="step-text">{t(step.text)}</div>
+                  {step.minutes > 0 && (
+                    <div className="step-timer">
+                      <div>
+                        <Clock size={20} />
+                        <span>
+                          <strong>
+                            {s.timer?.mealId === meal.id &&
+                            s.timer.step === index
+                              ? fmt(seconds)
+                              : `${step.minutes}:00`}
+                          </strong>
+                          <small>
+                            {tr("suggestedTimerCheckDonenessSeparately")}
+                          </small>
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => startTimer(index)}
+                        aria-label={tr("cookTimerStep", { count: index + 1 })}
+                      >
+                        <Play size={14} />
+                        {tr("startTimer")}
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ol>
             <div className="step-controls">
               <Button
-                disabled={pos === 0}
-                onClick={() =>
-                  update((x) => ({
-                    ...x,
-                    progress: {
-                      ...x.progress,
-                      cook: { ...x.progress.cook, [meal.id]: pos - 1 },
-                    },
-                  }))
-                }
+                primary
+                disabled={!ready || !!s.progress.done[meal.id]}
+                onClick={() => {
+                  toggle("done", meal.id, true);
+                  setToast(source("aGoodMealWellMadeEnjoy"));
+                }}
               >
-                <ArrowLeft size={16} />
-                {tr("back")}
+                <Check size={17} />
+                {s.progress.done[meal.id]
+                  ? tr("mealComplete")
+                  : tr("finishMeal")}
               </Button>
-              {pos < meal.steps.length - 1 ? (
-                <Button
-                  primary
-                  onClick={() =>
-                    update((x) => ({
-                      ...x,
-                      progress: {
-                        ...x.progress,
-                        cook: { ...x.progress.cook, [meal.id]: pos + 1 },
-                      },
-                    }))
-                  }
-                >
-                  {tr("nextStep")}
-                  <ArrowRight size={16} />
-                </Button>
-              ) : (
-                <Button
-                  primary
-                  disabled={!ready || s.progress.done[meal.id]}
-                  onClick={() => {
-                    toggle("done", meal.id, true);
-                    setToast(source("aGoodMealWellMadeEnjoy"));
-                  }}
-                >
-                  <Check size={17} />
-                  {s.progress.done[meal.id]
-                    ? tr("mealComplete")
-                    : tr("finishMeal")}
-                </Button>
-              )}
             </div>
             <div className="doneness">
               <ShieldCheck size={17} />

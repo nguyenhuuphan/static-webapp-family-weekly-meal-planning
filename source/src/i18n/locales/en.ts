@@ -1,4 +1,17 @@
 export const en = {
+  prepCookingSteps: "Cooking instructions",
+  cookTimerStep: "Start timer for step {count}",
+  prepRemaining: "Remaining",
+  prepAll: "All groups",
+  prepGroupsProgress: "{count} / {total} groups complete",
+  prepSharedAction: "1. Prepare together",
+  prepDivideAction: "2. Divide, season & store",
+  prepOriginalInstruction: "Full preparation instructions",
+  prepPortionDone: "Portion prepared and stored",
+  prepUndo: "Undo last completion",
+  prepEmpty: "All groups are complete.",
+  prepGroupDetails: "Show preparation: {ingredient}",
+
   readyToCook: "Ready to cook",
   checkThawing: "Check thawing",
   prepNeeded: "Prep needed",
@@ -9,7 +22,7 @@ export const en = {
   tryAgain: "Try again",
   settingYourTable: "Setting your table…",
   goodThingsAreComingToYourKitchen: "Good things are coming to your kitchen.",
-  oneMealOneStepAtATime: "ONE MEAL, ONE STEP AT A TIME",
+  oneMealOneStepAtATime: "YOUR MEAL AT A GLANCE",
   letSMakeSomethingGood: "Let’s make something good.",
   chooseYourMealCheckYourPortionsThenFollowThePreparedIngredientGuide:
     "Choose your meal, check your portions, then follow the prepared-ingredient guide.",

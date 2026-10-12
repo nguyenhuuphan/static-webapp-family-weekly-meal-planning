@@ -3,7 +3,6 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Layers3,
   ShieldCheck,
   Snowflake,
 } from "lucide-react";
@@ -45,9 +44,31 @@ const categories = [
 
 const PrepDay: React.FC = () => {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [remainingOnly, setRemainingOnly] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [undo, setUndo] = useState<Record<string, boolean> | null>(null);
   const { t: tr, content: ct, number, unit } = useI18n();
-  const { s, plan, factor, prepTotal, prepDone, t, navigate, toggle } =
-    useMealPlanner();
+  const { s, plan, factor, t, navigate, toggle } = useMealPlanner();
+  const complete = (keys: string[], checked: boolean) => {
+    setUndo(
+      Object.fromEntries(keys.map((key) => [key, !!s.progress.prep[key]])),
+    );
+    keys.forEach((key) => toggle("prep", key, checked));
+    setExpanded((current) => {
+      const next = { ...current };
+      groups.forEach((group) => {
+        if (
+          group.allocations.some((a) => keys.includes(a.key)) &&
+          group.allocations.every((a) =>
+            keys.includes(a.key) ? checked : !!s.progress.prep[a.key],
+          )
+        ) {
+          next[group.key] = false;
+        }
+      });
+      return next;
+    });
+  };
   const groups = useMemo(
     () =>
       groupPreparation(plan, s.servings).filter(
@@ -55,6 +76,12 @@ const PrepDay: React.FC = () => {
       ),
     [plan, s.servings],
   );
+  const completedGroups = groups.filter((group) =>
+    group.allocations.every((allocation) => s.progress.prep[allocation.key]),
+  ).length;
+  const nextGroup = groups.find((group) =>
+    group.allocations.some((allocation) => !s.progress.prep[allocation.key]),
+  )?.key;
   return (
     <>
       <Heading
@@ -70,15 +97,14 @@ const PrepDay: React.FC = () => {
       <div className="progress-panel">
         <div>
           <strong>
-            {tr("prepProgress", { count: prepDone, total: prepTotal })}
+            {tr("prepGroupsProgress", {
+              count: completedGroups,
+              total: groups.length,
+            })}
           </strong>
           <span>{tr("prepBatchCount", { count: groups.length })}</span>
         </div>
-        <progress value={prepDone} max={prepTotal} />
-      </div>
-      <div className="notice prep-batch-intro">
-        <Layers3 size={20} />
-        <p>{tr("prepBatchHelp")}</p>
+        <progress value={completedGroups} max={groups.length} />
       </div>
       <div className="notice warning">
         <Snowflake size={19} />
@@ -89,6 +115,30 @@ const PrepDay: React.FC = () => {
       </div>
       <div className="prep-collapse-controls">
         <Button
+          aria-pressed={!remainingOnly}
+          onClick={() => setRemainingOnly(false)}
+        >
+          {tr("prepAll")}
+        </Button>
+        <Button
+          aria-pressed={remainingOnly}
+          onClick={() => setRemainingOnly(true)}
+        >
+          {tr("prepRemaining")}
+        </Button>
+        {undo && (
+          <Button
+            onClick={() => {
+              Object.entries(undo).forEach(([key, value]) =>
+                toggle("prep", key, value),
+              );
+              setUndo(null);
+            }}
+          >
+            {tr("prepUndo")}
+          </Button>
+        )}
+        <Button
           onClick={() =>
             setCollapsed(
               Object.fromEntries(categories.map(({ key }) => [key, true])),
@@ -98,17 +148,32 @@ const PrepDay: React.FC = () => {
           <ChevronUp size={16} />
           {tr("prepCollapseAll")}
         </Button>
-        <Button onClick={() => setCollapsed({})}>
+        <Button
+          onClick={() => {
+            setCollapsed({});
+            setExpanded(
+              Object.fromEntries(groups.map((group) => [group.key, true])),
+            );
+          }}
+        >
           <ChevronDown size={16} />
           {tr("prepExpandAll")}
         </Button>
       </div>
+      {remainingOnly && completedGroups === groups.length && (
+        <p role="status">{tr("prepEmpty")}</p>
+      )}
       <div className="prep-batch-list">
         {categories.map((category) => {
-          const categoryGroups = groups.filter((group) =>
-            category.key === "Other"
-              ? !["Produce", "Protein", "Pantry"].includes(group.category)
-              : group.category === category.key,
+          const categoryGroups = groups.filter(
+            (group) =>
+              (!remainingOnly ||
+                group.allocations.some(
+                  (allocation) => !s.progress.prep[allocation.key],
+                )) &&
+              (category.key === "Other"
+                ? !["Produce", "Protein", "Pantry"].includes(group.category)
+                : group.category === category.key),
           );
           if (!categoryGroups.length) return null;
           return (
@@ -146,23 +211,6 @@ const PrepDay: React.FC = () => {
                     { category: tr(category.title) },
                   )}
                 </Button>
-                <Button
-                  disabled={categoryGroups.every((group) =>
-                    group.allocations.every(
-                      (allocation) => s.progress.prep[allocation.key],
-                    ),
-                  )}
-                  onClick={() =>
-                    categoryGroups.forEach((group) =>
-                      group.allocations.forEach((allocation) =>
-                        toggle("prep", allocation.key, true),
-                      ),
-                    )
-                  }
-                >
-                  <Check size={16} />
-                  {tr("prepCompleteCategory", { category: tr(category.title) })}
-                </Button>
               </header>
               <div
                 className="prep-category-groups"
@@ -175,6 +223,7 @@ const PrepDay: React.FC = () => {
                     (allocation) => s.progress.prep[allocation.key],
                   ).length;
                   const allDone = done === group.allocations.length;
+                  const isOpen = expanded[group.key] ?? group.key === nextGroup;
                   const name = group.ingredient
                     ? ct(group.ingredient)
                     : group.operation === "prepareSauces"
@@ -217,77 +266,130 @@ const PrepDay: React.FC = () => {
                           )}
                         </span>
                       </div>
-                      <p className="prep-batch-operation">
-                        {tr(operationKeys[group.operation])}
-                      </p>
-                      {group.operation === "reviewIndividually" && (
-                        <p className="caption">{tr("prepUnknownHelp")}</p>
-                      )}
-                      <div className="prep-allocations">
-                        {group.allocations.map((allocation) => (
-                          <div
-                            className={`prep-allocation ${s.progress.prep[allocation.key] ? "checked" : ""}`}
-                            key={allocation.key}
-                          >
-                            <div className="prep-allocation-heading">
-                              {allocation.quantity !== null && group.unit && (
-                                <strong className="prep-portion-quantity">
-                                  {number(allocation.quantity)}{" "}
-                                  {unit(group.unit)}
-                                </strong>
+                      <Button
+                        aria-expanded={isOpen}
+                        aria-controls={`prep-body-${groupIndex}`}
+                        aria-label={tr("prepGroupDetails", {
+                          ingredient: name,
+                        })}
+                        onClick={() =>
+                          setExpanded((current) => ({
+                            ...current,
+                            [group.key]: !isOpen,
+                          }))
+                        }
+                      >
+                        {isOpen ? (
+                          <ChevronUp size={16} />
+                        ) : (
+                          <ChevronDown size={16} />
+                        )}
+                        {tr("prepGroupDetails", { ingredient: name })}
+                      </Button>
+                      <div
+                        id={`prep-body-${groupIndex}`}
+                        hidden={!isOpen}
+                        className="prep-group-body"
+                      >
+                        <h4>{tr("prepSharedAction")}</h4>
+                        <p className="prep-batch-operation">
+                          {tr(operationKeys[group.operation])}
+                        </p>
+                        {group.operation === "reviewIndividually" && (
+                          <p className="caption">{tr("prepUnknownHelp")}</p>
+                        )}
+                        <h4>{tr("prepDivideAction")}</h4>
+                        <div className="prep-allocations">
+                          {group.allocations.map((allocation) => (
+                            <div
+                              className={`prep-allocation ${s.progress.prep[allocation.key] ? "checked" : ""}`}
+                              key={allocation.key}
+                            >
+                              <div className="prep-allocation-heading">
+                                {allocation.quantity !== null && group.unit && (
+                                  <strong className="prep-portion-quantity">
+                                    {number(allocation.quantity)}{" "}
+                                    {unit(group.unit)}
+                                  </strong>
+                                )}
+                                <MealDetails
+                                  meal={allocation.meal}
+                                  factor={factor}
+                                />
+                              </div>
+                              <p className="prep-portion-instruction">
+                                {["sliceThin", "cutChicken"].includes(
+                                  group.operation,
+                                )
+                                  ? t(allocation.task.text)
+                                      .split(/\.\s+/)
+                                      .slice(1)
+                                      .join(". ")
+                                  : t(allocation.task.text)}
+                              </p>
+                              {["sliceThin", "cutChicken"].includes(
+                                group.operation,
+                              ) && (
+                                <details className="prep-original">
+                                  <summary>
+                                    {tr("prepOriginalInstruction")}
+                                  </summary>
+                                  <p>{t(allocation.task.text)}</p>
+                                </details>
                               )}
-                              <MealDetails
-                                meal={allocation.meal}
-                                factor={factor}
-                              />
+                              <div className="prep-storage-inline">
+                                <Snowflake size={16} />
+                                <p>
+                                  <strong>{tr("store")}</strong>{" "}
+                                  {ct(allocation.meal.storage)}
+                                </p>
+                              </div>
+                              <label className="prep-row">
+                                <input
+                                  type="checkbox"
+                                  checked={!!s.progress.prep[allocation.key]}
+                                  aria-label={tr("prepTaskLabel", {
+                                    day: ct(allocation.meal.day),
+                                    type: ct(allocation.meal.type),
+                                    count: allocation.taskIndex + 1,
+                                  })}
+                                  onChange={(event) =>
+                                    complete(
+                                      [allocation.key],
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>{tr("prepPortionDone")}</span>
+                              </label>
                             </div>
-                            <label className="prep-row">
-                              <input
-                                type="checkbox"
-                                checked={!!s.progress.prep[allocation.key]}
-                                aria-label={tr("prepTaskLabel", {
-                                  day: ct(allocation.meal.day),
-                                  type: ct(allocation.meal.type),
-                                  count: allocation.taskIndex + 1,
-                                })}
-                                onChange={(event) =>
-                                  toggle(
-                                    "prep",
-                                    allocation.key,
-                                    event.target.checked,
-                                  )
-                                }
-                              />
-                              <span>{t(allocation.task.text)}</span>
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                      {group.allocations.length > 1 && (
-                        <label className="prep-batch-complete">
-                          <input
-                            type="checkbox"
-                            checked={allDone}
-                            ref={(input) => {
-                              if (input)
-                                input.indeterminate = done > 0 && !allDone;
-                            }}
-                            aria-label={tr("prepCompleteGroupLabel", {
-                              ingredient: name,
-                            })}
-                            onChange={(event) =>
-                              group.allocations.forEach((allocation) =>
-                                toggle(
-                                  "prep",
-                                  allocation.key,
+                          ))}
+                        </div>
+                        {group.allocations.length > 1 && (
+                          <label className="prep-batch-complete">
+                            <input
+                              type="checkbox"
+                              checked={allDone}
+                              ref={(input) => {
+                                if (input)
+                                  input.indeterminate = done > 0 && !allDone;
+                              }}
+                              aria-label={tr("prepCompleteGroupLabel", {
+                                ingredient: name,
+                              })}
+                              onChange={(event) =>
+                                complete(
+                                  group.allocations.map(
+                                    (allocation) => allocation.key,
+                                  ),
                                   event.target.checked,
-                                ),
-                              )
-                            }
-                          />
-                          {tr("prepCompleteGroup")}
-                        </label>
-                      )}
+                                )
+                              }
+                            />
+                            {tr("prepCompleteGroup")}
+                          </label>
+                        )}
+                      </div>
                     </section>
                   );
                 })}

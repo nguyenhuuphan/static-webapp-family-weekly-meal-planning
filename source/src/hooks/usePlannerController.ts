@@ -189,14 +189,14 @@ export function usePlannerController() {
     bought = needs.filter((i) => s.progress.shopping[ingredientKey(i)]).length,
     seconds = timerSeconds(s.timer, now),
     t = (v: string) => instruction(v, factor);
-  const startTimer = () => {
+  const startTimer = (stepIndex = pos) => {
     if (s.timer && seconds > 0 && !confirm(tr("replaceTimerConfirm"))) return;
     update((x) => ({
       ...x,
       timer: {
         mealId: meal.id,
-        step: pos,
-        end: Date.now() + step.minutes * 60000,
+        step: stepIndex,
+        end: Date.now() + meal.steps[stepIndex].minutes * 60000,
       },
     }));
   };

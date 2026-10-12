@@ -12,23 +12,14 @@ export default function MealDetails({
 }) {
   const { t, content, number, unit } = useI18n();
   const id = useId();
-  const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const open = hovered || pinned || focused;
+  const open = pinned;
   const close = () => {
-    setHovered(false);
     setPinned(false);
-    setFocused(false);
   };
   return (
     <div
       className="prep-meal-details"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={(event) => {
-        if (event.target.matches(":focus-visible")) setFocused(true);
-      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) close();
       }}
@@ -46,7 +37,6 @@ export default function MealDetails({
         aria-controls={id}
         aria-label={t("prepMealDetailsLabel", { name: content(meal.main) })}
         onClick={() => {
-          setFocused(false);
           setPinned(!pinned);
         }}
       >

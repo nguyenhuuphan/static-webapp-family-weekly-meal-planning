@@ -60,6 +60,7 @@ const PrepDay: React.FC = () => {
   );
   const [undo, setUndo] = usePersistentState<{
     before: Record<string, boolean>;
+    preparedTasks?: typeof s.preparedTasks;
     ready: Record<string, boolean>;
     after: boolean;
     plan: string;
@@ -74,6 +75,7 @@ const PrepDay: React.FC = () => {
   ]);
   const complete = (keys: string[], checked: boolean) => {
     setUndo({
+      preparedTasks: s.preparedTasks,
       before: Object.fromEntries(
         keys.map((key) => [key, !!s.progress.prep[key]]),
       ),
@@ -175,13 +177,22 @@ const PrepDay: React.FC = () => {
                 Object.entries(undo.before).forEach(([key, value]) =>
                   toggle("prep", key, value),
                 );
-                update((state) => ({
-                  ...state,
-                  progress: {
-                    ...state.progress,
-                    ready: { ...state.progress.ready, ...undo.ready },
-                  },
-                }));
+                update((state) => {
+                  const preparedTasks = { ...state.preparedTasks };
+                  for (const key of Object.keys(undo.before)) {
+                    if (undo.preparedTasks?.[key])
+                      preparedTasks[key] = undo.preparedTasks[key];
+                    else delete preparedTasks[key];
+                  }
+                  return {
+                    ...state,
+                    preparedTasks,
+                    progress: {
+                      ...state.progress,
+                      ready: { ...state.progress.ready, ...undo.ready },
+                    },
+                  };
+                });
                 setUndo(null);
               }}
             >

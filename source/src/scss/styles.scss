@@ -2829,3 +2829,64 @@ select:focus-visible {
     display: none;
   }
 }
+
+.schedule-controls {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  border-top: 1px solid #e2e6df;
+  padding-top: 12px;
+}
+.schedule-controls label,
+.saved-food-card label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+.schedule-controls select,
+.saved-food-card select,
+.saved-food-card input:not([type="checkbox"]) {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid #bbc5b7;
+  border-radius: 8px;
+  background: white;
+  color: #26362b;
+  font: inherit;
+}
+.schedule-preview {
+  display: grid;
+  gap: 10px;
+}
+.saved-food {
+  margin-bottom: 24px;
+}
+.saved-food-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px 0;
+  border-top: 1px solid #e2e6df;
+  overflow-wrap: anywhere;
+}
+.saved-food-card p,
+.saved-food-card h3 {
+  margin: 0;
+}
+.saved-food-card details > *:not(summary) {
+  margin-top: 12px;
+}
+.saved-food-card .readiness {
+  display: flex;
+  align-items: flex-start;
+}
+.meal-card.skipped {
+  background: #f4f5f1;
+}
+.day-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}

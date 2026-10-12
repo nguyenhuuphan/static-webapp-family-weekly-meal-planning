@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { usePersistentState } from "./usePersistentState";
 import { useTimerAlarm } from "./useTimerAlarm";
 import { useI18n } from "src/i18n";
+import { shoppingRequirements } from "src/helpers/shopping";
+import { retainPrepared, startWeek } from "src/helpers/scheduling";
 import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
 import {
@@ -22,7 +24,6 @@ import {
   initialized,
   stateChanged,
   progressToggled,
-  progressReset,
 } from "src/redux/plannerSlice";
 export function usePlannerController() {
   const hadRememberedMeal = useRef(
@@ -125,19 +126,20 @@ export function usePlannerController() {
   const shopping = useMemo(
     () =>
       state
-        ? aggregate(state.plan, state.servings, state.mealServings).map(
-            (item) => ({
-              ...item,
-              toBuy: Math.max(
-                0,
-                Math.round(
-                  (item.qty - (state.pantry?.[ingredientKey(item)] || 0)) * 100,
-                ) / 100,
-              ),
-            }),
-          )
+        ? shoppingRequirements(state).map((item) => ({
+            ...item,
+            toBuy: Math.max(
+              0,
+              Math.round(
+                (item.qty -
+                  (state.pantry?.[ingredientKey(item)] || 0) -
+                  (state.purchased?.[ingredientKey(item)]?.qty || 0)) *
+                  100,
+              ) / 100,
+            ),
+          }))
         : [],
-    [state?.plan, state?.servings, state?.pantry, state?.mealServings],
+    [state],
   );
   useEffect(() => {
     if (!state) return;
@@ -185,13 +187,17 @@ export function usePlannerController() {
   }
   function resetProgress() {
     if (confirm(tr("resetConfirm"))) {
-      dispatch(progressReset());
+      update((s) => startWeek(s, s.weekStart));
       setToast("Fresh progress. Same favourite recipes.");
     }
   }
   function applyPlan(plan: Plan, servings: number) {
     update((s) => ({
-      ...s,
+      ...retainPrepared(s),
+      mealServings: {},
+      mealCredits: {},
+      preparedTasks: {},
+      purchased: {},
       plan,
       servings,
       progress: freshProgress(),
@@ -270,7 +276,9 @@ export function usePlannerController() {
       0,
     ),
     needs = shopping.filter(
-      (i) => !s.progress.owned[ingredientKey(i)] && i.toBuy > 0,
+      (i) =>
+        !s.progress.owned[ingredientKey(i)] &&
+        i.qty > (s.pantry?.[ingredientKey(i)] || 0),
     ),
     bought = needs.filter((i) => s.progress.shopping[ingredientKey(i)]).length,
     seconds = timerSeconds(s.timer, now),

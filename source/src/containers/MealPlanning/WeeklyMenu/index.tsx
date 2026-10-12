@@ -19,6 +19,7 @@ import { isPrepared } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 
+import SavedFoodPanel from "./SavedFoodPanel";
 import ScheduleControls from "./ScheduleControls";
 
 interface IProps {}
@@ -84,6 +85,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
           </Button>
         </section>
       )}
+      <SavedFoodPanel />
       <div className="metric-grid">
         <div>
           <span className="metric-icon">

@@ -10,7 +10,8 @@ import {
   Pencil,
 } from "lucide-react";
 
-import { freshProgress, isMonday } from "src/domain";
+import { startWeek } from "src/helpers/scheduling";
+import { isMonday } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 
@@ -133,11 +134,8 @@ const HouseholdSettings: React.FC<IProps> = () => {
                 )
               ) {
                 update((x) => ({
-                  ...x,
+                  ...startWeek(x, x.weekStart),
                   servings: Number(servingsDraft),
-                  progress: freshProgress(),
-                  timer: null,
-                  timers: [],
                 }));
               }
             }}
@@ -162,13 +160,7 @@ const HouseholdSettings: React.FC<IProps> = () => {
                 date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
                 const monday = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
                 if (confirm(tr("startANewWeekWithThisMenuAndFreshChecklists")))
-                  update((x) => ({
-                    ...x,
-                    weekStart: monday,
-                    progress: freshProgress(),
-                    timer: null,
-                    timers: [],
-                  }));
+                  update((x) => startWeek(x, monday));
               }}
             />
             <small>

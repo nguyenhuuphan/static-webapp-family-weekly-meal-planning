@@ -16,6 +16,16 @@ const ShoppingList: React.FC<IProps> = () => {
   const { t: tr, content: ct, number: num, unit } = useI18n();
   const { s, needs, bought, shopping, toggle, search, setSearch, update } =
     useMealPlanner();
+  const surplus = Object.entries(s.purchased || {}).flatMap(([key, item]) => {
+    const required = shopping.find((i) => ingredientKey(i) === key)?.qty || 0;
+    const extra = Math.max(
+      0,
+      Math.round(
+        (item.qty - Math.max(0, required - (s.pantry?.[key] || 0))) * 100,
+      ) / 100,
+    );
+    return extra > 0 ? [{ ...item, qty: extra }] : [];
+  });
   const normalize = (value: string) =>
     value
       .normalize("NFD")
@@ -49,6 +59,30 @@ const ShoppingList: React.FC<IProps> = () => {
         </div>
         <progress value={bought} max={needs.length || 1} />
       </div>
+      {surplus.length > 0 && (
+        <details className="panel">
+          <summary>
+            {text(
+              "Đã mua ngoài nhu cầu hiện tại",
+              "Purchased beyond current requirements",
+            )}{" "}
+            ({surplus.length})
+          </summary>
+          <p>
+            {text(
+              "Lượng này có thể đang nằm trong phần đã sơ chế cần sắp xếp. Đây là ghi nhận đã mua, không phải lượng tồn kho được kiểm kê.",
+              "Some of this may be in prepared portions awaiting a meal. These are purchase records, not a stock count.",
+            )}
+          </p>
+          <ul>
+            {surplus.map((i) => (
+              <li key={ingredientKey(i)}>
+                {ct(i.name)} · {num(i.qty)} {unit(i.unit)}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       <div className="search-field">
         <Search size={17} />
         <input
@@ -138,12 +172,19 @@ const ShoppingList: React.FC<IProps> = () => {
                       </span>
                     </label>
                     <span className="quantity">
-                      {num(owned ? 0 : i.toBuy)} {unit(i.unit)}
+                      {num(
+                        owned
+                          ? 0
+                          : checked
+                            ? (s.purchased?.[k]?.qty ?? i.toBuy)
+                            : i.toBuy,
+                      )}{" "}
+                      {unit(i.unit)}
                       <small>
                         {text("Cần dùng", "Required")}: {num(i.qty)}{" "}
                         {unit(i.unit)}
                       </small>
-                      {!owned && i.toBuy > 0 && (
+                      {!owned && !checked && i.toBuy > 0 && (
                         <small>
                           {text("Gợi ý mua", "Suggested purchase")}:{" "}
                           {num(

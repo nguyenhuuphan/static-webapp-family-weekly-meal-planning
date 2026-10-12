@@ -110,9 +110,11 @@ export type PrepGroup = {
 
 export function isCookingPreparation(meal: Meal, taskIndex: number): boolean {
   return (
-    profiles[meal.id]?.[taskIndex]?.operation === "prepareSauces" &&
-    original.meals.find((item) => item.id === meal.id)?.prep[taskIndex]
-      ?.text === meal.prep[taskIndex]?.text
+    profiles[meal.recipeId || meal.id]?.[taskIndex]?.operation ===
+      "prepareSauces" &&
+    original.meals.find((item) => item.id === (meal.recipeId || meal.id))?.prep[
+      taskIndex
+    ]?.text === meal.prep[taskIndex]?.text
   );
 }
 
@@ -127,8 +129,10 @@ export function groupPreparation(
     if (!count) continue;
     const factor = count / plan.servings;
     meal.prep.forEach((task, taskIndex) => {
-      const baseline = original.meals.find((item) => item.id === meal.id);
-      const candidate = profiles[meal.id]?.[taskIndex];
+      const baseline = original.meals.find(
+        (item) => item.id === (meal.recipeId || meal.id),
+      );
+      const candidate = profiles[meal.recipeId || meal.id]?.[taskIndex];
       const currentIngredient = candidate?.ingredient
         ? meal.ingredients.find((item) => item.name === candidate.ingredient)
         : undefined;

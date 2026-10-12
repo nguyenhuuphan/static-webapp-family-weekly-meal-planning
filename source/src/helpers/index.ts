@@ -1,5 +1,6 @@
 import { type Plan, type Meal, type State, type Progress } from "src/types";
 import { defaultMonday, isMonday, aggregate, ingredientKey } from "src/utils";
+import { changePortions } from "./scheduling";
 import { parseBackup, validatePlan } from "src/validations";
 export const freshProgress = (): Progress => ({
   shopping: {},
@@ -54,6 +55,82 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
         item.qty >= 0,
     ),
   );
+  for (const item of aggregate(v.plan, v.servings, mealServings)) {
+    const key = ingredientKey(item);
+    if (progress.shopping[key] && !purchased[key])
+      purchased[key] = {
+        ...item,
+        qty: Math.max(0, item.qty - (Number(v.pantry?.[key]) || 0)),
+      };
+  }
+  const preparedTasks: NonNullable<State["preparedTasks"]> = {};
+  for (const [key, task] of Object.entries(v.preparedTasks || {})) {
+    if (
+      task &&
+      Number.isInteger(task.servings) &&
+      task.servings >= 0 &&
+      task.servings <= 12 &&
+      typeof task.at === "string" &&
+      (!task.at || Number.isFinite(Date.parse(task.at)))
+    )
+      preparedTasks[key] = task;
+  }
+  const savedFood = Array.isArray(v.savedFood) ? v.savedFood : [];
+  const ids = new Set<string>();
+  for (const food of savedFood) {
+    const errors = validatePlan({
+      ...v.plan,
+      meals: v.plan.meals.map((m, i) =>
+        i === 0 ? { ...food.meal, id: m.id, day: m.day, type: m.type } : m,
+      ),
+    });
+    if (
+      !food ||
+      typeof food.id !== "string" ||
+      ids.has(food.id) ||
+      !["prepared", "recipe"].includes(food.kind) ||
+      !["pending", "scheduled", "used", "discarded", "assigned"].includes(
+        food.status,
+      ) ||
+      !Number.isInteger(food.servings) ||
+      food.servings < 0 ||
+      food.servings > 12 ||
+      !Number.isInteger(food.baseServings) ||
+      food.baseServings < 1 ||
+      food.baseServings > 12 ||
+      errors.length ||
+      typeof food.storageNote !== "string" ||
+      !food.preparedTasks ||
+      typeof food.preparedTasks !== "object" ||
+      Array.isArray(food.preparedTasks)
+    )
+      throw Error("Invalid saved food in backup.");
+    if (
+      food.date &&
+      (!/^\d{4}-\d{2}-\d{2}$/.test(food.date) ||
+        !Number.isFinite(Date.parse(food.date)))
+    )
+      throw Error("Invalid saved food date.");
+    if (
+      food.status === "scheduled" &&
+      (!food.date || !["Lunch", "Dinner"].includes(food.type || ""))
+    )
+      throw Error("Invalid saved food schedule.");
+    for (const [index, task] of Object.entries(food.preparedTasks)) {
+      if (
+        !/^\d+$/.test(index) ||
+        Number(index) >= food.meal.prep.length ||
+        !task ||
+        !Number.isInteger(task.servings) ||
+        task.servings < 0 ||
+        task.servings > 12 ||
+        typeof task.at !== "string" ||
+        (task.at && !Number.isFinite(Date.parse(task.at)))
+      )
+        throw Error("Invalid saved preparation record.");
+    }
+    ids.add(food.id);
+  }
   let timer = v.timer;
   if (
     timer &&
@@ -68,7 +145,27 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   return {
     ...v,
     mealServings,
+    mealCredits:
+      v.mealCredits && typeof v.mealCredits === "object"
+        ? Object.fromEntries(
+            Object.entries(v.mealCredits).filter(
+              ([id, items]) =>
+                v.plan.meals.some((m) => m.id === id) &&
+                Array.isArray(items) &&
+                items.every(
+                  (i) =>
+                    i &&
+                    typeof i.name === "string" &&
+                    ["g", "ml", "each", "tsp", "tbsp"].includes(i.unit) &&
+                    Number.isFinite(i.qty) &&
+                    i.qty >= 0,
+                ),
+            ),
+          )
+        : {},
     purchased,
+    preparedTasks,
+    savedFood,
     weekStart: isMonday(v.weekStart) ? v.weekStart : defaultMonday(),
     progress,
     pantry:
@@ -104,6 +201,9 @@ export function resetForMeal(s: State, id: string): State {
   const next = structuredClone(s);
   for (const k of Object.keys(next.progress.prep))
     if (k.startsWith(id + ":")) delete next.progress.prep[k];
+  for (const key of Object.keys(next.preparedTasks || {}))
+    if (key.startsWith(id + ":")) delete next.preparedTasks![key];
+  if (next.mealCredits) delete next.mealCredits[id];
   delete next.progress.ready[id];
   delete next.progress.done[id];
   delete next.progress.cook[id];
@@ -112,7 +212,14 @@ export function resetForMeal(s: State, id: string): State {
   return next;
 }
 export function replaceMeal(s: State, id: string, updated: Meal): State {
-  const next = resetForMeal(s, id);
+  const originalCount = s.mealServings?.[id] ?? s.servings;
+  const next = resetForMeal(
+    s.progress.done[id] ? s : changePortions(s, id, 0),
+    id,
+  );
+  next.progress.shopping = { ...s.progress.shopping };
+  next.progress.owned = { ...s.progress.owned };
+  next.mealServings = { ...next.mealServings, [id]: originalCount };
   next.plan.meals = next.plan.meals.map((m) => (m.id === id ? updated : m));
   const before = new Map(
     aggregate(s.plan, s.servings, s.mealServings).map((i) => [

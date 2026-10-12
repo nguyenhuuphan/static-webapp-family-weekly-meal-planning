@@ -20,6 +20,7 @@ export type Step = {
   label?: string;
 };
 export type Meal = {
+  recipeId?: string;
   id: string;
   day: Day;
   type: "Lunch" | "Dinner";
@@ -53,6 +54,9 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  mealCredits?: Record<string, Ingredient[]>;
+  preparedTasks?: Record<string, { servings: number; at: string }>;
+  savedFood?: SavedFood[];
   mealServings?: Record<string, number>;
   purchased?: Record<
     string,
@@ -65,5 +69,17 @@ export type State = {
   progress: Progress;
   timer: Timer;
   timers?: NonNullable<Timer>[];
+};
+export type SavedFood = {
+  id: string;
+  kind: "prepared" | "recipe";
+  meal: Meal;
+  baseServings: number;
+  servings: number;
+  preparedTasks: Record<string, { servings: number; at: string }>;
+  storageNote: string;
+  date?: string;
+  type?: "Lunch" | "Dinner";
+  status: "pending" | "scheduled" | "used" | "discarded" | "assigned";
 };
 export type View = "week" | "shop" | "prep" | "cook" | "settings" | "safety";

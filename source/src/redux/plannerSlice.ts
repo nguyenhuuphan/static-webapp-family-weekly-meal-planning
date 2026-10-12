@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { State, Plan, Progress } from "src/types";
-import { aggregate, ingredientKey } from "src/utils";
+import { shoppingRequirements } from "src/helpers/shopping";
+import { aggregate, ingredientKey, mealPortions } from "src/utils";
 import { freshProgress } from "src/helpers";
 interface IPlannerState {
   current: State | null;
@@ -22,16 +23,26 @@ const plannerSlice = createSlice({
       if (!state.current) return;
       const { group, key, value } = action.payload;
       state.current.progress[group][key] = value;
+      if (group === "prep") {
+        const current = state.current;
+        current.preparedTasks ??= {};
+        const mealId = key.slice(0, key.lastIndexOf(":"));
+        const meal = current.plan.meals.find((m) => m.id === mealId);
+        if (value && meal)
+          current.preparedTasks[key] = {
+            servings: mealPortions(current, meal),
+            at: current.preparedTasks[key]?.at || new Date().toISOString(),
+          };
+        if (!value) delete current.preparedTasks[key];
+      }
       if (group === "shopping") {
         const current = state.current;
         current.purchased ??= {};
         if (!value) delete current.purchased[key];
         else {
-          const item = aggregate(
-            current.plan,
-            current.servings,
-            current.mealServings,
-          ).find((i) => ingredientKey(i) === key);
+          const item = shoppingRequirements(current).find(
+            (i) => ingredientKey(i) === key,
+          );
           if (item)
             current.purchased[key] = {
               ...item,

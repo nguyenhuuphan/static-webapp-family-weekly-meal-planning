@@ -1,5 +1,5 @@
 import { useI18n, useText } from "src/i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import type { Meal, Ingredient, Step, Unit } from "src/types";
 import { validateMealDraft } from "./schema";
@@ -12,6 +12,8 @@ interface IProps {
 }
 const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
   const text = useText();
+  const editor = useRef<HTMLDivElement>(null);
+  const [attempted, setAttempted] = useState(false);
   const draftKey = `meal-draft:${meal.id}`;
   const { t: tr, content: ct, unit, error: translateError } = useI18n();
   const [draft, setDraft] = useState<Meal>(() => {
@@ -23,6 +25,23 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
   }),
     [error, setError] = useState("");
   const dirty = JSON.stringify(draft) !== JSON.stringify(meal);
+  useEffect(() => {
+    if (!attempted || !editor.current) return;
+    const messages: HTMLElement[] = [];
+    editor.current.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select").forEach((control, index) => {
+      const optional = control.hasAttribute("data-optional");
+      const invalid = !optional && (!control.value.trim() || !control.validity.valid);
+      control.setAttribute("aria-invalid", String(invalid));
+      if (invalid) {
+        const message = document.createElement("span");
+        message.id = `editor-error-${index}`; message.className = "error field-error";
+        message.textContent = text("Nhập giá trị hợp lệ cho trường này.", "Enter a valid value for this field.");
+        control.setAttribute("aria-describedby", message.id);
+        control.insertAdjacentElement("afterend", message); messages.push(message);
+      } else control.removeAttribute("aria-describedby");
+    });
+    return () => messages.forEach((message) => message.remove());
+  }, [attempted, draft, text]);
   useEffect(() => {
     try { sessionStorage.setItem(draftKey, JSON.stringify({ baseline: JSON.stringify(meal), draft })); } catch { /* Keep editing in memory. */ }
     const beforeUnload = (event: BeforeUnloadEvent) => {
@@ -53,9 +72,14 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
     }));
   }
   function save() {
+    setAttempted(true);
     const errors = validateMealDraft(plan, meal.id, draft);
     if (errors.length) {
       setError(errors.join("\n"));
+      setTimeout(() => {
+        const first = editor.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+        first?.focus(); first?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+      }, 0);
       return;
     }
     if (
@@ -66,7 +90,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
       { try { sessionStorage.removeItem(draftKey); } catch { /* Optional draft storage. */ } onSave(draft); }
   }
   return (
-    <>
+    <div ref={editor}>
       <div className="page-heading">
         <div>
           <div className="eyebrow">
@@ -302,7 +326,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
           {tr("saveMeal")}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 export default MealEditor;

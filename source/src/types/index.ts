@@ -54,6 +54,7 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  mealStorage?: Record<string, FoodStorage>;
   stockUses?: Record<string, StockUse>;
   stockHistory?: {
     weekStart: string;
@@ -85,6 +86,7 @@ export type StockUse = {
   ingredients: Ingredient[];
 };
 export type SavedFood = {
+  storage?: FoodStorage;
   sourceWeek?: string;
   id: string;
   kind: "prepared" | "recipe";
@@ -96,5 +98,15 @@ export type SavedFood = {
   date?: string;
   type?: "Lunch" | "Dinner";
   status: "pending" | "scheduled" | "used" | "discarded" | "assigned";
+};
+export type FoodStorage = {
+  stage: "unknown" | "raw" | "cooked";
+  place: "unknown" | "fridge" | "freezer" | "room";
+  events: {
+    type: "prepared" | "frozen" | "thawing" | "thawed" | "cooked" | "checked";
+    at: string;
+    stage: FoodStorage["stage"];
+    place: FoodStorage["place"];
+  }[];
 };
 export type View = "week" | "shop" | "prep" | "cook" | "settings" | "safety";

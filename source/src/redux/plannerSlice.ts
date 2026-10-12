@@ -44,6 +44,17 @@ const plannerSlice = createSlice({
         current.preparedTasks ??= {};
         const mealId = key.slice(0, key.lastIndexOf(":"));
         const meal = current.plan.meals.find((m) => m.id === mealId);
+        if (value && meal && !current.mealStorage?.[mealId]) {
+          current.mealStorage ??= {};
+          const at = new Date().toISOString();
+          current.mealStorage[mealId] = {
+            stage: "unknown",
+            place: "unknown",
+            events: [
+              { type: "prepared", at, stage: "unknown", place: "unknown" },
+            ],
+          };
+        }
         if (value && meal)
           current.preparedTasks[key] = {
             servings: mealPortions(current, meal),

@@ -1,5 +1,6 @@
 import { type Plan, type Meal, type State, type Progress } from "src/types";
 import { defaultMonday, isMonday, aggregate, ingredientKey } from "src/utils";
+import { validateFoodStorage } from "./foodStorage";
 import { changePortions } from "./scheduling";
 import { parseBackup, validatePlan } from "src/validations";
 export const freshProgress = (): Progress => ({
@@ -89,6 +90,8 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
     )
       preparedTasks[key] = task;
   }
+  for (const storage of Object.values(v.mealStorage || {}))
+    validateFoodStorage(storage);
   const savedFood = Array.isArray(v.savedFood) ? v.savedFood : [];
   const ids = new Set<string>();
   for (const food of savedFood) {
@@ -143,6 +146,7 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       )
         throw Error("Invalid saved preparation record.");
     }
+    if (food.storage) validateFoodStorage(food.storage);
     ids.add(food.id);
   }
   let timer = v.timer;

@@ -1,3 +1,4 @@
+import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
 import { useI18n, useText } from "src/i18n";
 import { currentMealLabel, movedFromOriginal } from "src/helpers/mealLabels";
 import { isCookingPreparation } from "src/helpers/preparation";
@@ -183,6 +184,16 @@ const CookingSession: React.FC<IProps> = () => {
                 </ul>
               </div>
             )}
+            <FoodStorageEditor
+              key={meal.id}
+              value={s.mealStorage?.[meal.id]}
+              onChange={(storage) =>
+                update((s) => ({
+                  ...s,
+                  mealStorage: { ...s.mealStorage, [meal.id]: storage },
+                }))
+              }
+            />
             <label className="readiness">
               <input
                 type="checkbox"

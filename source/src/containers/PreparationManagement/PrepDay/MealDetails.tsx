@@ -1,3 +1,5 @@
+import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
+import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useId, useState } from "react";
 import { ChevronDown, Clock, Snowflake, X } from "lucide-react";
 import { useI18n } from "src/i18n";
@@ -10,6 +12,7 @@ export default function MealDetails({
   meal: Meal;
   factor: number;
 }) {
+  const { s, update } = useMealPlanner();
   const { t, content, number, unit } = useI18n();
   const id = useId();
   const [pinned, setPinned] = useState(false);
@@ -82,6 +85,15 @@ export default function MealDetails({
             </li>
           ))}
         </ul>
+        <FoodStorageEditor
+          value={s.mealStorage?.[meal.id]}
+          onChange={(storage) =>
+            update((s) => ({
+              ...s,
+              mealStorage: { ...s.mealStorage, [meal.id]: storage },
+            }))
+          }
+        />
         <div className="prep-storage-note">
           <Snowflake size={15} />
           <p>

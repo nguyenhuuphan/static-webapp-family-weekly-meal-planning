@@ -1,3 +1,4 @@
+import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
 import { useState } from "react";
 import type { SavedFood } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -80,6 +81,12 @@ function FoodCard({ food }: { food: SavedFood }) {
       <p className="caption">
         {ct(food.meal.storage)} {ct(food.meal.thaw)}
       </p>
+      {food.kind === "prepared" && (
+        <FoodStorageEditor
+          value={food.storage}
+          onChange={(storage) => change({ storage })}
+        />
+      )}
       {food.kind === "prepared" && (
         <>
           <label>

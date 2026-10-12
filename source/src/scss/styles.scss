@@ -2690,3 +2690,7 @@ html[lang="vi"] .welcome h2 {
     display: block;
   }
 }
+
+.shopping-row { flex-wrap: wrap; }
+.pantry-amount { flex: 0 0 110px; font-size: 11px; }
+.pantry-amount input { width: 100%; }

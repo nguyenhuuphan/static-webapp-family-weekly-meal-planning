@@ -86,8 +86,8 @@ export function usePlannerController() {
     return () => clearTimeout(id);
   }, [toast]);
   const shopping = useMemo(
-    () => (state ? aggregate(state.plan, state.servings) : []),
-    [state?.plan, state?.servings],
+    () => state ? aggregate(state.plan, state.servings).map((item) => ({ ...item, toBuy: Math.max(0, Math.round((item.qty - (state.pantry?.[ingredientKey(item)] || 0)) * 100) / 100) })) : [],
+    [state?.plan, state?.servings, state?.pantry],
   );
   useEffect(() => {
     if (!state) return;
@@ -198,7 +198,7 @@ export function usePlannerController() {
         ).length,
       0,
     ),
-    needs = shopping.filter((i) => !s.progress.owned[ingredientKey(i)]),
+    needs = shopping.filter((i) => !s.progress.owned[ingredientKey(i)] && i.toBuy > 0),
     bought = needs.filter((i) => s.progress.shopping[ingredientKey(i)]).length,
     seconds = timerSeconds(s.timer, now),
     t = (v: string) => instruction(v, factor);

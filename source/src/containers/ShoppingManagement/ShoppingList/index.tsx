@@ -11,7 +11,7 @@ const ShoppingList: React.FC<IProps> = () => {
   const text = useText();
   const [filter, setFilter] = usePersistentState("planner:shopping-filter", "needed");
   const { t: tr, content: ct, number: num, unit } = useI18n();
-  const { s, needs, bought, shopping, toggle, search, setSearch } =
+  const { s, needs, bought, shopping, toggle, search, setSearch, update } =
     useMealPlanner();
   const normalize = (value: string) =>
     value
@@ -110,13 +110,28 @@ const ShoppingList: React.FC<IProps> = () => {
                       </span>
                     </label>
                     <span className="quantity">
-                      {num(i.qty)} {unit(i.unit)}
+                      {num(owned ? 0 : i.toBuy)} {unit(i.unit)}
+                      <small>{text("Cần dùng", "Required")}: {num(i.qty)} {unit(i.unit)}</small>
                     </span>
+                    <label className="pantry-amount">{text("Lượng có sẵn", "Amount at home")} ({unit(i.unit)})
+                      <input type="number" min="0" step="any" defaultValue={s.pantry?.[k] || 0}
+                        aria-label={`${text("Lượng có sẵn", "Amount at home")}: ${ct(i.name)} (${unit(i.unit)})`}
+                        key={`${k}:${s.pantry?.[k] || 0}`}
+                        onBlur={(event) => {
+                          const amount = Number(event.target.value);
+                          if (!Number.isFinite(amount) || amount < 0) { event.target.value = String(s.pantry?.[k] || 0); return; }
+                          if (amount === (s.pantry?.[k] || 0)) return;
+                          update((state) => ({ ...state, pantry: { ...state.pantry, [k]: amount }, progress: { ...state.progress, owned: { ...state.progress.owned, [k]: amount >= i.qty }, shopping: { ...state.progress.shopping, [k]: false } } }));
+                        }} />
+                    </label>
                     <label className="pantry-check">
                       <input
                         type="checkbox"
                         checked={!!owned}
-                        onChange={(e) => toggle("owned", k, e.target.checked)}
+                        onChange={(event) => {
+                          const owned = event.target.checked;
+                          update((state) => ({ ...state, pantry: { ...state.pantry, [k]: owned ? i.qty : 0 }, progress: { ...state.progress, owned: { ...state.progress.owned, [k]: owned } } }));
+                        }}
                       />
                       {tr("atHome")}
                     </label>

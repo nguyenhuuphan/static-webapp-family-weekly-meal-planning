@@ -43,6 +43,7 @@ export type Progress = {
 };
 export type Timer = { mealId: string; step: number; end: number } | null;
 export type State = {
+  pantry?: Record<string, number>;
   plan: Plan;
   servings: number;
   weekStart: string;

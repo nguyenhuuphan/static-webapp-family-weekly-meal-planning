@@ -48,6 +48,7 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
     ...v,
     weekStart: isMonday(v.weekStart) ? v.weekStart : defaultMonday(),
     progress,
+    pantry: v.pantry && typeof v.pantry === "object" && !Array.isArray(v.pantry) ? Object.fromEntries(Object.entries(v.pantry).filter(([, amount]) => typeof amount === "number" && Number.isFinite(amount) && amount >= 0)) : {},
     timer,
   };
 }

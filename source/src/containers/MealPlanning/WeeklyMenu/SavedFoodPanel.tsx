@@ -38,7 +38,7 @@ function FoodCard({ food }: { food: SavedFood }) {
   const factor = food.servings / food.baseServings;
   if (food.kind === "cooked") return <CookedFoodCard food={food} />;
   return (
-    <article className="saved-food-card" id={`food-${food.id}`} tabIndex={-1}>
+    <article className="saved-food-card">
       <h3>
         {ct(food.meal.main)} · {food.servings} {text("phần", "portions")}
       </h3>
@@ -322,6 +322,7 @@ function FoodCard({ food }: { food: SavedFood }) {
 }
 
 export default function SavedFoodPanel() {
+  const [query, setQuery] = useState("");
   const { s } = useMealPlanner();
   const text = useText();
   const { content: ct } = useI18n();
@@ -349,11 +350,81 @@ export default function SavedFoodPanel() {
           "Kept across weeks. Dates and storage durations are never extended automatically.",
         )}
       </p>
-      {active
-        .sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"))
-        .map((food) => (
-          <FoodCard key={food.id} food={food} />
-        ))}
+      <label>
+        {text("Tìm đồ cần sắp xếp", "Find saved food")}
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </label>
+      {[false, true].map((recipes) => {
+        const items = active.filter(
+          (food) =>
+            (food.kind === "recipe") === recipes &&
+            [
+              food.meal.main,
+              ct(food.meal.main),
+              food.date || "",
+              food.storageNote,
+            ]
+              .join(" ")
+              .toLocaleLowerCase()
+              .includes(query.toLocaleLowerCase()),
+        );
+        return (
+          <section
+            key={String(recipes)}
+            aria-label={
+              recipes
+                ? text("Công thức chưa lên lịch", "Unscheduled recipes")
+                : text("Thực phẩm đã chuẩn bị", "Prepared batches")
+            }
+          >
+            <h3>
+              {recipes
+                ? text("Công thức", "Recipes")
+                : text("Đồ đã sơ chế / đã nấu", "Prepared / cooked food")}{" "}
+              ({items.length})
+            </h3>
+            {items
+              .sort((a, b) =>
+                (a.date || "9999").localeCompare(b.date || "9999"),
+              )
+              .map((food) => (
+                <details
+                  className="compact-food"
+                  key={food.id}
+                  id={`food-${food.id}`}
+                  tabIndex={-1}
+                >
+                  <summary>
+                    <strong>
+                      {ct(food.meal.main)} · {food.servings}{" "}
+                      {text("phần", "portions")}
+                    </strong>
+                    <span>
+                      {food.kind === "cooked"
+                        ? text("Đã nấu", "Cooked")
+                        : food.kind === "prepared"
+                          ? text(
+                              "Đã sơ chế một phần / toàn bộ",
+                              "Partly / fully prepared",
+                            )
+                          : text("Công thức", "Recipe")}{" "}
+                      · {food.date || text("Chưa có lịch", "Not scheduled")}
+                    </span>
+                    <span>{text("Xem và sắp xếp", "Review and arrange")}</span>
+                  </summary>
+                  <FoodCard food={food} />
+                </details>
+              ))}
+            {!items.length && (
+              <p>{text("Không có mục phù hợp", "No matching items")}</p>
+            )}
+          </section>
+        );
+      })}
       {history.length > 0 && (
         <details>
           <summary>

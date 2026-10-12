@@ -2947,3 +2947,23 @@ select:focus-visible {
   width: fit-content;
   margin: 12px auto;
 }
+
+.compact-food {
+  margin-block: 12px;
+  border: 1px solid #d7ded6;
+  border-radius: 12px;
+  padding: 12px;
+  scroll-margin-top: 100px;
+}
+.compact-food > summary {
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.compact-food > summary span {
+  font-size: 0.85rem;
+}
+.compact-food[open] > summary {
+  margin-bottom: 16px;
+}

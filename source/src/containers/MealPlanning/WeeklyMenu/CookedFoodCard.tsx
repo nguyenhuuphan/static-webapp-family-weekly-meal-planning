@@ -25,7 +25,7 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
       }),
     );
   return (
-    <article className="saved-food-card" id={`food-${food.id}`} tabIndex={-1}>
+    <article className="saved-food-card">
       <h3>
         {ct(food.meal.main)} · {food.servings}{" "}
         {text("phần đã nấu", "cooked portions")}

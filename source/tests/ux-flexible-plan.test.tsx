@@ -47,6 +47,7 @@ it("preserves food after cancellation and schedules it into the next week", asyn
     { target: { value: "0" } },
   );
   const panel = within(screen.getByRole("region", { name: "Food to arrange" }));
+  fireEvent.click(panel.getByText("Review and arrange"));
   expect(readState().savedFood![0].servings).toBe(2);
   expect(
     (panel.getByRole("button", { name: "Save meal date" }) as HTMLButtonElement)

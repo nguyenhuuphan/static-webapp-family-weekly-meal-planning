@@ -87,6 +87,7 @@ it("finishes a two-person meal with one cooked leftover through the cooking scre
   fireEvent.click(screen.getByRole("button", { name: "Finish meal" }));
   expect(readState().mealResults?.[s.plan.meals[0].id].remaining).toBe(1);
   nav("This Week");
+  fireEvent.click(screen.getByText("Review and arrange"));
   expect(screen.getByText(/1 cooked portions/)).toBeTruthy();
   expect(
     screen.getByRole("link", { name: "USDA: Leftovers and Food Safety" }),

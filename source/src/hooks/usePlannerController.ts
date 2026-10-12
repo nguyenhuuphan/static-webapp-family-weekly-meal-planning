@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePersistentState } from "./usePersistentState";
 import { useI18n } from "src/i18n";
 import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
@@ -26,9 +27,9 @@ export function usePlannerController() {
   const { current: state, defaults } = useAppSelector((s) => s.planner);
   const dispatch = useAppDispatch(),
     store = useAppStore();
-  const [view, setView] = useState<View>("week"),
-    [selected, setSelected] = useState("mon-lunch"),
-    [editId, setEditId] = useState<string | null>(null),
+  const [view, setView] = usePersistentState<View>("planner:view", "week");
+  const [selected, setSelected] = usePersistentState("planner:selected", "mon-lunch");
+  const [editId, setEditId] = useState<string | null>(null),
     [advanced, setAdvanced] = useState(false),
     [json, setJson] = useState(""),
     [jsonError, setJsonError] = useState(""),
@@ -52,7 +53,7 @@ export function usePlannerController() {
             "Saved data could not be read. The original menu is shown. Export changes to keep a backup.",
           );
         }
-        setSelected(initial.plan.meals[0].id);
+        setSelected((id) => initial.plan.meals.some((meal) => meal.id === id) ? id : initial.plan.meals[0].id);
         dispatch(initialized({ current: initial, defaults: p }));
       })
       .catch((e) => {
@@ -86,6 +87,16 @@ export function usePlannerController() {
     () => (state ? aggregate(state.plan, state.servings) : []),
     [state?.plan, state?.servings],
   );
+  useEffect(() => {
+    if (!state) return;
+    const key = `planner:scroll:${view}:${selected}`;
+    let saved = 0;
+    try { saved = Number(localStorage.getItem(key)) || 0; } catch { /* Optional. */ }
+    const id = setTimeout(() => window.scrollTo(0, saved), 0);
+    const remember = () => { try { localStorage.setItem(key, String(window.scrollY)); } catch { /* Optional. */ } };
+    window.addEventListener("scroll", remember);
+    return () => { clearTimeout(id); window.removeEventListener("scroll", remember); };
+  }, [view, selected, !!state]);
   function navigate(v: View) {
     setView(v);
     setEditId(null);

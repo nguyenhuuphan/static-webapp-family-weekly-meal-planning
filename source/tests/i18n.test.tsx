@@ -37,9 +37,7 @@ async function boot(state?: State) {
   vi.spyOn(window, "confirm").mockReturnValue(true);
   if (state) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   const view = render(<App />);
-  await screen.findByRole("heading", {
-    name: /A little planning|Lên kế hoạch/,
-  });
+  await screen.findByRole("navigation");
   return view;
 }
 
@@ -176,6 +174,8 @@ describe("bilingual meal planner", () => {
     switchLanguage("vi");
     view.unmount();
     await boot();
+    expect(within(screen.getByRole("navigation")).getByRole("button", { name: "Đi chợ" }).getAttribute("aria-current")).toBe("page");
+    navigation("Tuần này");
     expect(
       screen.getByRole("heading", { name: "Thịt heo rim tỏi nước mắm" }),
     ).toBeTruthy();

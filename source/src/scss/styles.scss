@@ -2386,17 +2386,74 @@ html[lang="vi"] .welcome h2 {
     overflow-wrap: anywhere;
   }
 }
-.mobile-safety { display: none; }
-@media (max-width: 680px) {
-  .mobile-safety { display: inline-flex; flex-shrink: 0; }
-  .topbar { height: auto; min-height: 65px; flex-wrap: wrap; padding-block: 10px; }
-  .topbar-tools { flex-wrap: wrap; }
-  .page-content { padding-bottom: 120px; }
-  .shopping-row { flex-wrap: wrap; }
-  .pantry-amount { max-width: 140px; font-size: 12px; }
-  .pantry-amount input { width: 100%; }
+.mobile-safety {
+  display: none;
 }
-.quantity small { display: block; font-size: 11px; font-weight: normal; }
+@media (max-width: 680px) {
+  .mobile-safety {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+  .topbar {
+    height: auto;
+    min-height: 65px;
+    flex-wrap: wrap;
+    padding-block: 10px;
+  }
+  .topbar-tools {
+    flex-wrap: wrap;
+  }
+  .page-content {
+    padding-bottom: 120px;
+  }
+  .shopping-row {
+    flex-wrap: wrap;
+  }
+  .pantry-amount {
+    max-width: 140px;
+    font-size: 12px;
+  }
+  .pantry-amount input {
+    width: 100%;
+  }
+}
+.quantity small {
+  display: block;
+  font-size: 11px;
+  font-weight: normal;
+}
+.shopping-row {
+  flex-wrap: wrap;
+}
+.pantry-amount {
+  flex: 0 0 110px;
+  font-size: 11px;
+}
+.pantry-amount input {
+  width: 100%;
+}
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 100;
+  padding: 12px;
+  background: #fff5cc;
+  color: #302a20;
+}
+.skip-link:focus {
+  top: 12px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #716029;
+  outline-offset: 3px;
+}
+.field-error {
+  display: block;
+  font-size: 13px;
+}
 @media print {
   .week-companion {
     display: none;
@@ -2495,12 +2552,26 @@ html[lang="vi"] .welcome h2 {
   background: #fff5cc;
   border-radius: 12px;
 }
-.mobile-meal-picker { display: none; }
+.mobile-meal-picker {
+  display: none;
+}
 @media (max-width: 850px) {
-  .mobile-meal-picker { display: flex; gap: 12px; align-items: end; margin-bottom: 20px; }
-  .mobile-meal-picker label { flex: 1; min-width: 0; }
-  .mobile-meal-picker select { width: 100%; }
-  .cook-layout .meal-picker { display: none; }
+  .mobile-meal-picker {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+  .mobile-meal-picker label {
+    flex: 1;
+    min-width: 0;
+  }
+  .mobile-meal-picker select {
+    width: 100%;
+  }
+  .cook-layout .meal-picker {
+    display: none;
+  }
 }
 .cook-seasonings h3 {
   margin: 0 0 8px;
@@ -2701,7 +2772,11 @@ html[lang="vi"] .welcome h2 {
   font-weight: 700;
   color: #716029;
 }
-.cooking-instructions > li.current-instruction { background: #fff5cc; border-radius: 12px; padding-right: 12px; }
+.cooking-instructions > li.current-instruction {
+  background: #fff5cc;
+  border-radius: 12px;
+  padding-right: 12px;
+}
 .cooking-instructions .step-text {
   font-size: clamp(18px, 2vw, 23px);
   margin: 0 0 14px;
@@ -2718,11 +2793,39 @@ html[lang="vi"] .welcome h2 {
   }
 }
 
-.shopping-row { flex-wrap: wrap; }
-.pantry-amount { flex: 0 0 110px; font-size: 11px; }
-.pantry-amount input { width: 100%; }
-.timer-stack { position: fixed; bottom: 22px; right: 20px; z-index: 20; display: grid; gap: 8px; max-height: 42vh; overflow: auto; max-width: min(420px, 90vw); }
-.timer-stack .floating-timer { position: static; transform: none; min-width: 0; max-width: 100%; }
-.has-timers .page-content { padding-bottom: calc(42vh + 110px); }
-@media (max-width: 680px) { .timer-stack { bottom: 88px; right: 12px; left: 12px; max-width: none; } .timer-stack .floating-timer { width: auto; } }
-@media print { .timer-stack { display: none; } }
+.timer-stack {
+  position: fixed;
+  bottom: 22px;
+  right: 20px;
+  z-index: 20;
+  display: grid;
+  gap: 8px;
+  max-height: 42vh;
+  overflow: auto;
+  max-width: min(420px, 90vw);
+}
+.timer-stack .floating-timer {
+  position: static;
+  transform: none;
+  min-width: 0;
+  max-width: 100%;
+}
+.has-timers .page-content {
+  padding-bottom: calc(42vh + 110px);
+}
+@media (max-width: 680px) {
+  .timer-stack {
+    bottom: 88px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+  .timer-stack .floating-timer {
+    width: auto;
+  }
+}
+@media print {
+  .timer-stack {
+    display: none;
+  }
+}

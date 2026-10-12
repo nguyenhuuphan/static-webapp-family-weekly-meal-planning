@@ -1,5 +1,13 @@
 import { LanguageSwitcher, useI18n, useText } from "src/i18n";
-import { CalendarDays, Leaf, Clock, X, CheckCircle2, ShieldCheck } from "lucide-react";
+import { useEffect, useRef } from "react";
+import {
+  CalendarDays,
+  Leaf,
+  Clock,
+  X,
+  CheckCircle2,
+  ShieldCheck,
+} from "lucide-react";
 
 import { replaceMeal } from "src/domain";
 import { Button } from "src/modules/shared-main/components";
@@ -42,16 +50,43 @@ const AppLayout: React.FC<IProps> = () => {
     navigate,
   } = useMealPlanner();
   const text = useText();
+  const previousScreen = useRef("");
+  const screen = `${view}:${editing?.id || ""}:${advanced}`;
+  useEffect(() => {
+    if (previousScreen.current && previousScreen.current !== screen) {
+      const heading = document.querySelector<HTMLElement>("main h1");
+      heading?.setAttribute("tabindex", "-1");
+      heading?.focus({ preventScroll: true });
+    }
+    previousScreen.current = screen;
+  }, [screen]);
   const timers = [...(s.timers || []), ...(s.timer ? [s.timer] : [])];
-  const changeTimer = (target: NonNullable<Timer>, transform: (timer: NonNullable<Timer>) => Timer) => update((state) => ({
-    ...state,
-    timer: state.timer?.mealId === target.mealId && state.timer.step === target.step ? transform(state.timer) : state.timer,
-    timers: (state.timers || []).flatMap((timer) => { const next = timer.mealId === target.mealId && timer.step === target.step ? transform(timer) : timer; return next ? [next] : []; }),
-  }));
+  const changeTimer = (
+    target: NonNullable<Timer>,
+    transform: (timer: NonNullable<Timer>) => Timer,
+  ) =>
+    update((state) => ({
+      ...state,
+      timer:
+        state.timer?.mealId === target.mealId &&
+        state.timer.step === target.step
+          ? transform(state.timer)
+          : state.timer,
+      timers: (state.timers || []).flatMap((timer) => {
+        const next =
+          timer.mealId === target.mealId && timer.step === target.step
+            ? transform(timer)
+            : timer;
+        return next ? [next] : [];
+      }),
+    }));
   return (
     <div className={`app-shell ${timers.length ? "has-timers" : ""}`}>
+      <a className="skip-link" href="#main-content">
+        {text("Đến nội dung chính", "Skip to main content")}
+      </a>
       <Sidebar />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <header className="topbar">
           <span className="mobile-brand">
             <Leaf size={17} />
@@ -62,7 +97,13 @@ const AppLayout: React.FC<IProps> = () => {
             {tr("weekOf")} {localizedDate(s.weekStart, "Monday")}
           </span>
           <div className="topbar-tools">
-            <button className="mobile-safety icon-button" aria-label={tr("safetyStorage")} onClick={() => navigate("safety")}><ShieldCheck size={19} /></button>
+            <button
+              className="mobile-safety icon-button"
+              aria-label={tr("safetyStorage")}
+              onClick={() => navigate("safety")}
+            >
+              <ShieldCheck size={19} />
+            </button>
             <LanguageSwitcher />
             <span className="saved">
               <i />
@@ -166,24 +207,81 @@ const AppLayout: React.FC<IProps> = () => {
           </footer>
         </div>
       </main>
-      {timers.length > 0 && <div className="timer-stack" aria-label={text("Hẹn giờ đang chạy", "Cooking timers")}>
-        {timers.map((timer) => {
-          const remaining = timerSeconds(timer);
-          return <div className={`floating-timer ${remaining === 0 ? "finished" : ""}`} key={`${timer.mealId}:${timer.step}`}>
-            <Clock size={20} />
-            <div>
-              <strong role="timer">{remaining === 0 ? tr("timerFinished") : fmt(remaining)}</strong>
-              <span>{ct(plan.meals.find((meal) => meal.id === timer.mealId)?.main || "")} · {tr("stepMessage")} {timer.step + 1}</span>
-              {remaining === 0 && <span role="status">{tr("checkDoneness")}</span>}
-              <div className="actions">
-                <Button onClick={() => changeTimer(timer, (value) => value.paused !== undefined ? { ...value, paused: value.paused + 60 } : { ...value, end: Math.max(Date.now(), value.end) + 60000 })}>+1 {text("phút", "min")}</Button>
-                {remaining > 0 && <Button onClick={() => changeTimer(timer, (value) => value.paused !== undefined ? { ...value, end: Date.now() + value.paused * 1000, paused: undefined } : { ...value, paused: remaining })}>{timer.paused !== undefined ? text("Tiếp tục", "Resume") : text("Tạm dừng", "Pause")}</Button>}
+      {timers.length > 0 && (
+        <div
+          className="timer-stack"
+          aria-label={text("Hẹn giờ đang chạy", "Cooking timers")}
+        >
+          {timers.map((timer) => {
+            const remaining = timerSeconds(timer);
+            return (
+              <div
+                className={`floating-timer ${remaining === 0 ? "finished" : ""}`}
+                key={`${timer.mealId}:${timer.step}`}
+              >
+                <Clock size={20} />
+                <div>
+                  <strong role="timer">
+                    {remaining === 0 ? tr("timerFinished") : fmt(remaining)}
+                  </strong>
+                  <span>
+                    {ct(
+                      plan.meals.find((meal) => meal.id === timer.mealId)
+                        ?.main || "",
+                    )}{" "}
+                    · {tr("stepMessage")} {timer.step + 1}
+                  </span>
+                  {remaining === 0 && (
+                    <span role="status">{tr("checkDoneness")}</span>
+                  )}
+                  <div className="actions">
+                    <Button
+                      onClick={() =>
+                        changeTimer(timer, (value) =>
+                          value.paused !== undefined
+                            ? { ...value, paused: value.paused + 60 }
+                            : {
+                                ...value,
+                                end: Math.max(Date.now(), value.end) + 60000,
+                              },
+                        )
+                      }
+                    >
+                      +1 {text("phút", "min")}
+                    </Button>
+                    {remaining > 0 && (
+                      <Button
+                        onClick={() =>
+                          changeTimer(timer, (value) =>
+                            value.paused !== undefined
+                              ? {
+                                  ...value,
+                                  end: Date.now() + value.paused * 1000,
+                                  paused: undefined,
+                                }
+                              : { ...value, paused: remaining },
+                          )
+                        }
+                      >
+                        {timer.paused !== undefined
+                          ? text("Tiếp tục", "Resume")
+                          : text("Tạm dừng", "Pause")}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <button
+                  className="icon-button"
+                  aria-label={tr("dismissTimer")}
+                  onClick={() => changeTimer(timer, () => null)}
+                >
+                  <X size={17} />
+                </button>
               </div>
-            </div>
-            <button className="icon-button" aria-label={tr("dismissTimer")} onClick={() => changeTimer(timer, () => null)}><X size={17} /></button>
-          </div>;
-        })}
-      </div>}
+            );
+          })}
+        </div>
+      )}
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />

@@ -126,6 +126,20 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       ))
   )
     throw Error("Invalid purchase history.");
+  if (
+    v.avoidanceProfiles !== undefined &&
+    (!Array.isArray(v.avoidanceProfiles) ||
+      v.avoidanceProfiles.some(
+        (p) =>
+          !p ||
+          typeof p.id !== "string" ||
+          typeof p.name !== "string" ||
+          !p.name.trim() ||
+          !Array.isArray(p.avoid) ||
+          p.avoid.some((term) => typeof term !== "string" || !term.trim()),
+      ))
+  )
+    throw Error("Invalid avoidance profiles.");
   const mealServings = Object.fromEntries(
     Object.entries(v.mealServings || {}).filter(
       ([id, count]) =>

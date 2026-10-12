@@ -8,6 +8,7 @@ export const DAYS = [
 export type Day = (typeof DAYS)[number];
 export type Unit = "g" | "ml" | "each" | "tsp" | "tbsp";
 export type Ingredient = {
+  allergenTags?: string[];
   id?: string;
   name: string;
   qty: number;
@@ -56,6 +57,7 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  avoidanceProfiles?: { id: string; name: string; avoid: string[] }[];
   purchaseReceipts?: {
     id: string;
     key: string;

@@ -1,3 +1,4 @@
+import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { finishSavedFood } from "src/helpers/cooking";
 import CookedFoodCard from "./CookedFoodCard";
 import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
@@ -53,6 +54,7 @@ function FoodCard({ food }: { food: SavedFood }) {
               "Unscheduled recipe — not prepared food.",
             )}
       </p>
+      <AllergyWarnings ingredients={food.meal.ingredients} />
       {food.status === "scheduled" && (
         <p role="status">
           {text("Đã lên lịch", "Scheduled")}: {food.date} ·{" "}

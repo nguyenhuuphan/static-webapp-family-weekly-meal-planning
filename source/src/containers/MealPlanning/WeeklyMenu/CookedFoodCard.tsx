@@ -1,3 +1,4 @@
+import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useState } from "react";
 import type { SavedFood } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -49,6 +50,7 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
           USDA: Leftovers and Food Safety
         </a>
       </p>
+      <AllergyWarnings ingredients={food.meal.ingredients} />
       <FoodStorageEditor
         cookedOnly
         value={food.storage}

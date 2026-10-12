@@ -1,3 +1,4 @@
+import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useEffect, useState } from "react";
 import { CALENDAR_DAYS, calendarDate } from "src/helpers/calendar";
 import Stocktake from "src/containers/SettingsManagement/HouseholdSettings/Stocktake";
@@ -353,6 +354,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                               </p>
                             );
                           })()}
+                        <AllergyWarnings ingredients={m.ingredients} />
                         {!readOnly && <ScheduleControls meal={m} />}
                         <CalendarMeals date={date} type={type} />
                         {done && !readOnly && (

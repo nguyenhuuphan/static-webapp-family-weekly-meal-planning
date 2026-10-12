@@ -1,3 +1,4 @@
+import AvoidanceProfiles from "./AvoidanceProfiles";
 import { useState } from "react";
 import { useText, useI18n } from "src/i18n";
 import {
@@ -100,6 +101,7 @@ const HouseholdSettings: React.FC<IProps> = () => {
           </ul>
         </details>
       )}
+      <AvoidanceProfiles />
       <div className="settings-grid">
         <section className="panel">
           <h2>{text("Thông báo hẹn giờ", "Timer alerts")}</h2>

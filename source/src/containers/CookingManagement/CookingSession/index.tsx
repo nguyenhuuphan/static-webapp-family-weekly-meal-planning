@@ -1,3 +1,4 @@
+import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import MealOutcome from "./MealOutcome";
 import { beginCooking, cancelCooking } from "src/helpers/cooking";
 import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
@@ -142,6 +143,7 @@ const CookingSession: React.FC<IProps> = () => {
               {ct(meal.day)} · {ct(meal.type)} ·{" "}
               {tr("servingsCount", { count: mealPortions(s, meal) })}
             </div>
+            <AllergyWarnings ingredients={meal.ingredients} />
             <h2>{ct(meal.main)}</h2>
             {!s.progress.done[meal.id] && (
               <div className="batch-status">

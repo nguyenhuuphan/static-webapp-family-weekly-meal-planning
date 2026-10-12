@@ -1,3 +1,4 @@
+import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import { useI18n, useText } from "src/i18n";
 import { useEffect, useState, useRef } from "react";
@@ -248,6 +249,32 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                   ))}
                 </select>
               </label>
+              <label>
+                {text(
+                  "Thành phần dị ứng từ nhãn (tùy chọn)",
+                  "Allergen tags from label (optional)",
+                )}
+                <input
+                  data-optional
+                  value={(i.allergenTags || []).join(", ")}
+                  onChange={(e) =>
+                    setDraft((s) => ({
+                      ...s,
+                      ingredients: s.ingredients.map((item, j) =>
+                        j === n
+                          ? {
+                              ...item,
+                              allergenTags: e.target.value
+                                .split(",")
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            }
+                          : item,
+                      ),
+                    }))
+                  }
+                />
+              </label>
               <button
                 className="icon-button danger"
                 aria-label={tr("removeIngredientLabel", { count: n + 1 })}
@@ -270,6 +297,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
           ))}
         </div>
       </section>
+      <AllergyWarnings ingredients={draft.ingredients} />
       {(["prep", "steps"] as const).map((kind) => (
         <section className="panel" key={kind}>
           <div className="section-title">

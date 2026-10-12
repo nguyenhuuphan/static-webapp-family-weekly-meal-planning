@@ -3,12 +3,19 @@ export function validatePreparationLinks(meal: Meal): string[] {
   const errors: string[] = [],
     allocated = new Map<string, number>(),
     ids = new Set<string>();
-  for (const i of Array.isArray(meal.ingredients) ? meal.ingredients : [])
+  for (const i of Array.isArray(meal.ingredients) ? meal.ingredients : []) {
+    if (
+      i?.allergenTags !== undefined &&
+      (!Array.isArray(i.allergenTags) ||
+        i.allergenTags.some((s) => typeof s !== "string" || !s.trim()))
+    )
+      errors.push("Invalid allergen tags.");
     if (i?.id !== undefined) {
       if (typeof i.id !== "string" || !i.id || ids.has(i.id))
         errors.push("Ingredient IDs must be unique.");
       ids.add(i.id);
     }
+  }
   for (const task of Array.isArray(meal.prep) ? meal.prep : []) {
     if (task?.ingredients === undefined) continue;
     if (!Array.isArray(task.ingredients)) {

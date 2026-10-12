@@ -31,7 +31,11 @@ export function offlineBundle(): Plugin {
         for (const entry of await readdir(directory, { withFileTypes: true })) {
           const path = resolve(directory, entry.name);
           if (entry.isDirectory()) await walk(path);
-          else if (entry.name !== "sw.js" && !entry.name.endsWith(".map"))
+          else if (
+            entry.name !== "sw.js" &&
+            !entry.name.startsWith("_") &&
+            !entry.name.endsWith(".map")
+          )
             files.push(path);
         }
       }

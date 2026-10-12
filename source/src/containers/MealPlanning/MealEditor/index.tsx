@@ -256,8 +256,8 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                 )}
                 <input
                   data-optional
-                  value={(i.allergenTags || []).join(", ")}
-                  onChange={(e) =>
+                  defaultValue={(i.allergenTags || []).join(", ")}
+                  onBlur={(e) =>
                     setDraft((s) => ({
                       ...s,
                       ingredients: s.ingredients.map((item, j) =>

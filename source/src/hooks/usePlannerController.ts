@@ -334,16 +334,17 @@ export function usePlannerController() {
     const current = store.getState().planner.current;
     if (!undoEntry || current !== undoEntry.after) return;
     const physical =
-      JSON.stringify([
-        current.savedFood,
-        current.stockUses,
-        current.mealResults,
-      ]) !==
-      JSON.stringify([
-        undoEntry.before.savedFood,
-        undoEntry.before.stockUses,
-        undoEntry.before.mealResults,
-      ]);
+      current.savedFood?.some(
+        (food) =>
+          ["used", "discarded"].includes(food.status) &&
+          undoEntry.before.savedFood?.find((old) => old.id === food.id)
+            ?.status !== food.status,
+      ) ||
+      JSON.stringify([current.stockUses, current.mealResults]) !==
+        JSON.stringify([
+          undoEntry.before.stockUses,
+          undoEntry.before.mealResults,
+        ]);
     if (physical && !confirm(tr("undoPhysicalRecordConfirm"))) return;
     const next = structuredClone(undoEntry.before);
     next.corrections = [

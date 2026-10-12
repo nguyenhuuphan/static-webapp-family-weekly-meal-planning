@@ -2978,3 +2978,30 @@ select:focus-visible {
   gap: 6px;
   margin-block: 12px;
 }
+
+.cooking-screen-tools label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+.cooking-screen-tools p {
+  margin-top: 8px;
+}
+.offline-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+.allergy-warnings {
+  display: block;
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+}
+.allergy-warnings summary {
+  cursor: pointer;
+  min-height: 44px;
+}

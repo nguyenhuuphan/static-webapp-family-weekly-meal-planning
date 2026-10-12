@@ -1,3 +1,4 @@
+import CookingScreenTools from "./CookingScreenTools";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import MealOutcome from "./MealOutcome";
 import { beginCooking, cancelCooking } from "src/helpers/cooking";
@@ -66,6 +67,7 @@ const CookingSession: React.FC<IProps> = () => {
           "chooseYourMealCheckYourPortionsThenFollowThePreparedIngredientGuide",
         )}
       />
+      <CookingScreenTools />
       <div className="mobile-meal-picker">
         <label>
           {tr("chooseYourMeal")}

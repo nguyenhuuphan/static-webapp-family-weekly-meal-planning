@@ -93,14 +93,55 @@ export function shoppingRequirements(state: State) {
   return aggregate({ ...state.plan, meals }, state.servings, portions);
 }
 
+/** Purchases already embodied in saved food cannot also supply a new raw batch. */
+export function committedPurchases(state: State): Record<string, number> {
+  const amounts: Record<string, number> = {};
+  const add = (items: Ingredient[]) =>
+    items.forEach((item) => {
+      const normalized =
+        item.unit === "tbsp"
+          ? { ...item, qty: item.qty * 3, unit: "tsp" }
+          : item;
+      const key = ingredientKey(normalized);
+      amounts[key] = (amounts[key] || 0) + normalized.qty;
+    });
+  for (const food of state.savedFood || [])
+    if (
+      food.sourceWeek === state.weekStart &&
+      food.kind === "prepared" &&
+      food.status !== "assigned"
+    )
+      add(savedFoodCredits(food, food.servings));
+  for (const [id, credits] of Object.entries(state.mealCredits || {}))
+    if (state.mealCreditWeeks?.[id] === state.weekStart) add(credits);
+  return amounts;
+}
+
+export function availableAcquisitions(
+  state: State,
+  key: string,
+  committed = committedPurchases(state),
+) {
+  const home = state.pantry?.[key] || 0;
+  const used = committed[key] || 0;
+  return {
+    home: Math.max(0, home - used),
+    purchased: Math.max(
+      0,
+      (state.purchased?.[key]?.qty || 0) - Math.max(0, used - home),
+    ),
+  };
+}
+
 export function reconcileShopping(state: State): State {
   const next = structuredClone(state);
+  const committed = committedPurchases(next);
   for (const item of shoppingRequirements(next)) {
     const key = ingredientKey(item);
-    next.progress.owned[key] = (next.pantry?.[key] || 0) >= item.qty;
+    const available = availableAcquisitions(next, key, committed);
+    next.progress.owned[key] = available.home >= item.qty;
     next.progress.shopping[key] =
-      (next.purchased?.[key]?.qty || 0) >=
-      Math.max(0, item.qty - (next.pantry?.[key] || 0));
+      available.purchased >= Math.max(0, item.qty - available.home);
   }
   return next;
 }

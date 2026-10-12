@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { usePersistentState } from "./usePersistentState";
 import { useTimerAlarm } from "./useTimerAlarm";
 import { useI18n } from "src/i18n";
-import { shoppingRequirements } from "src/helpers/shopping";
+import {
+  availableAcquisitions,
+  committedPurchases,
+  shoppingRequirements,
+} from "src/helpers/shopping";
 import { retainPrepared, startWeek } from "src/helpers/scheduling";
 import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
@@ -126,24 +130,26 @@ export function usePlannerController() {
     const id = setTimeout(() => setToast(""), 4500);
     return () => clearTimeout(id);
   }, [toast]);
-  const shopping = useMemo(
-    () =>
-      state
-        ? shoppingRequirements(state).map((item) => ({
-            ...item,
-            toBuy: Math.max(
-              0,
-              Math.round(
-                (item.qty -
-                  (state.pantry?.[ingredientKey(item)] || 0) -
-                  (state.purchased?.[ingredientKey(item)]?.qty || 0)) *
-                  100,
-              ) / 100,
-            ),
-          }))
-        : [],
-    [state],
-  );
+  const shopping = useMemo(() => {
+    if (!state) return [];
+    const committed = committedPurchases(state);
+    return shoppingRequirements(state).map((item) => {
+      const available = availableAcquisitions(
+        state,
+        ingredientKey(item),
+        committed,
+      );
+      return {
+        ...item,
+        toBuy: Math.max(
+          0,
+          Math.round((item.qty - available.home - available.purchased) * 100) /
+            100,
+        ),
+        availableHome: available.home,
+      };
+    });
+  }, [state]);
   useEffect(() => {
     if (!state) return;
     const key = `planner:scroll:${view}:${selected}`;
@@ -284,9 +290,7 @@ export function usePlannerController() {
       0,
     ),
     needs = shopping.filter(
-      (i) =>
-        !s.progress.owned[ingredientKey(i)] &&
-        i.qty > (s.pantry?.[ingredientKey(i)] || 0),
+      (i) => !s.progress.owned[ingredientKey(i)] && i.qty > i.availableHome,
     ),
     bought = needs.filter((i) => s.progress.shopping[ingredientKey(i)]).length,
     seconds = timerSeconds(s.timer, now),

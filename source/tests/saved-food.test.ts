@@ -7,7 +7,10 @@ import {
   changePortions,
   startWeek,
 } from "../src/helpers/scheduling";
-import { shoppingRequirements } from "../src/helpers/shopping";
+import {
+  availableAcquisitions,
+  shoppingRequirements,
+} from "../src/helpers/shopping";
 const plan = data as Plan;
 const prepared = () => {
   const s = freshState(structuredClone(plan));
@@ -111,4 +114,22 @@ it("rejects malformed physical food records rather than silently losing them", (
   const s = changePortions(prepared(), plan.meals[0].id, 0);
   s.savedFood![0].preparedTasks[0].servings = -1;
   expect(() => hydrateState(s, plan)).toThrow();
+});
+
+it("does not count food held aside as ingredients available for a restored meal", () => {
+  const initial = prepared();
+  const ingredient = plan.meals[0].ingredients[0];
+  const key = ingredient.name + "|" + ingredient.unit;
+  initial.purchased = { [key]: { ...ingredient, qty: ingredient.qty } };
+  const cancelled = changePortions(initial, plan.meals[0].id, 0);
+  const restored = changePortions(cancelled, plan.meals[0].id, 2);
+  expect(availableAcquisitions(restored, key).purchased).toBe(0);
+  expect(restored.progress.shopping[key]).toBe(false);
+  expect(restored.savedFood![0].servings).toBe(2);
+  const fromPantry = {
+    ...restored,
+    purchased: {},
+    pantry: { [key]: ingredient.qty },
+  };
+  expect(availableAcquisitions(fromPantry, key).home).toBe(0);
 });

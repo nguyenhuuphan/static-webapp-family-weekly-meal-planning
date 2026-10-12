@@ -145,6 +145,14 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   return {
     ...v,
     mealServings,
+    mealCreditWeeks: Object.fromEntries(
+      Object.entries(v.mealCreditWeeks || {}).filter(
+        ([id, week]) =>
+          v.plan.meals.some((m) => m.id === id) &&
+          typeof week === "string" &&
+          (!week || isMonday(week)),
+      ),
+    ),
     lastMealServings: Object.fromEntries(
       Object.entries(v.lastMealServings || {}).filter(
         ([id, count]) =>
@@ -213,6 +221,7 @@ export function resetForMeal(s: State, id: string): State {
   for (const key of Object.keys(next.preparedTasks || {}))
     if (key.startsWith(id + ":")) delete next.preparedTasks![key];
   if (next.mealCredits) delete next.mealCredits[id];
+  if (next.mealCreditWeeks) delete next.mealCreditWeeks[id];
   delete next.progress.ready[id];
   delete next.progress.done[id];
   delete next.progress.cook[id];

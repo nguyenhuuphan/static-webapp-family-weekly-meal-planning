@@ -54,6 +54,7 @@ export function changePortions(state: State, id: string, count: number): State {
     next.savedFood.push({
       id: crypto.randomUUID(),
       kind: "prepared",
+      sourceWeek: state.mealCreditWeeks?.[id] || state.weekStart,
       meal: structuredClone(meal),
       baseServings: state.plan.servings,
       servings: Math.max(...Object.values(surplus).map((p) => p.servings)),
@@ -123,6 +124,7 @@ export function startWeek(state: State, weekStart: string): State {
     mealServings: {},
     lastMealServings: {},
     mealCredits: {},
+    mealCreditWeeks: {},
     purchased: {},
     preparedTasks: {},
     progress: {
@@ -204,6 +206,10 @@ export function assignFood(
   next.plan.meals = next.plan.meals.map((m) =>
     m.id === destinationId ? recipe : m,
   );
+  next.mealCreditWeeks = {
+    ...next.mealCreditWeeks,
+    [destinationId]: food.sourceWeek || "",
+  };
   next.mealCredits = {
     ...next.mealCredits,
     [destinationId]: savedFoodCredits(food, count),

@@ -56,6 +56,7 @@ export type Timer = {
 export type State = {
   lastMealServings?: Record<string, number>;
   mealCredits?: Record<string, Ingredient[]>;
+  mealCreditWeeks?: Record<string, string>;
   preparedTasks?: Record<string, { servings: number; at: string }>;
   savedFood?: SavedFood[];
   mealServings?: Record<string, number>;
@@ -72,6 +73,7 @@ export type State = {
   timers?: NonNullable<Timer>[];
 };
 export type SavedFood = {
+  sourceWeek?: string;
   id: string;
   kind: "prepared" | "recipe";
   meal: Meal;

@@ -1,6 +1,10 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { State, Plan, Progress } from "src/types";
-import { shoppingRequirements } from "src/helpers/shopping";
+import {
+  availableAcquisitions,
+  committedPurchases,
+  shoppingRequirements,
+} from "src/helpers/shopping";
 import { aggregate, ingredientKey, mealPortions } from "src/utils";
 import { freshProgress } from "src/helpers";
 interface IPlannerState {
@@ -46,7 +50,16 @@ const plannerSlice = createSlice({
           if (item)
             current.purchased[key] = {
               ...item,
-              qty: Math.max(0, item.qty - (current.pantry?.[key] || 0)),
+              qty:
+                Math.max(
+                  0,
+                  item.qty - availableAcquisitions(current, key).home,
+                ) +
+                Math.max(
+                  0,
+                  (committedPurchases(current)[key] || 0) -
+                    (current.pantry?.[key] || 0),
+                ),
             };
         }
       }

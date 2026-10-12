@@ -74,6 +74,14 @@ export function useI18n(): I18n {
   return value;
 }
 
+export function useText() {
+  const { language } = useI18n();
+  return useMemo(
+    () => (vi: string, en: string) => (language === "vi" ? vi : en),
+    [language],
+  );
+}
+
 export function LanguageSwitcher() {
   const { language, setLanguage, t } = useI18n();
   return (

@@ -1,5 +1,5 @@
-import { useI18n } from "src/i18n";
-import { useState } from "react";
+import { useI18n, useText } from "src/i18n";
+import { useEffect, useState } from "react";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import type { Meal, Ingredient, Step, Unit } from "src/types";
 import { validateMealDraft } from "./schema";
@@ -11,9 +11,26 @@ interface IProps {
   onCancel: () => void;
 }
 const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
+  const text = useText();
+  const draftKey = `meal-draft:${meal.id}`;
   const { t: tr, content: ct, unit, error: translateError } = useI18n();
-  const [draft, setDraft] = useState<Meal>(structuredClone(meal)),
+  const [draft, setDraft] = useState<Meal>(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(draftKey) || "null");
+      if (saved?.baseline === JSON.stringify(meal)) return saved.draft;
+    } catch { /* Draft persistence is optional. */ }
+    return structuredClone(meal);
+  }),
     [error, setError] = useState("");
+  const dirty = JSON.stringify(draft) !== JSON.stringify(meal);
+  useEffect(() => {
+    try { sessionStorage.setItem(draftKey, JSON.stringify({ baseline: JSON.stringify(meal), draft })); } catch { /* Keep editing in memory. */ }
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (dirty) { event.preventDefault(); event.returnValue = ""; }
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [draft, draftKey, dirty, meal]);
   const field = (k: keyof Meal, v: unknown) =>
     setDraft((s) => ({ ...s, [k]: v }));
   function ingredient(index: number, k: keyof Ingredient, v: string | number) {
@@ -46,7 +63,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
         tr("saveChangesShoppingChecksAndThisMealSPrepReadinessAndCompletion"),
       )
     )
-      onSave(draft);
+      { try { sessionStorage.removeItem(draftKey); } catch { /* Optional draft storage. */ } onSave(draft); }
   }
   return (
     <>
@@ -65,6 +82,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
         </button>
       </div>
       <div className="panel">
+        {dirty && <p role="status">{text("Bản nháp được giữ trong phiên này khi chuyển trang.", "Your draft is kept in this session when you switch pages.")}</p>}
         <div className="field-grid">
           <label>
             {tr("mainDish")}

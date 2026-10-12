@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { Meal } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useI18n, useText } from "src/i18n";
-import { swapSchedule } from "src/helpers/scheduling";
+import { swapSchedule, changePortions } from "src/helpers/scheduling";
+import { mealPortions } from "src/utils";
 import { Button } from "src/modules/shared-main/components";
 
 export default function ScheduleControls({ meal }: { meal: Meal }) {
@@ -15,6 +16,24 @@ export default function ScheduleControls({ meal }: { meal: Meal }) {
   const other = s.plan.meals.find((m) => m.id === target);
   return (
     <div className="schedule-controls">
+      <label>
+        {text("Người ăn", "Diners")}
+        <select
+          aria-label={`${text("Người ăn", "Diners")}: ${ct(meal.day)} · ${ct(meal.type)}`}
+          value={mealPortions(s, meal)}
+          onChange={(e) =>
+            update((s) => changePortions(s, meal.id, Number(e.target.value)))
+          }
+        >
+          {Array.from({ length: s.servings + 1 }, (_, count) => (
+            <option key={count} value={count}>
+              {count === 0
+                ? text("Không ăn tại nhà", "Not eating at home")
+                : `${count} ${text("người ăn", "diners")}`}
+            </option>
+          ))}
+        </select>
+      </label>
       <Button aria-expanded={open} onClick={() => setOpen(!open)}>
         {text("Đổi lịch", "Move meal")}
       </Button>

@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { State, Plan, Progress } from "src/types";
+import { aggregate, ingredientKey } from "src/utils";
 import { freshProgress } from "src/helpers";
 interface IPlannerState {
   current: State | null;
@@ -21,6 +22,23 @@ const plannerSlice = createSlice({
       if (!state.current) return;
       const { group, key, value } = action.payload;
       state.current.progress[group][key] = value;
+      if (group === "shopping") {
+        const current = state.current;
+        current.purchased ??= {};
+        if (!value) delete current.purchased[key];
+        else {
+          const item = aggregate(
+            current.plan,
+            current.servings,
+            current.mealServings,
+          ).find((i) => ingredientKey(i) === key);
+          if (item)
+            current.purchased[key] = {
+              ...item,
+              qty: Math.max(0, item.qty - (current.pantry?.[key] || 0)),
+            };
+        }
+      }
       if (group === "prep" && !value)
         delete state.current.progress.ready[key.slice(0, key.lastIndexOf(":"))];
     },

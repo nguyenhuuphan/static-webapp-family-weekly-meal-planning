@@ -12,6 +12,7 @@ import type { MessageKey } from "src/i18n/locales/en";
 import { groupPreparation, type PrepOperation } from "src/helpers/preparation";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
+import { mealPortions } from "src/utils";
 import MealDetails from "./MealDetails";
 
 const operationKeys = {
@@ -63,9 +64,14 @@ const PrepDay: React.FC = () => {
     after: boolean;
     plan: string;
   } | null>("prep:undo", null);
-  const { t: tr, content: ct, number, unit } = useI18n();
-  const { s, plan, factor, t, navigate, toggle, update } = useMealPlanner();
-  const prepIdentity = JSON.stringify([plan, s.servings, s.weekStart]);
+  const { t: tr, content: ct, number, unit, instruction } = useI18n();
+  const { s, plan, navigate, toggle, update } = useMealPlanner();
+  const prepIdentity = JSON.stringify([
+    plan,
+    s.servings,
+    s.weekStart,
+    s.mealServings,
+  ]);
   const complete = (keys: string[], checked: boolean) => {
     setUndo({
       before: Object.fromEntries(
@@ -98,10 +104,10 @@ const PrepDay: React.FC = () => {
   };
   const groups = useMemo(
     () =>
-      groupPreparation(plan, s.servings).filter(
+      groupPreparation(plan, s.servings, s.mealServings).filter(
         (group) => group.operation !== "prepareSauces",
       ),
-    [plan, s.servings],
+    [plan, s.servings, s.mealServings],
   );
   const completedGroups = groups.filter((group) =>
     group.allocations.every((allocation) => s.progress.prep[allocation.key]),
@@ -358,18 +364,29 @@ const PrepDay: React.FC = () => {
                                 )}
                                 <MealDetails
                                   meal={allocation.meal}
-                                  factor={factor}
+                                  factor={
+                                    mealPortions(s, allocation.meal) /
+                                    plan.servings
+                                  }
                                 />
                               </div>
                               <p className="prep-portion-instruction">
                                 {["sliceThin", "cutChicken"].includes(
                                   group.operation,
                                 )
-                                  ? t(allocation.task.text)
+                                  ? instruction(
+                                      allocation.task.text,
+                                      mealPortions(s, allocation.meal) /
+                                        plan.servings,
+                                    )
                                       .split(/\.\s+/)
                                       .slice(1)
                                       .join(". ")
-                                  : t(allocation.task.text)}
+                                  : instruction(
+                                      allocation.task.text,
+                                      mealPortions(s, allocation.meal) /
+                                        plan.servings,
+                                    )}
                               </p>
                               {["sliceThin", "cutChicken"].includes(
                                 group.operation,
@@ -378,7 +395,13 @@ const PrepDay: React.FC = () => {
                                   <summary>
                                     {tr("prepOriginalInstruction")}
                                   </summary>
-                                  <p>{t(allocation.task.text)}</p>
+                                  <p>
+                                    {instruction(
+                                      allocation.task.text,
+                                      mealPortions(s, allocation.meal) /
+                                        plan.servings,
+                                    )}
+                                  </p>
                                 </details>
                               )}
                               <div className="prep-storage-inline">

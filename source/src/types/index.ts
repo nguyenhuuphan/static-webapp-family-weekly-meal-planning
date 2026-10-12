@@ -53,6 +53,11 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  mealServings?: Record<string, number>;
+  purchased?: Record<
+    string,
+    { name: string; unit: string; category: string; qty: number }
+  >;
   pantry?: Record<string, number>;
   plan: Plan;
   servings: number;

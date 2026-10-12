@@ -34,6 +34,26 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
         } else if (typeof value === "boolean") progress[k][id] = value;
       }
   }
+  const mealServings = Object.fromEntries(
+    Object.entries(v.mealServings || {}).filter(
+      ([id, count]) =>
+        v.plan.meals.some((m) => m.id === id) &&
+        Number.isInteger(count) &&
+        count >= 0 &&
+        count <= v.servings,
+    ),
+  );
+  const purchased = Object.fromEntries(
+    Object.entries(v.purchased || {}).filter(
+      ([, item]) =>
+        item &&
+        typeof item.name === "string" &&
+        ["g", "ml", "each", "tsp", "tbsp"].includes(item.unit) &&
+        typeof item.category === "string" &&
+        Number.isFinite(item.qty) &&
+        item.qty >= 0,
+    ),
+  );
   let timer = v.timer;
   if (
     timer &&
@@ -47,6 +67,8 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
     timer = null;
   return {
     ...v,
+    mealServings,
+    purchased,
     weekStart: isMonday(v.weekStart) ? v.weekStart : defaultMonday(),
     progress,
     pantry:
@@ -93,10 +115,16 @@ export function replaceMeal(s: State, id: string, updated: Meal): State {
   const next = resetForMeal(s, id);
   next.plan.meals = next.plan.meals.map((m) => (m.id === id ? updated : m));
   const before = new Map(
-    aggregate(s.plan, s.servings).map((i) => [ingredientKey(i), i.qty]),
+    aggregate(s.plan, s.servings, s.mealServings).map((i) => [
+      ingredientKey(i),
+      i.qty,
+    ]),
   );
   const after = new Map(
-    aggregate(next.plan, next.servings).map((i) => [ingredientKey(i), i.qty]),
+    aggregate(next.plan, next.servings, next.mealServings).map((i) => [
+      ingredientKey(i),
+      i.qty,
+    ]),
   );
   for (const key of new Set([...before.keys(), ...after.keys()])) {
     if (before.get(key) !== after.get(key)) {

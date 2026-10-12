@@ -116,10 +116,16 @@ export function isCookingPreparation(meal: Meal, taskIndex: number): boolean {
   );
 }
 
-export function groupPreparation(plan: Plan, servings: number): PrepGroup[] {
+export function groupPreparation(
+  plan: Plan,
+  servings: number,
+  portions: Record<string, number> = {},
+): PrepGroup[] {
   const groups = new Map<string, PrepGroup>();
-  const factor = servings / plan.servings;
   for (const meal of plan.meals) {
+    const count = portions[meal.id] ?? servings;
+    if (!count) continue;
+    const factor = count / plan.servings;
     meal.prep.forEach((task, taskIndex) => {
       const baseline = original.meals.find((item) => item.id === meal.id);
       const candidate = profiles[meal.id]?.[taskIndex];

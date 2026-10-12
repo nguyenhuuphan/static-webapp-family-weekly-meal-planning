@@ -11,7 +11,7 @@ import {
   Info,
 } from "lucide-react";
 import { DAYS } from "src/types";
-import { isPrepared, round } from "src/domain";
+import { isPrepared, round, mealPortions } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { fmt } from "src/utils/formatTime";
@@ -113,7 +113,7 @@ const CookingSession: React.FC<IProps> = () => {
           <section className="panel cook-header">
             <div className="eyebrow">
               {ct(meal.day)} · {ct(meal.type)} ·{" "}
-              {tr("servingsCount", { count: s.servings })}
+              {tr("servingsCount", { count: mealPortions(s, meal) })}
             </div>
             <h2>{ct(meal.main)}</h2>
             <p>{ct(meal.side)}</p>

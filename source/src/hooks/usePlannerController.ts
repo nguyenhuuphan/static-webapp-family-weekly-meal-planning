@@ -5,6 +5,7 @@ import { useI18n } from "src/i18n";
 import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
 import {
+  mealPortions,
   freshState,
   hydrateState,
   aggregate,
@@ -124,17 +125,19 @@ export function usePlannerController() {
   const shopping = useMemo(
     () =>
       state
-        ? aggregate(state.plan, state.servings).map((item) => ({
-            ...item,
-            toBuy: Math.max(
-              0,
-              Math.round(
-                (item.qty - (state.pantry?.[ingredientKey(item)] || 0)) * 100,
-              ) / 100,
-            ),
-          }))
+        ? aggregate(state.plan, state.servings, state.mealServings).map(
+            (item) => ({
+              ...item,
+              toBuy: Math.max(
+                0,
+                Math.round(
+                  (item.qty - (state.pantry?.[ingredientKey(item)] || 0)) * 100,
+                ) / 100,
+              ),
+            }),
+          )
         : [],
-    [state?.plan, state?.servings, state?.pantry],
+    [state?.plan, state?.servings, state?.pantry, state?.mealServings],
   );
   useEffect(() => {
     if (!state) return;
@@ -234,27 +237,36 @@ export function usePlannerController() {
   if (!state || !defaults) return { error, model: null };
   const s = state,
     plan = s.plan,
-    factor = s.servings / plan.servings,
     meal = plan.meals.find((m) => m.id === selected) || plan.meals[0],
+    factor = mealPortions(s, meal) / plan.servings,
     editing = plan.meals.find((m) => m.id === editId),
     pos = Math.min(
       Math.max(0, s.progress.cook[meal.id] || 0),
       meal.steps.length - 1,
     ),
     step = meal.steps[pos],
-    ready = isPrepared(s, meal) && s.progress.ready[meal.id],
+    ready =
+      mealPortions(s, meal) > 0 &&
+      isPrepared(s, meal) &&
+      s.progress.ready[meal.id],
     doneCount = plan.meals.filter((m) => s.progress.done[m.id]).length,
     prepTotal = plan.meals.reduce(
-      (n, m) => n + m.prep.filter((_, i) => !isCookingPreparation(m, i)).length,
+      (n, m) =>
+        n +
+        (mealPortions(s, m) > 0
+          ? m.prep.filter((_, i) => !isCookingPreparation(m, i)).length
+          : 0),
       0,
     ),
     prepDone = plan.meals.reduce(
       (n, m) =>
         n +
-        m.prep.filter(
-          (_, i) =>
-            !isCookingPreparation(m, i) && s.progress.prep[m.id + ":" + i],
-        ).length,
+        (mealPortions(s, m) > 0
+          ? m.prep.filter(
+              (_, i) =>
+                !isCookingPreparation(m, i) && s.progress.prep[m.id + ":" + i],
+            ).length
+          : 0),
       0,
     ),
     needs = shopping.filter(

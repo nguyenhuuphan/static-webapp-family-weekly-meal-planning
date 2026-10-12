@@ -59,6 +59,11 @@ it("preserves food after cancellation and schedules it into the next week", asyn
   });
   fireEvent.click(panel.getByRole("button", { name: "Save meal date" }));
   expect(readState().savedFood![0].date).toBe("2026-10-20");
+  expect(
+    within(panel.getByRole("region", { name: "Prepared batches" })).queryByText(
+      "Review and arrange",
+    ),
+  ).toBeNull();
   expect(readState().savedFood![0].preparedTasks[0].at).toBe(
     "2026-10-12T10:00:00Z",
   );

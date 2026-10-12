@@ -328,9 +328,8 @@ export default function SavedFoodPanel() {
   const { s } = useMealPlanner();
   const text = useText();
   const { content: ct } = useI18n();
-  const active = (s.savedFood || []).filter((f) =>
-    ["pending", "scheduled"].includes(f.status),
-  );
+  const active = (s.savedFood || []).filter((f) => f.status === "pending");
+  const scheduled = (s.savedFood || []).filter((f) => f.status === "scheduled");
   const history = (s.savedFood || []).filter(
     (f) => !["pending", "scheduled"].includes(f.status),
   );
@@ -427,6 +426,21 @@ export default function SavedFoodPanel() {
           </section>
         );
       })}
+      {scheduled.length > 0 && (
+        <details>
+          <summary>
+            {text("Đã lên lịch", "Scheduled meals")} ({scheduled.length})
+          </summary>
+          {scheduled.map((food) => (
+            <details key={food.id} id={`food-${food.id}`} tabIndex={-1}>
+              <summary>
+                {ct(food.meal.main)} · {food.date} · {ct(food.type || "Dinner")}
+              </summary>
+              <FoodCard food={food} />
+            </details>
+          ))}
+        </details>
+      )}
       {history.length > 0 && (
         <details>
           <summary>

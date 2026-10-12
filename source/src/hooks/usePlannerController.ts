@@ -1,3 +1,4 @@
+import { uniqueSavedRecipes } from "src/helpers/savedRecipes";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { usePersistentState } from "./usePersistentState";
 import { useTimerAlarm } from "./useTimerAlarm";
@@ -131,7 +132,9 @@ export function usePlannerController() {
             )?.id || initial.plan.meals[0].id
           );
         });
-        dispatch(initialized({ current: initial, defaults: p }));
+        dispatch(
+          initialized({ current: uniqueSavedRecipes(initial), defaults: p }),
+        );
       })
       .catch((e) => {
         if (active) setError(String(e.message));
@@ -302,7 +305,7 @@ export function usePlannerController() {
     const current = store.getState().planner.current;
     if (current) {
       try {
-        const next = fn(current);
+        const next = uniqueSavedRecipes(fn(current));
         if (next === current) return true;
         dispatch(stateChanged(next));
         setUndoEntry({

@@ -37,8 +37,11 @@ export default function CalendarMeals({
             onClick={() =>
               setTimeout(() => {
                 const target = document.getElementById(`food-${f.id}`);
-                const details = target?.closest("details");
-                if (details) details.open = true;
+                let details = target?.closest("details");
+                while (details) {
+                  details.open = true;
+                  details = details.parentElement?.closest("details");
+                }
                 target?.focus();
               }, 0)
             }

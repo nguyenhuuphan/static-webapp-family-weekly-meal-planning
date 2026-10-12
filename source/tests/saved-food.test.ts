@@ -1,3 +1,4 @@
+import { uniqueSavedRecipes } from "../src/helpers/savedRecipes";
 import { expect, it } from "vitest";
 import { freshState, hydrateState, validatePlan } from "../src/domain";
 import type { Plan } from "../src/types";
@@ -132,4 +133,34 @@ it("does not count food held aside as ingredients available for a restored meal"
     pantry: { [key]: ingredient.qty },
   };
   expect(availableAcquisitions(fromPantry, key).home).toBe(0);
+});
+
+it("does not create a displaced duplicate when restoring the same recipe", () => {
+  const s = startWeek(
+    changePortions(prepared(), plan.meals[0].id, 0),
+    "2026-10-19",
+  );
+  const next = assignFood(s, s.savedFood![0].id, plan.meals[0].id);
+  expect(next.savedFood).toHaveLength(1);
+  expect(next.savedFood![0].status).toBe("assigned");
+});
+
+it("cleans duplicate suggestions without merging physical batches", () => {
+  const s = changePortions(prepared(), plan.meals[0].id, 0);
+  const food = s.savedFood![0];
+  s.savedFood!.push(
+    { ...structuredClone(food), id: "second-batch" },
+    {
+      ...structuredClone(food),
+      id: "duplicate-recipe",
+      kind: "recipe",
+      preparedTasks: {},
+    },
+  );
+  const cleaned = uniqueSavedRecipes(s);
+  expect(cleaned.savedFood!.filter((f) => f.status === "pending")).toHaveLength(
+    2,
+  );
+  expect(cleaned.savedFood![2].status).toBe("discarded");
+  expect(cleaned.savedFood![0]).toEqual(food);
 });

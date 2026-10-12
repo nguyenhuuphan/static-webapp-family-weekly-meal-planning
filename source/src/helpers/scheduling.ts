@@ -1,3 +1,4 @@
+import { recipeKey } from "./savedRecipes";
 import { stocktakeCandidates } from "./inventory";
 import type { State, SavedFood } from "src/types";
 import {
@@ -286,16 +287,26 @@ export function assignFood(
     throw Error("There are not enough portions for this meal.");
   const next = changePortions(state, destinationId, count);
   next.savedFood ??= [];
-  next.savedFood.push({
-    id: crypto.randomUUID(),
-    kind: "recipe",
-    meal: structuredClone(destination),
-    baseServings: state.plan.servings,
-    servings: count,
-    preparedTasks: {},
-    storageNote: "",
-    status: "pending",
-  });
+  if (
+    recipeKey(food.meal, food.baseServings) !==
+      recipeKey(destination, state.plan.servings) &&
+    !next.savedFood.some(
+      (f) =>
+        ["pending", "scheduled"].includes(f.status) &&
+        recipeKey(f.meal, f.baseServings) ===
+          recipeKey(destination, state.plan.servings),
+    )
+  )
+    next.savedFood.push({
+      id: crypto.randomUUID(),
+      kind: "recipe",
+      meal: structuredClone(destination),
+      baseServings: state.plan.servings,
+      servings: count,
+      preparedTasks: {},
+      storageNote: "",
+      status: "pending",
+    });
   // Convert quantities if the saved food came from a different recipe base.
   const recipe = {
     ...structuredClone(food.meal),

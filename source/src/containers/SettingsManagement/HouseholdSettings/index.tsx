@@ -1,4 +1,5 @@
-import { useI18n } from "src/i18n";
+import { useState } from "react";
+import { useText, useI18n } from "src/i18n";
 import {
   ArrowRight,
   Users,
@@ -32,6 +33,9 @@ const HouseholdSettings: React.FC<IProps> = () => {
     setJsonError,
     setToast,
   } = useMealPlanner();
+  const text = useText();
+  const [servingsDraft, setServingsDraft] = useState(String(s.servings));
+  const validServings = Number.isInteger(Number(servingsDraft)) && Number(servingsDraft) >= 1 && Number(servingsDraft) <= 12;
   return (
     <>
       <Heading
@@ -57,27 +61,17 @@ const HouseholdSettings: React.FC<IProps> = () => {
               type="number"
               min="1"
               max="12"
-              value={s.servings}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                if (!Number.isInteger(n) || n < 1 || n > 12) return;
-                if (
-                  n !== s.servings &&
-                  confirm(
-                    tr(
-                      "changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch",
-                    ),
-                  )
-                )
-                  update((x) => ({
-                    ...x,
-                    servings: n,
-                    progress: freshProgress(),
-                    timer: null,
-                  }));
-              }}
+              value={servingsDraft}
+              onChange={(e) => setServingsDraft(e.target.value)}
+              aria-invalid={!validServings}
             />
           </label>
+          <p>{text("Khẩu phần mới sẽ điều chỉnh lượng nguyên liệu và đặt lại tiến độ.", "Applying new servings adjusts quantities and resets progress.")}</p>
+          <Button disabled={!validServings || Number(servingsDraft) === s.servings} onClick={() => {
+            if (confirm(tr("changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch"))) {
+              update((x) => ({ ...x, servings: Number(servingsDraft), progress: freshProgress(), timer: null, timers: [] }));
+            }
+          }}>{text("Áp dụng khẩu phần", "Apply servings")}</Button>
           <p className="caption">
             {tr(
               "ingredientsAndBracketedInstructionAmountsScaleTogetherEggCountsMayBeFractional",

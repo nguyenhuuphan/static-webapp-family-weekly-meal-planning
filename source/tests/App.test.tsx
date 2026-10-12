@@ -175,6 +175,8 @@ describe("React feature parity", () => {
       screen.getByRole("spinbutton", { name: "People per meal" }),
       { target: { value: "4" } },
     );
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).servings).toBe(2);
+    fireEvent.click(screen.getByRole("button", { name: "Apply servings" }));
     nav("Shopping");
     expect(
       screen.getByText(`${new Intl.NumberFormat("en-GB").format(1000)} g`),

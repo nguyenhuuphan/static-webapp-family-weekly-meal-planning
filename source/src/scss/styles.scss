@@ -2482,6 +2482,13 @@ html[lang="vi"] .welcome h2 {
   background: #fff5cc;
   border-radius: 12px;
 }
+.mobile-meal-picker { display: none; }
+@media (max-width: 850px) {
+  .mobile-meal-picker { display: flex; gap: 12px; align-items: end; margin-bottom: 20px; }
+  .mobile-meal-picker label { flex: 1; min-width: 0; }
+  .mobile-meal-picker select { width: 100%; }
+  .cook-layout .meal-picker { display: none; }
+}
 .cook-seasonings h3 {
   margin: 0 0 8px;
 }

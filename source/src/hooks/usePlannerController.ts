@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { usePersistentState } from "./usePersistentState";
 import { useTimerAlarm } from "./useTimerAlarm";
 import { useI18n } from "src/i18n";
@@ -24,6 +24,7 @@ import {
   progressReset,
 } from "src/redux/plannerSlice";
 export function usePlannerController() {
+  const hadRememberedMeal = useRef((() => { try { return !!localStorage.getItem("planner:selected"); } catch { return false; } })());
   const { t: tr, instruction, source } = useI18n();
   const { current: state, defaults } = useAppSelector((s) => s.planner);
   const dispatch = useAppDispatch(),
@@ -55,7 +56,11 @@ export function usePlannerController() {
             "Saved data could not be read. The original menu is shown. Export changes to keep a backup.",
           );
         }
-        setSelected((id) => initial.plan.meals.some((meal) => meal.id === id) ? id : initial.plan.meals[0].id);
+        setSelected((id) => {
+          if (hadRememberedMeal.current && initial.plan.meals.some((meal) => meal.id === id)) return id;
+          const day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()];
+          return initial.plan.meals.find((meal) => meal.day === day && !initial.progress.done[meal.id])?.id || initial.plan.meals[0].id;
+        });
         dispatch(initialized({ current: initial, defaults: p }));
       })
       .catch((e) => {

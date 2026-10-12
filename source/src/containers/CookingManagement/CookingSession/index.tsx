@@ -46,6 +46,40 @@ const CookingSession: React.FC<IProps> = () => {
           "chooseYourMealCheckYourPortionsThenFollowThePreparedIngredientGuide",
         )}
       />
+      <div className="mobile-meal-picker">
+        <label>
+          {tr("chooseYourMeal")}
+          <select
+            value={meal.id}
+            onChange={(event) => setSelected(event.target.value)}
+          >
+            {plan.meals.map((item) => (
+              <option key={item.id} value={item.id}>
+                {ct(item.day)} · {ct(item.type)} · {ct(item.main)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <Button
+          onClick={() => {
+            const day = DAYS[new Date().getDay() - 1];
+            const today =
+              plan.meals.find(
+                (item) => item.day === day && !s.progress.done[item.id],
+              ) || plan.meals.find((item) => item.day === day);
+            if (today) setSelected(today.id);
+            else
+              setToast(
+                text(
+                  "Cuối tuần chưa có bữa trong kế hoạch. Hãy chọn bữa muốn nấu.",
+                  "There are no weekend meals in this plan. Choose any meal to cook.",
+                ),
+              );
+          }}
+        >
+          {text("Bữa hôm nay", "Today's meal")}
+        </Button>
+      </div>
       <div className="cook-layout">
         <aside className="meal-picker">
           <span className="eyebrow">{tr("chooseYourMeal")}</span>
@@ -147,9 +181,25 @@ const CookingSession: React.FC<IProps> = () => {
             <h3>{tr("prepCookingSteps")}</h3>
             <ol className="cooking-instructions">
               {meal.steps.map((step, index) => (
-                <li key={`${meal.id}:${index}`} className={pos === index ? "current-instruction" : ""}>
-                  <Button aria-pressed={pos === index} onClick={() => update((state) => ({ ...state, progress: { ...state.progress, cook: { ...state.progress.cook, [meal.id]: index } } }))}>
-                    {pos === index ? text("Đang làm bước này", "Current step") : text("Đánh dấu đang làm", "Mark as current")}
+                <li
+                  key={`${meal.id}:${index}`}
+                  className={pos === index ? "current-instruction" : ""}
+                >
+                  <Button
+                    aria-pressed={pos === index}
+                    onClick={() =>
+                      update((state) => ({
+                        ...state,
+                        progress: {
+                          ...state.progress,
+                          cook: { ...state.progress.cook, [meal.id]: index },
+                        },
+                      }))
+                    }
+                  >
+                    {pos === index
+                      ? text("Đang làm bước này", "Current step")
+                      : text("Đánh dấu đang làm", "Mark as current")}
                   </Button>
                   <div className="step-text">{t(step.text)}</div>
                   {step.minutes > 0 && (
@@ -157,10 +207,21 @@ const CookingSession: React.FC<IProps> = () => {
                       <div>
                         <Clock size={20} />
                         <span>
-                          <strong>{(() => {
-                            const timer = [...(s.timers || []), ...(s.timer ? [s.timer] : [])].find((value) => value.mealId === meal.id && value.step === index);
-                            return timer ? fmt(timerSeconds(timer)) : `${step.minutes}:00`;
-                          })()}</strong>
+                          <strong>
+                            {(() => {
+                              const timer = [
+                                ...(s.timers || []),
+                                ...(s.timer ? [s.timer] : []),
+                              ].find(
+                                (value) =>
+                                  value.mealId === meal.id &&
+                                  value.step === index,
+                              );
+                              return timer
+                                ? fmt(timerSeconds(timer))
+                                : `${step.minutes}:00`;
+                            })()}
+                          </strong>
                           <small>
                             {tr("suggestedTimerCheckDonenessSeparately")}
                           </small>
@@ -179,14 +240,30 @@ const CookingSession: React.FC<IProps> = () => {
               ))}
             </ol>
             <div className="step-controls">
-              {!ready && !s.progress.done[meal.id] && <p role="status">
-                {!isPrepared(s, meal)
-                  ? text("Còn phần chưa sơ chế. Hãy xem lại sơ chế trước khi hoàn thành bữa ăn.", "Some portions still need preparation. Review prep before finishing this meal.")
-                  : text("Hãy xác nhận thực phẩm đã bảo quản đúng và rã đông ở đầu trang.", "Confirm safe storage and thawing at the top of this page.")}
-                <Button onClick={() => !isPrepared(s, meal) ? navigate("prep") : document.querySelector<HTMLInputElement>(".readiness input")?.focus()}>
-                  {text("Kiểm tra ngay", "Review now")}
-                </Button>
-              </p>}
+              {!ready && !s.progress.done[meal.id] && (
+                <p role="status">
+                  {!isPrepared(s, meal)
+                    ? text(
+                        "Còn phần chưa sơ chế. Hãy xem lại sơ chế trước khi hoàn thành bữa ăn.",
+                        "Some portions still need preparation. Review prep before finishing this meal.",
+                      )
+                    : text(
+                        "Hãy xác nhận thực phẩm đã bảo quản đúng và rã đông ở đầu trang.",
+                        "Confirm safe storage and thawing at the top of this page.",
+                      )}
+                  <Button
+                    onClick={() =>
+                      !isPrepared(s, meal)
+                        ? navigate("prep")
+                        : document
+                            .querySelector<HTMLInputElement>(".readiness input")
+                            ?.focus()
+                    }
+                  >
+                    {text("Kiểm tra ngay", "Review now")}
+                  </Button>
+                </p>
+              )}
               <Button
                 primary
                 disabled={!ready || !!s.progress.done[meal.id]}

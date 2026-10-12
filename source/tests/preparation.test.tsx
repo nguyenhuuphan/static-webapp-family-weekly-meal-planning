@@ -93,7 +93,7 @@ describe("ingredient preparation groups", () => {
       }),
     );
     expect(group.querySelector(".prep-storage-inline")?.textContent).toContain(
-      plan.meals[0].storage,
+      plan.meals[0].storage.split(". ")[0],
     );
     const trigger = within(group).getAllByRole("button", {
       name: /Meal details:/,

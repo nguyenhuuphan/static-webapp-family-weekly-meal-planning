@@ -244,6 +244,10 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                   }
                 />
               </label>
+              {kind === "prep" && <div className="field-grid">
+                <label>{text("Nhãn hộp (tùy chọn)", "Container label (optional)")}<input value={s.label || ""} onChange={(e) => step(kind, n, "label", e.target.value)} /></label>
+                <label>{text("Bảo quản riêng phần này (tùy chọn)", "Storage for this portion (optional)")}<textarea value={s.storage || ""} onChange={(e) => step(kind, n, "storage", e.target.value)} /></label>
+              </div>}
               <button
                 className="icon-button danger"
                 aria-label={tr("removeStepLabel", {

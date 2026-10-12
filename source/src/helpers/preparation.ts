@@ -91,6 +91,7 @@ const profiles: Record<string, Profile[]> = {
 };
 
 export type PrepAllocation = {
+  baselineStorage: boolean;
   key: string;
   meal: Meal;
   task: Step;
@@ -161,7 +162,14 @@ export function groupPreparation(plan: Plan, servings: number): PrepGroup[] {
         allocations: [],
       };
       if (quantity !== null) group.quantity! += quantity;
-      group.allocations.push({ key: taskKey, meal, task, taskIndex, quantity });
+      group.allocations.push({
+        key: taskKey,
+        meal,
+        task,
+        taskIndex,
+        quantity,
+        baselineStorage: meal.storage === baseline?.storage,
+      });
       groups.set(key, group);
     });
   }

@@ -6,7 +6,7 @@ import {
   ShieldCheck,
   Snowflake,
 } from "lucide-react";
-import { useI18n } from "src/i18n";
+import { useI18n, useText } from "src/i18n";
 import type { MessageKey } from "src/i18n/locales/en";
 import { groupPreparation, type PrepOperation } from "src/helpers/preparation";
 import { Button, Heading } from "src/modules/shared-main/components";
@@ -43,6 +43,7 @@ const categories = [
 ] satisfies { key: string; title: MessageKey }[];
 
 const PrepDay: React.FC = () => {
+  const text = useText();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [remainingOnly, setRemainingOnly] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -341,9 +342,15 @@ const PrepDay: React.FC = () => {
                                 <Snowflake size={16} />
                                 <p>
                                   <strong>{tr("store")}</strong>{" "}
-                                  {ct(allocation.meal.storage)}
+                                {allocation.task.storage ? ct(allocation.task.storage)
+                                  : !allocation.baselineStorage ? ct(allocation.meal.storage)
+                                  : group.operation === "keepEggs" ? tr("keepEggsIntactInTheirCartonInTheRefrigerator")
+                                  : group.operation === "reviewIndividually" || !group.ingredient ? ct(allocation.meal.storage)
+                                  : group.category === "Protein" ? ct(allocation.meal.storage).split(/\.\s+/)[0] + "."
+                                  : ct(allocation.meal.storage).split(/\.\s+/).slice(1).join(". ")}
                                 </p>
                               </div>
+                            <p className="caption"><strong>{text("Nhãn phần", "Portion label")}: </strong>{allocation.task.label || `${ct(allocation.meal.day)} · ${ct(allocation.meal.type)} · ${name}`}</p>
                               <label className="prep-row">
                                 <input
                                   type="checkbox"

@@ -59,6 +59,8 @@ export function validatePlan(p: unknown): string[] {
           (s) =>
             !s ||
             typeof s.text !== "string" ||
+            (s.storage !== undefined && typeof s.storage !== "string") ||
+            (s.label !== undefined && typeof s.label !== "string") ||
             !s.text.trim() ||
             !Number.isFinite(s.minutes) ||
             s.minutes < 0 ||

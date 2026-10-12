@@ -13,7 +13,7 @@ export type Ingredient = {
   unit: Unit;
   category: string;
 };
-export type Step = { text: string; minutes: number };
+export type Step = { text: string; minutes: number; storage?: string; label?: string };
 export type Meal = {
   id: string;
   day: Day;

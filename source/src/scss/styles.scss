@@ -2364,7 +2364,9 @@ html[lang="vi"] .welcome h2 {
 }
 @media (max-width: 680px) {
   .topbar-tools .saved {
-    display: none;
+    display: flex;
+    font-size: 10px;
+    max-width: 95px;
   }
   .language-switcher > span {
     position: absolute;
@@ -2384,6 +2386,17 @@ html[lang="vi"] .welcome h2 {
     overflow-wrap: anywhere;
   }
 }
+.mobile-safety { display: none; }
+@media (max-width: 680px) {
+  .mobile-safety { display: inline-flex; flex-shrink: 0; }
+  .topbar { height: auto; min-height: 65px; flex-wrap: wrap; padding-block: 10px; }
+  .topbar-tools { flex-wrap: wrap; }
+  .page-content { padding-bottom: 120px; }
+  .shopping-row { flex-wrap: wrap; }
+  .pantry-amount { max-width: 140px; font-size: 12px; }
+  .pantry-amount input { width: 100%; }
+}
+.quantity small { display: block; font-size: 11px; font-weight: normal; }
 @media print {
   .week-companion {
     display: none;

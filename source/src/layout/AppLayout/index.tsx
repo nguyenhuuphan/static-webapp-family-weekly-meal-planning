@@ -1,5 +1,5 @@
 import { LanguageSwitcher, useI18n, useText } from "src/i18n";
-import { CalendarDays, Leaf, Clock, X, CheckCircle2 } from "lucide-react";
+import { CalendarDays, Leaf, Clock, X, CheckCircle2, ShieldCheck } from "lucide-react";
 
 import { replaceMeal } from "src/domain";
 import { Button } from "src/modules/shared-main/components";
@@ -39,6 +39,7 @@ const AppLayout: React.FC<IProps> = () => {
     setToast,
     swapId,
     setSwapId,
+    navigate,
   } = useMealPlanner();
   const text = useText();
   const timers = [...(s.timers || []), ...(s.timer ? [s.timer] : [])];
@@ -61,6 +62,7 @@ const AppLayout: React.FC<IProps> = () => {
             {tr("weekOf")} {localizedDate(s.weekStart, "Monday")}
           </span>
           <div className="topbar-tools">
+            <button className="mobile-safety icon-button" aria-label={tr("safetyStorage")} onClick={() => navigate("safety")}><ShieldCheck size={19} /></button>
             <LanguageSwitcher />
             <span className="saved">
               <i />

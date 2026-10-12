@@ -15,6 +15,7 @@ import { isPrepared, round } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { fmt } from "src/utils/formatTime";
+import { timerSeconds } from "src/utils";
 
 interface IProps {}
 const CookingSession: React.FC<IProps> = () => {
@@ -156,12 +157,10 @@ const CookingSession: React.FC<IProps> = () => {
                       <div>
                         <Clock size={20} />
                         <span>
-                          <strong>
-                            {s.timer?.mealId === meal.id &&
-                            s.timer.step === index
-                              ? fmt(seconds)
-                              : `${step.minutes}:00`}
-                          </strong>
+                          <strong>{(() => {
+                            const timer = [...(s.timers || []), ...(s.timer ? [s.timer] : [])].find((value) => value.mealId === meal.id && value.step === index);
+                            return timer ? fmt(timerSeconds(timer)) : `${step.minutes}:00`;
+                          })()}</strong>
                           <small>
                             {tr("suggestedTimerCheckDonenessSeparately")}
                           </small>

@@ -28,6 +28,7 @@ const plannerSlice = createSlice({
       if (!state.current) return;
       state.current.progress = freshProgress();
       state.current.timer = null;
+      state.current.timers = [];
     },
     initialized: (
       _state,

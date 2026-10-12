@@ -40,7 +40,7 @@ export function usePlannerController() {
     [now, setNow] = useState(Date.now()),
     [search, setSearch] = useState(""),
     [swapId, setSwapId] = useState("");
-  const alarm = useTimerAlarm(state?.timer ?? null, timerSeconds(state?.timer ?? null, now));
+  const alarm = useTimerAlarm([...(state?.timers || []), ...(state?.timer ? [state.timer] : [])], now);
   useEffect(() => {
     let active = true;
     queryMealPlan()
@@ -132,7 +132,7 @@ export function usePlannerController() {
       plan,
       servings,
       progress: freshProgress(),
-      timer: null,
+      timer: null, timers: [],
     }));
     setSelected(plan.meals[0].id);
     navigate("week");
@@ -203,9 +203,11 @@ export function usePlannerController() {
     seconds = timerSeconds(s.timer, now),
     t = (v: string) => instruction(v, factor);
   const startTimer = (stepIndex = pos) => {
-    if (s.timer && seconds > 0 && !confirm(tr("replaceTimerConfirm"))) return;
+    const existing = [...(s.timers || []), ...(s.timer ? [s.timer] : [])].find((timer) => timer.mealId === meal.id && timer.step === stepIndex);
+    if (existing && timerSeconds(existing, now) > 0 && !confirm(tr("replaceTimerConfirm"))) return;
     update((x) => ({
       ...x,
+      timers: [...(x.timers || []), ...(x.timer ? [x.timer] : [])].filter((timer) => !(timer.mealId === meal.id && timer.step === stepIndex)),
       timer: {
         mealId: meal.id,
         step: stepIndex,

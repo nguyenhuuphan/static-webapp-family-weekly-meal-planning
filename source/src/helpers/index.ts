@@ -16,6 +16,7 @@ export function freshState(plan: Plan): State {
     weekStart: defaultMonday(),
     progress: freshProgress(),
     timer: null,
+    timers: [],
   };
 }
 export function hydrateState(raw: unknown, defaults: Plan): State {
@@ -48,8 +49,33 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
     ...v,
     weekStart: isMonday(v.weekStart) ? v.weekStart : defaultMonday(),
     progress,
-    pantry: v.pantry && typeof v.pantry === "object" && !Array.isArray(v.pantry) ? Object.fromEntries(Object.entries(v.pantry).filter(([, amount]) => typeof amount === "number" && Number.isFinite(amount) && amount >= 0)) : {},
+    pantry:
+      v.pantry && typeof v.pantry === "object" && !Array.isArray(v.pantry)
+        ? Object.fromEntries(
+            Object.entries(v.pantry).filter(
+              ([, amount]) =>
+                typeof amount === "number" &&
+                Number.isFinite(amount) &&
+                amount >= 0,
+            ),
+          )
+        : {},
     timer,
+    timers: Array.isArray(v.timers)
+      ? v.timers.filter(
+          (item) =>
+            item &&
+            Number.isFinite(item.end) &&
+            Number.isInteger(item.step) &&
+            item.step >= 0 &&
+            (item.paused === undefined ||
+              (Number.isFinite(item.paused) && item.paused >= 0)) &&
+            v.plan.meals.some(
+              (meal) =>
+                meal.id === item.mealId && item.step < meal.steps.length,
+            ),
+        )
+      : [],
   };
 }
 export function resetForMeal(s: State, id: string): State {
@@ -60,13 +86,18 @@ export function resetForMeal(s: State, id: string): State {
   delete next.progress.done[id];
   delete next.progress.cook[id];
   if (next.timer?.mealId === id) next.timer = null;
+  next.timers = next.timers?.filter((timer) => timer.mealId !== id);
   return next;
 }
 export function replaceMeal(s: State, id: string, updated: Meal): State {
   const next = resetForMeal(s, id);
   next.plan.meals = next.plan.meals.map((m) => (m.id === id ? updated : m));
-  const before = new Map(aggregate(s.plan, s.servings).map((i) => [ingredientKey(i), i.qty]));
-  const after = new Map(aggregate(next.plan, next.servings).map((i) => [ingredientKey(i), i.qty]));
+  const before = new Map(
+    aggregate(s.plan, s.servings).map((i) => [ingredientKey(i), i.qty]),
+  );
+  const after = new Map(
+    aggregate(next.plan, next.servings).map((i) => [ingredientKey(i), i.qty]),
+  );
   for (const key of new Set([...before.keys(), ...after.keys()])) {
     if (before.get(key) !== after.get(key)) {
       delete next.progress.shopping[key];

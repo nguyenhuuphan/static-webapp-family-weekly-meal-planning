@@ -58,4 +58,4 @@ export const isPrepared = (s: State, m: Meal) =>
     (_, i) => isCookingPreparation(m, i) || s.progress.prep[m.id + ":" + i],
   );
 export const timerSeconds = (t: Timer, now = Date.now()) =>
-  t ? Math.max(0, Math.ceil((t.end - now) / 1000)) : 0;
+  t ? (t.paused ?? Math.max(0, Math.ceil((t.end - now) / 1000))) : 0;

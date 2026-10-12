@@ -107,7 +107,7 @@ const HouseholdSettings: React.FC<IProps> = () => {
                     ...x,
                     weekStart: v,
                     progress: freshProgress(),
-                    timer: null,
+                    timer: null, timers: [],
                   }));
               }}
             />

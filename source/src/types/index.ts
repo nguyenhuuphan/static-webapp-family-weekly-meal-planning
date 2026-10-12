@@ -13,7 +13,12 @@ export type Ingredient = {
   unit: Unit;
   category: string;
 };
-export type Step = { text: string; minutes: number; storage?: string; label?: string };
+export type Step = {
+  text: string;
+  minutes: number;
+  storage?: string;
+  label?: string;
+};
 export type Meal = {
   id: string;
   day: Day;
@@ -41,7 +46,12 @@ export type Progress = {
   done: Record<string, boolean>;
   cook: Record<string, number>;
 };
-export type Timer = { mealId: string; step: number; end: number } | null;
+export type Timer = {
+  mealId: string;
+  step: number;
+  end: number;
+  paused?: number;
+} | null;
 export type State = {
   pantry?: Record<string, number>;
   plan: Plan;
@@ -49,5 +59,6 @@ export type State = {
   weekStart: string;
   progress: Progress;
   timer: Timer;
+  timers?: NonNullable<Timer>[];
 };
 export type View = "week" | "shop" | "prep" | "cook" | "settings" | "safety";

@@ -1,9 +1,11 @@
-import { LanguageSwitcher, useI18n } from "src/i18n";
+import { LanguageSwitcher, useI18n, useText } from "src/i18n";
 import { CalendarDays, Leaf, Clock, X, CheckCircle2 } from "lucide-react";
 
 import { replaceMeal } from "src/domain";
 import { Button } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
+import { timerSeconds } from "src/utils";
+import type { Timer } from "src/types";
 import { fmt } from "src/utils/formatTime";
 import WeeklyMenu from "src/containers/MealPlanning/WeeklyMenu";
 import ShoppingList from "src/containers/ShoppingManagement/ShoppingList";
@@ -38,8 +40,15 @@ const AppLayout: React.FC<IProps> = () => {
     swapId,
     setSwapId,
   } = useMealPlanner();
+  const text = useText();
+  const timers = [...(s.timers || []), ...(s.timer ? [s.timer] : [])];
+  const changeTimer = (target: NonNullable<Timer>, transform: (timer: NonNullable<Timer>) => Timer) => update((state) => ({
+    ...state,
+    timer: state.timer?.mealId === target.mealId && state.timer.step === target.step ? transform(state.timer) : state.timer,
+    timers: (state.timers || []).flatMap((timer) => { const next = timer.mealId === target.mealId && timer.step === target.step ? transform(timer) : timer; return next ? [next] : []; }),
+  }));
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${timers.length ? "has-timers" : ""}`}>
       <Sidebar />
       <main>
         <header className="topbar">
@@ -155,31 +164,24 @@ const AppLayout: React.FC<IProps> = () => {
           </footer>
         </div>
       </main>
-      {s.timer && (
-        <div
-          className={`floating-timer ${seconds === 0 ? "finished" : ""}`}
-          role="status"
-        >
-          <Clock size={20} />
-          <div>
-            <strong>
-              {seconds === 0 ? tr("timerFinished") : fmt(seconds)}
-            </strong>
-            <span>
-              {ct(plan.meals.find((m) => m.id === s.timer?.mealId)?.main || "")}{" "}
-              {tr("stepMessage")} {s.timer.step + 1}
-              {seconds === 0 ? tr("checkDoneness") : ""}
-            </span>
-          </div>
-          <button
-            className="icon-button"
-            aria-label={tr("dismissTimer")}
-            onClick={() => update((x) => ({ ...x, timer: null }))}
-          >
-            <X size={17} />
-          </button>
-        </div>
-      )}
+      {timers.length > 0 && <div className="timer-stack" aria-label={text("Hẹn giờ đang chạy", "Cooking timers")}>
+        {timers.map((timer) => {
+          const remaining = timerSeconds(timer);
+          return <div className={`floating-timer ${remaining === 0 ? "finished" : ""}`} key={`${timer.mealId}:${timer.step}`}>
+            <Clock size={20} />
+            <div>
+              <strong role="timer">{remaining === 0 ? tr("timerFinished") : fmt(remaining)}</strong>
+              <span>{ct(plan.meals.find((meal) => meal.id === timer.mealId)?.main || "")} · {tr("stepMessage")} {timer.step + 1}</span>
+              {remaining === 0 && <span role="status">{tr("checkDoneness")}</span>}
+              <div className="actions">
+                <Button onClick={() => changeTimer(timer, (value) => value.paused !== undefined ? { ...value, paused: value.paused + 60 } : { ...value, end: Math.max(Date.now(), value.end) + 60000 })}>+1 {text("phút", "min")}</Button>
+                {remaining > 0 && <Button onClick={() => changeTimer(timer, (value) => value.paused !== undefined ? { ...value, end: Date.now() + value.paused * 1000, paused: undefined } : { ...value, paused: remaining })}>{timer.paused !== undefined ? text("Tiếp tục", "Resume") : text("Tạm dừng", "Pause")}</Button>}
+              </div>
+            </div>
+            <button className="icon-button" aria-label={tr("dismissTimer")} onClick={() => changeTimer(timer, () => null)}><X size={17} /></button>
+          </div>;
+        })}
+      </div>}
       {toast && (
         <div className="toast" role="status">
           <CheckCircle2 size={18} />

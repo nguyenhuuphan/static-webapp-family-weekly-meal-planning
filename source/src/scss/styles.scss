@@ -2701,3 +2701,8 @@ html[lang="vi"] .welcome h2 {
 .shopping-row { flex-wrap: wrap; }
 .pantry-amount { flex: 0 0 110px; font-size: 11px; }
 .pantry-amount input { width: 100%; }
+.timer-stack { position: fixed; bottom: 22px; right: 20px; z-index: 20; display: grid; gap: 8px; max-height: 42vh; overflow: auto; max-width: min(420px, 90vw); }
+.timer-stack .floating-timer { position: static; transform: none; min-width: 0; max-width: 100%; }
+.has-timers .page-content { padding-bottom: calc(42vh + 110px); }
+@media (max-width: 680px) { .timer-stack { bottom: 88px; right: 12px; left: 12px; max-width: none; } .timer-stack .floating-timer { width: auto; } }
+@media print { .timer-stack { display: none; } }

@@ -2457,6 +2457,12 @@ html[lang="vi"] .welcome h2 {
   display: none;
 }
 .prep-collapse-controls {
+  position: sticky;
+  top: 8px;
+  z-index: 10;
+  padding: 10px;
+  background: var(--paper, #fffdf5);
+  border-radius: 12px;
   display: flex;
   flex-wrap: wrap;
   gap: 12px;

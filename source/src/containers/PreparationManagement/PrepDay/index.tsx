@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { usePersistentState } from "src/hooks/usePersistentState";
 import {
   Check,
   ChevronDown,
@@ -44,16 +45,41 @@ const categories = [
 
 const PrepDay: React.FC = () => {
   const text = useText();
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [remainingOnly, setRemainingOnly] = useState(false);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [undo, setUndo] = useState<Record<string, boolean> | null>(null);
+  const [collapsed, setCollapsed] = usePersistentState<Record<string, boolean>>(
+    "prep:collapsed",
+    {},
+  );
+  const [remainingOnly, setRemainingOnly] = usePersistentState(
+    "prep:remaining",
+    false,
+  );
+  const [expanded, setExpanded] = usePersistentState<Record<string, boolean>>(
+    "prep:expanded",
+    {},
+  );
+  const [undo, setUndo] = usePersistentState<{
+    before: Record<string, boolean>;
+    ready: Record<string, boolean>;
+    after: boolean;
+    plan: string;
+  } | null>("prep:undo", null);
   const { t: tr, content: ct, number, unit } = useI18n();
-  const { s, plan, factor, t, navigate, toggle } = useMealPlanner();
+  const { s, plan, factor, t, navigate, toggle, update } = useMealPlanner();
+  const prepIdentity = JSON.stringify([plan, s.servings, s.weekStart]);
   const complete = (keys: string[], checked: boolean) => {
-    setUndo(
-      Object.fromEntries(keys.map((key) => [key, !!s.progress.prep[key]])),
-    );
+    setUndo({
+      before: Object.fromEntries(
+        keys.map((key) => [key, !!s.progress.prep[key]]),
+      ),
+      ready: Object.fromEntries(
+        keys.map((key) => {
+          const mealId = key.slice(0, key.lastIndexOf(":"));
+          return [mealId, !!s.progress.ready[mealId]];
+        }),
+      ),
+      after: checked,
+      plan: prepIdentity,
+    });
     keys.forEach((key) => toggle("prep", key, checked));
     setExpanded((current) => {
       const next = { ...current };
@@ -95,7 +121,12 @@ const PrepDay: React.FC = () => {
           {tr("safetyNotes")}
         </Button>
       </Heading>
-      <p className="caption" id="prep-completion-help">{text("Chỉ đánh dấu hoàn tất khi phần đó đã sơ chế, chia đúng lượng, ướp theo món và cất đúng nơi. Làm dở thì để chưa đánh dấu; có thể mở lại bất kỳ nhóm nào.", "Mark a portion complete after preparing, dividing, seasoning as directed and storing it. Leave unfinished portions unchecked; you can reopen any group.")}</p>
+      <p className="caption" id="prep-completion-help">
+        {text(
+          "Chỉ đánh dấu hoàn tất khi phần đó đã sơ chế, chia đúng lượng, ướp theo món và cất đúng nơi. Làm dở thì để chưa đánh dấu; có thể mở lại bất kỳ nhóm nào.",
+          "Mark a portion complete after preparing, dividing, seasoning as directed and storing it. Leave unfinished portions unchecked; you can reopen any group.",
+        )}
+      </p>
       <div className="progress-panel">
         <div>
           <strong>
@@ -128,18 +159,29 @@ const PrepDay: React.FC = () => {
         >
           {tr("prepRemaining")}
         </Button>
-        {undo && (
-          <Button
-            onClick={() => {
-              Object.entries(undo).forEach(([key, value]) =>
-                toggle("prep", key, value),
-              );
-              setUndo(null);
-            }}
-          >
-            {tr("prepUndo")}
-          </Button>
-        )}
+        {undo &&
+          undo.plan === prepIdentity &&
+          Object.keys(undo.before).every(
+            (key) => !!s.progress.prep[key] === undo.after,
+          ) && (
+            <Button
+              onClick={() => {
+                Object.entries(undo.before).forEach(([key, value]) =>
+                  toggle("prep", key, value),
+                );
+                update((state) => ({
+                  ...state,
+                  progress: {
+                    ...state.progress,
+                    ready: { ...state.progress.ready, ...undo.ready },
+                  },
+                }));
+                setUndo(null);
+              }}
+            >
+              {tr("prepUndo")}
+            </Button>
+          )}
         <Button
           onClick={() =>
             setCollapsed(
@@ -343,19 +385,39 @@ const PrepDay: React.FC = () => {
                                 <Snowflake size={16} />
                                 <p>
                                   <strong>{tr("store")}</strong>{" "}
-                                {allocation.task.storage ? ct(allocation.task.storage)
-                                  : !allocation.baselineStorage ? ct(allocation.meal.storage)
-                                  : group.operation === "keepEggs" ? tr("keepEggsIntactInTheirCartonInTheRefrigerator")
-                                  : group.operation === "reviewIndividually" || !group.ingredient ? ct(allocation.meal.storage)
-                                  : group.category === "Protein" ? ct(allocation.meal.storage).split(/\.\s+/)[0] + "."
-                                  : ct(allocation.meal.storage).split(/\.\s+/).slice(1).join(". ")}
+                                  {allocation.task.storage
+                                    ? ct(allocation.task.storage)
+                                    : !allocation.baselineStorage
+                                      ? ct(allocation.meal.storage)
+                                      : group.operation === "keepEggs"
+                                        ? tr(
+                                            "keepEggsIntactInTheirCartonInTheRefrigerator",
+                                          )
+                                        : group.operation ===
+                                              "reviewIndividually" ||
+                                            !group.ingredient
+                                          ? ct(allocation.meal.storage)
+                                          : group.category === "Protein"
+                                            ? ct(allocation.meal.storage).split(
+                                                /\.\s+/,
+                                              )[0] + "."
+                                            : ct(allocation.meal.storage)
+                                                .split(/\.\s+/)
+                                                .slice(1)
+                                                .join(". ")}
                                 </p>
                               </div>
-                            <p className="caption"><strong>{text("Nhãn phần", "Portion label")}: </strong>{allocation.task.label || `${ct(allocation.meal.day)} · ${ct(allocation.meal.type)} · ${name}`}</p>
+                              <p className="caption">
+                                <strong>
+                                  {text("Nhãn phần", "Portion label")}:{" "}
+                                </strong>
+                                {allocation.task.label ||
+                                  `${ct(allocation.meal.day)} · ${ct(allocation.meal.type)} · ${name}`}
+                              </p>
                               <label className="prep-row">
                                 <input
                                   type="checkbox"
-                                aria-describedby="prep-completion-help"
+                                  aria-describedby="prep-completion-help"
                                   checked={!!s.progress.prep[allocation.key]}
                                   aria-label={tr("prepTaskLabel", {
                                     day: ct(allocation.meal.day),

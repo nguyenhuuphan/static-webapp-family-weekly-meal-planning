@@ -52,6 +52,42 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   }
   if (v.stockHistory !== undefined && !Array.isArray(v.stockHistory))
     throw Error("Invalid stock history.");
+  for (const [week, entry] of Object.entries(v.weekArchive || {})) {
+    if (
+      !isMonday(week) ||
+      !entry ||
+      validatePlan(entry.plan).length ||
+      !Number.isInteger(entry.servings) ||
+      entry.servings < 1 ||
+      entry.servings > 12 ||
+      !entry.done ||
+      typeof entry.done !== "object"
+    )
+      throw Error("Invalid archived week.");
+  }
+  for (const count of Object.values(v.mealAllocatedPortions || {}))
+    if (!Number.isInteger(count) || count < 0 || count > 12)
+      throw Error("Invalid allocated portions.");
+  const validateSources = (
+    sources: NonNullable<State["mealCreditSources"]>[string],
+  ) => {
+    if (
+      !Array.isArray(sources) ||
+      sources.some(
+        (source) =>
+          !source ||
+          typeof source.week !== "string" ||
+          (source.week && !isMonday(source.week)) ||
+          !Array.isArray(source.ingredients) ||
+          source.ingredients.some(
+            (i) => !i || !Number.isFinite(i.qty) || i.qty < 0,
+          ),
+      )
+    )
+      throw Error("Invalid batch credits.");
+  };
+  for (const sources of Object.values(v.mealCreditSources || {}))
+    validateSources(sources);
   const mealServings = Object.fromEntries(
     Object.entries(v.mealServings || {}).filter(
       ([id, count]) =>
@@ -154,6 +190,7 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       )
         throw Error("Invalid saved preparation record.");
     }
+    if (food.creditSources) validateSources(food.creditSources);
     if (food.storage) validateFoodStorage(food.storage);
     ids.add(food.id);
   }
@@ -247,6 +284,8 @@ export function resetForMeal(s: State, id: string): State {
   for (const key of Object.keys(next.preparedTasks || {}))
     if (key.startsWith(id + ":")) delete next.preparedTasks![key];
   if (next.mealCredits) delete next.mealCredits[id];
+  if (next.mealCreditSources) delete next.mealCreditSources[id];
+  if (next.mealAllocatedPortions) delete next.mealAllocatedPortions[id];
   if (next.mealCreditWeeks) delete next.mealCreditWeeks[id];
   delete next.progress.ready[id];
   delete next.progress.done[id];

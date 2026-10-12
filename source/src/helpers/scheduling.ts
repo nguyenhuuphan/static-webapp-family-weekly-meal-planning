@@ -3,6 +3,7 @@ import type { State, SavedFood } from "src/types";
 import {
   shoppingRequirements,
   savedFoodCredits,
+  ingredientCredit,
   reconcileShopping,
 } from "./shopping";
 import { aggregate, ingredientKey, mealPortions } from "src/utils";
@@ -58,6 +59,13 @@ export function changePortions(state: State, id: string, count: number): State {
       storage: next.mealStorage?.[id]
         ? structuredClone(next.mealStorage[id])
         : undefined,
+      creditSources: state.mealCreditSources?.[id]?.map((source) => ({
+        ...source,
+        ingredients: source.ingredients.map((i) => ({
+          ...i,
+          qty: (i.qty * Math.max(0, oldCount - count)) / oldCount,
+        })),
+      })),
       sourceWeek: state.mealCreditWeeks?.[id] || state.weekStart,
       meal: structuredClone(meal),
       baseServings: state.plan.servings,
@@ -71,12 +79,34 @@ export function changePortions(state: State, id: string, count: number): State {
   if (oldCount > 0 && count < oldCount && next.mealCredits?.[id])
     next.mealCredits[id] = next.mealCredits[id].map((i) => ({
       ...i,
-      qty: (i.qty * count) / oldCount,
+      qty: Math.min(
+        i.qty,
+        ((meal.ingredients.find((raw) =>
+          raw.id && i.id
+            ? raw.id === i.id
+            : ingredientKey(raw) === ingredientKey(i),
+        )?.qty || 0) *
+          count) /
+          state.plan.servings,
+      ),
+    }));
+  if (next.mealCreditSources?.[id] && count < oldCount)
+    next.mealCreditSources[id] = next.mealCreditSources[id].map((source) => ({
+      ...source,
+      ingredients: source.ingredients.map((i) => ({
+        ...i,
+        qty: (i.qty * count) / oldCount,
+      })),
     }));
   if (count > mealPortions(state, meal)) {
     for (const key of Object.keys(next.progress.prep))
       if (key.startsWith(id + ":")) delete next.progress.prep[key];
   }
+  if (next.mealAllocatedPortions?.[id])
+    next.mealAllocatedPortions[id] = Math.min(
+      count,
+      next.mealAllocatedPortions[id],
+    );
   delete next.progress.ready[id];
   return reconcileShopping(next);
 }
@@ -129,6 +159,16 @@ export function startWeek(
   return {
     ...next,
     weekStart,
+    weekArchive: {
+      ...state.weekArchive,
+      [state.weekStart]: {
+        plan: structuredClone(state.plan),
+        servings: state.servings,
+        mealServings: state.mealServings,
+        done: state.progress.done,
+      },
+    },
+    mealAllocatedPortions: {},
     pantry:
       checkedStock ||
       Object.fromEntries(
@@ -148,6 +188,7 @@ export function startWeek(
     lastMealServings: {},
     mealCredits: {},
     mealCreditWeeks: {},
+    mealCreditSources: {},
     purchased: {},
     preparedTasks: {},
     mealStorage: {},
@@ -243,9 +284,28 @@ export function assignFood(
       ...next.mealStorage,
       [destinationId]: structuredClone(food.storage),
     };
+  next.mealAllocatedPortions = {
+    ...next.mealAllocatedPortions,
+    [destinationId]: count,
+  };
   next.mealCreditWeeks = {
     ...next.mealCreditWeeks,
     [destinationId]: food.sourceWeek || "",
+  };
+  next.mealCreditSources = {
+    ...next.mealCreditSources,
+    [destinationId]: food.creditSources?.map((source) => ({
+      ...source,
+      ingredients: source.ingredients.map((i) => ({
+        ...i,
+        qty: (i.qty * count) / food.servings,
+      })),
+    })) || [
+      {
+        week: food.sourceWeek || "",
+        ingredients: savedFoodCredits(food, count),
+      },
+    ],
   };
   next.mealCredits = {
     ...next.mealCredits,
@@ -267,10 +327,128 @@ export function assignFood(
       };
   });
   const remaining = next.savedFood.find((f) => f.id === foodId)!;
+  if (remaining.creditSources)
+    remaining.creditSources = remaining.creditSources.map((source) => ({
+      ...source,
+      ingredients: source.ingredients.map((i) => ({
+        ...i,
+        qty: (i.qty * (remaining.servings - count)) / remaining.servings,
+      })),
+    }));
   remaining.servings -= count;
   for (const task of Object.values(remaining.preparedTasks))
     task.servings = Math.max(0, task.servings - count);
   if (!remaining.servings) remaining.status = "assigned";
   // Reconcile the new ingredient requirements without deleting acquisition records.
   return changePortions(next, destinationId, count);
+}
+
+export function mergeFood(
+  state: State,
+  foodId: string,
+  destinationId: string,
+): State {
+  const food = state.savedFood?.find((f) => f.id === foodId);
+  const meal = state.plan.meals.find((m) => m.id === destinationId);
+  if (
+    !food ||
+    !meal ||
+    !["pending", "scheduled"].includes(food.status) ||
+    state.progress.done[destinationId] ||
+    state.timer?.mealId === destinationId ||
+    state.timers?.some((t) => t.mealId === destinationId)
+  )
+    throw Error("Choose an unfinished meal without a running timer.");
+  const signature = (m: typeof meal, base: number) =>
+    JSON.stringify([
+      m.main,
+      m.ingredients.map((i) => [i.name, i.unit, i.qty / base]),
+      m.prep.map((p) => p.text),
+    ]);
+  if (
+    signature(food.meal, food.baseServings) !==
+    signature(meal, state.plan.servings)
+  )
+    throw Error(
+      "Only identical recipes can share portions. Use an additional meal for different recipes.",
+    );
+  const count = Math.min(
+    food.servings,
+    mealPortions(state, meal) -
+      (state.mealAllocatedPortions?.[destinationId] || 0),
+  );
+  if (count <= 0) throw Error("No portions are needed for this meal.");
+  const next = structuredClone(state);
+  next.mealAllocatedPortions = {
+    ...next.mealAllocatedPortions,
+    [destinationId]: (next.mealAllocatedPortions?.[destinationId] || 0) + count,
+  };
+  const credits = savedFoodCredits(food, count);
+  const sources =
+    state.mealCreditSources?.[destinationId] ||
+    (state.mealCredits?.[destinationId]
+      ? [
+          {
+            week: state.mealCreditWeeks?.[destinationId] || "",
+            ingredients: state.mealCredits[destinationId],
+          },
+        ]
+      : []);
+  next.mealCreditSources = {
+    ...next.mealCreditSources,
+    [destinationId]: [
+      ...sources,
+      ...(food.creditSources?.map((source) => ({
+        ...source,
+        ingredients: source.ingredients.map((i) => ({
+          ...i,
+          qty: (i.qty * count) / food.servings,
+        })),
+      })) || [{ week: food.sourceWeek || "", ingredients: credits }]),
+    ],
+  };
+  next.mealCredits ??= {};
+  const oldCredits = next.mealCredits[destinationId] || [];
+  next.mealCredits[destinationId] = meal.ingredients.flatMap((raw) => {
+    const previous = ingredientCredit(oldCredits, raw);
+    const extra = ingredientCredit(credits, raw);
+    return previous + extra > 0 ? [{ ...raw, qty: previous + extra }] : [];
+  });
+  next.mealCreditWeeks = {
+    ...next.mealCreditWeeks,
+    [destinationId]: food.sourceWeek || "",
+  };
+  next.preparedTasks ??= {};
+  meal.prep.forEach((_, index) => {
+    const source = food.preparedTasks[index];
+    if (!source) return;
+    const key = `${destinationId}:${index}`,
+      previous = next.preparedTasks![key];
+    const servings = Math.min(
+      mealPortions(state, meal),
+      (previous?.servings || 0) + Math.min(count, source.servings),
+    );
+    next.preparedTasks![key] = {
+      servings,
+      at: previous?.at && previous.at < source.at ? previous.at : source.at,
+    };
+    next.progress.prep[key] = servings >= mealPortions(state, meal);
+  });
+  const remaining = next.savedFood!.find((f) => f.id === foodId)!;
+  if (remaining.creditSources)
+    remaining.creditSources = remaining.creditSources.map((source) => ({
+      ...source,
+      ingredients: source.ingredients.map((i) => ({
+        ...i,
+        qty: (i.qty * (remaining.servings - count)) / remaining.servings,
+      })),
+    }));
+  remaining.servings -= count;
+  for (const task of Object.values(remaining.preparedTasks))
+    task.servings = Math.max(0, task.servings - count);
+  if (!remaining.servings) remaining.status = "assigned";
+  // Preserve source batch histories in savedFood; a combined batch needs its own storage check.
+  if (next.mealStorage) delete next.mealStorage[destinationId];
+  delete next.progress.ready[destinationId];
+  return reconcileShopping(next);
 }

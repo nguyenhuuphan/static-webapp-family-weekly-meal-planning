@@ -5,7 +5,7 @@ import type { SavedFood } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useI18n, useText } from "src/i18n";
 import { reconcileShopping } from "src/helpers/shopping";
-import { assignFood } from "src/helpers/scheduling";
+import { assignFood, mergeFood } from "src/helpers/scheduling";
 import { currentMealLabel } from "src/helpers/mealLabels";
 import { mealPortions } from "src/utils";
 import { Button } from "src/modules/shared-main/components";
@@ -35,7 +35,7 @@ function FoodCard({ food }: { food: SavedFood }) {
   const tasks = Object.entries(food.preparedTasks);
   const factor = food.servings / food.baseServings;
   return (
-    <article className="saved-food-card">
+    <article className="saved-food-card" id={`food-${food.id}`} tabIndex={-1}>
       <h3>
         {ct(food.meal.main)} · {food.servings} {text("phần", "portions")}
       </h3>
@@ -120,7 +120,6 @@ function FoodCard({ food }: { food: SavedFood }) {
               (m) =>
                 !s.progress.done[m.id] &&
                 mealPortions(s, m) > 0 &&
-                mealPortions(s, m) <= food.servings &&
                 !m.prep.some((_, i) => s.progress.prep[`${m.id}:${i}`]) &&
                 !s.progress.ready[m.id] &&
                 s.timer?.mealId !== m.id &&
@@ -143,7 +142,11 @@ function FoodCard({ food }: { food: SavedFood }) {
         </p>
       )}
       <Button
-        disabled={!destination || (food.kind === "prepared" && !reviewed)}
+        disabled={
+          !destination ||
+          (destination && mealPortions(s, destination) > food.servings) ||
+          (food.kind === "prepared" && !reviewed)
+        }
         onClick={() => {
           try {
             update((s) => assignFood(s, food.id, target));
@@ -153,6 +156,21 @@ function FoodCard({ food }: { food: SavedFood }) {
         }}
       >
         {text("Xác nhận thay bữa", "Confirm replacement")}
+      </Button>
+      <Button
+        disabled={!destination || (food.kind === "prepared" && !reviewed)}
+        onClick={() => {
+          try {
+            update((s) => mergeFood(s, food.id, target));
+          } catch (e) {
+            setToast((e as Error).message);
+          }
+        }}
+      >
+        {text(
+          "Gộp phần vào cùng công thức",
+          "Merge portions into the same recipe",
+        )}
       </Button>
       <details>
         <summary>
@@ -340,7 +358,7 @@ export default function SavedFoodPanel() {
           </summary>
           <ul>
             {history.map((f) => (
-              <li key={f.id}>
+              <li key={f.id} id={`food-${f.id}`} tabIndex={-1}>
                 {ct(f.meal.main)} ·{" "}
                 {text(
                   f.status === "assigned"

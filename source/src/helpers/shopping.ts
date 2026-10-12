@@ -109,9 +109,21 @@ export function committedPurchases(state: State): Record<string, number> {
       food.kind === "prepared" &&
       food.status !== "assigned"
     )
-      add(savedFoodCredits(food, food.servings));
+      add(
+        food.creditSources
+          ? food.creditSources
+              .filter((s) => s.week === state.weekStart && !s.accounted)
+              .flatMap((s) => s.ingredients)
+          : savedFoodCredits(food, food.servings),
+      );
   for (const [id, credits] of Object.entries(state.mealCredits || {}))
-    if (state.mealCreditWeeks?.[id] === state.weekStart) add(credits);
+    if (state.mealCreditSources?.[id])
+      add(
+        state.mealCreditSources[id]
+          .filter((s) => s.week === state.weekStart && !s.accounted)
+          .flatMap((s) => s.ingredients),
+      );
+    else if (state.mealCreditWeeks?.[id] === state.weekStart) add(credits);
   return amounts;
 }
 

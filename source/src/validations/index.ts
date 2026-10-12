@@ -3,13 +3,13 @@ export function validatePreparationLinks(meal: Meal): string[] {
   const errors: string[] = [],
     allocated = new Map<string, number>(),
     ids = new Set<string>();
-  for (const i of meal.ingredients || [])
+  for (const i of Array.isArray(meal.ingredients) ? meal.ingredients : [])
     if (i?.id !== undefined) {
       if (typeof i.id !== "string" || !i.id || ids.has(i.id))
         errors.push("Ingredient IDs must be unique.");
       ids.add(i.id);
     }
-  for (const task of meal.prep || []) {
+  for (const task of Array.isArray(meal.prep) ? meal.prep : []) {
     if (task?.ingredients === undefined) continue;
     if (!Array.isArray(task.ingredients)) {
       errors.push("Invalid preparation ingredient links.");
@@ -34,7 +34,7 @@ export function validatePreparationLinks(meal: Meal): string[] {
       seen.add(ref?.ingredientId);
     }
   }
-  for (const i of meal.ingredients || [])
+  for (const i of Array.isArray(meal.ingredients) ? meal.ingredients : [])
     if (i && (allocated.get(i.id || "") || 0) > i.qty + 0.000001)
       errors.push(
         "Prepared allocations exceed the recipe ingredient quantity.",

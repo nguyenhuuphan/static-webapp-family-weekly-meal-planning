@@ -56,6 +56,20 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  weekArchive?: Record<
+    string,
+    {
+      plan: Plan;
+      servings: number;
+      mealServings?: Record<string, number>;
+      done: Record<string, boolean>;
+    }
+  >;
+  mealCreditSources?: Record<
+    string,
+    { week: string; ingredients: Ingredient[]; accounted?: boolean }[]
+  >;
+  mealAllocatedPortions?: Record<string, number>;
   mealStorage?: Record<string, FoodStorage>;
   stockUses?: Record<string, StockUse>;
   stockHistory?: {
@@ -88,6 +102,11 @@ export type StockUse = {
   ingredients: Ingredient[];
 };
 export type SavedFood = {
+  creditSources?: {
+    week: string;
+    ingredients: Ingredient[];
+    accounted?: boolean;
+  }[];
   storage?: FoodStorage;
   sourceWeek?: string;
   id: string;

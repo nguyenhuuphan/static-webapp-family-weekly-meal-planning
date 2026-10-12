@@ -17,35 +17,57 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
   const draftKey = `meal-draft:${meal.id}`;
   const { t: tr, content: ct, unit, error: translateError } = useI18n();
   const [draft, setDraft] = useState<Meal>(() => {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(draftKey) || "null");
-      if (saved?.baseline === JSON.stringify(meal)) return saved.draft;
-    } catch { /* Draft persistence is optional. */ }
-    return structuredClone(meal);
-  }),
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(draftKey) || "null");
+        if (saved?.baseline === JSON.stringify(meal)) return saved.draft;
+      } catch {
+        /* Draft persistence is optional. */
+      }
+      return structuredClone(meal);
+    }),
     [error, setError] = useState("");
   const dirty = JSON.stringify(draft) !== JSON.stringify(meal);
   useEffect(() => {
     if (!attempted || !editor.current) return;
     const messages: HTMLElement[] = [];
-    editor.current.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select").forEach((control, index) => {
-      const optional = control.hasAttribute("data-optional");
-      const invalid = !optional && (!control.value.trim() || !control.validity.valid);
-      control.setAttribute("aria-invalid", String(invalid));
-      if (invalid) {
-        const message = document.createElement("span");
-        message.id = `editor-error-${index}`; message.className = "error field-error";
-        message.textContent = text("Nhập giá trị hợp lệ cho trường này.", "Enter a valid value for this field.");
-        control.setAttribute("aria-describedby", message.id);
-        control.insertAdjacentElement("afterend", message); messages.push(message);
-      } else control.removeAttribute("aria-describedby");
-    });
+    editor.current
+      .querySelectorAll<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >("input, textarea, select")
+      .forEach((control, index) => {
+        const optional = control.hasAttribute("data-optional");
+        const invalid =
+          !optional && (!control.value.trim() || !control.validity.valid);
+        control.setAttribute("aria-invalid", String(invalid));
+        if (invalid) {
+          const message = document.createElement("span");
+          message.id = `editor-error-${index}`;
+          message.className = "error field-error";
+          message.textContent = text(
+            "Nhập giá trị hợp lệ cho trường này.",
+            "Enter a valid value for this field.",
+          );
+          control.setAttribute("aria-describedby", message.id);
+          control.insertAdjacentElement("afterend", message);
+          messages.push(message);
+        } else control.removeAttribute("aria-describedby");
+      });
     return () => messages.forEach((message) => message.remove());
   }, [attempted, draft, text]);
   useEffect(() => {
-    try { sessionStorage.setItem(draftKey, JSON.stringify({ baseline: JSON.stringify(meal), draft })); } catch { /* Keep editing in memory. */ }
+    try {
+      sessionStorage.setItem(
+        draftKey,
+        JSON.stringify({ baseline: JSON.stringify(meal), draft }),
+      );
+    } catch {
+      /* Keep editing in memory. */
+    }
     const beforeUnload = (event: BeforeUnloadEvent) => {
-      if (dirty) { event.preventDefault(); event.returnValue = ""; }
+      if (dirty) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
     };
     window.addEventListener("beforeunload", beforeUnload);
     return () => window.removeEventListener("beforeunload", beforeUnload);
@@ -77,8 +99,11 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
     if (errors.length) {
       setError(errors.join("\n"));
       setTimeout(() => {
-        const first = editor.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
-        first?.focus(); first?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+        const first = editor.current?.querySelector<HTMLElement>(
+          '[aria-invalid="true"]',
+        );
+        first?.focus();
+        first?.scrollIntoView?.({ block: "center", behavior: "smooth" });
       }, 0);
       return;
     }
@@ -86,8 +111,14 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
       confirm(
         tr("saveChangesShoppingChecksAndThisMealSPrepReadinessAndCompletion"),
       )
-    )
-      { try { sessionStorage.removeItem(draftKey); } catch { /* Optional draft storage. */ } onSave(draft); }
+    ) {
+      try {
+        sessionStorage.removeItem(draftKey);
+      } catch {
+        /* Optional draft storage. */
+      }
+      onSave(draft);
+    }
   }
   return (
     <div ref={editor}>
@@ -106,7 +137,14 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
         </button>
       </div>
       <div className="panel">
-        {dirty && <p role="status">{text("Bản nháp được giữ trong phiên này khi chuyển trang.", "Your draft is kept in this session when you switch pages.")}</p>}
+        {dirty && (
+          <p role="status">
+            {text(
+              "Bản nháp được giữ trong phiên này khi chuyển trang.",
+              "Your draft is kept in this session when you switch pages.",
+            )}
+          </p>
+        )}
         <div className="field-grid">
           <label>
             {tr("mainDish")}
@@ -251,6 +289,59 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                   value={ct(s.text)}
                   onChange={(e) => step(kind, n, "text", e.target.value)}
                 />
+                <select
+                  data-optional
+                  aria-label={
+                    text(
+                      "Chèn nguyên liệu vào bước",
+                      "Insert ingredient into step",
+                    ) + ` ${n + 1}`
+                  }
+                  value=""
+                  onChange={(event) => {
+                    const item = draft.ingredients[Number(event.target.value)];
+                    if (!item) return;
+                    const area =
+                      event.currentTarget.parentElement?.querySelector(
+                        "textarea",
+                      );
+                    const current = ct(s.text);
+                    const start = area?.selectionStart ?? current.length;
+                    const end = area?.selectionEnd ?? start;
+                    const insertion = `[${item.qty} ${item.unit}] ${ct(item.name)}`;
+                    step(
+                      kind,
+                      n,
+                      "text",
+                      current.slice(0, start) + insertion + current.slice(end),
+                    );
+                    setTimeout(() => {
+                      area?.focus();
+                      area?.setSelectionRange(
+                        start + insertion.length,
+                        start + insertion.length,
+                      );
+                    }, 0);
+                  }}
+                >
+                  <option value="">
+                    {text(
+                      "+ Chèn nguyên liệu và định lượng",
+                      "+ Insert ingredient and amount",
+                    )}
+                  </option>
+                  {draft.ingredients.map((item, index) => (
+                    <option key={index} value={index}>
+                      {ct(item.name)} · {item.qty} {unit(item.unit)}
+                    </option>
+                  ))}
+                </select>
+                <small>
+                  {text(
+                    "Lượng được chèn sẽ tự đổi theo khẩu phần khi xem hướng dẫn.",
+                    "Inserted amounts scale automatically with servings in the instructions.",
+                  )}
+                </small>
               </label>
               <label className="minutes-field">
                 {tr("timerMin")}
@@ -268,10 +359,29 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                   }
                 />
               </label>
-              {kind === "prep" && <div className="field-grid">
-                <label>{text("Nhãn hộp (tùy chọn)", "Container label (optional)")}<input value={s.label || ""} onChange={(e) => step(kind, n, "label", e.target.value)} /></label>
-                <label>{text("Bảo quản riêng phần này (tùy chọn)", "Storage for this portion (optional)")}<textarea value={s.storage || ""} onChange={(e) => step(kind, n, "storage", e.target.value)} /></label>
-              </div>}
+              {kind === "prep" && (
+                <div className="field-grid">
+                  <label>
+                    {text("Nhãn hộp (tùy chọn)", "Container label (optional)")}
+                    <input
+                      data-optional
+                      value={s.label || ""}
+                      onChange={(e) => step(kind, n, "label", e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    {text(
+                      "Bảo quản riêng phần này (tùy chọn)",
+                      "Storage for this portion (optional)",
+                    )}
+                    <textarea
+                      data-optional
+                      value={s.storage || ""}
+                      onChange={(e) => step(kind, n, "storage", e.target.value)}
+                    />
+                  </label>
+                </div>
+              )}
               <button
                 className="icon-button danger"
                 aria-label={tr("removeStepLabel", {

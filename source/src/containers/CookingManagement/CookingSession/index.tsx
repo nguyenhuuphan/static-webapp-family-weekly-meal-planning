@@ -26,6 +26,8 @@ const CookingSession: React.FC<IProps> = () => {
     factor,
     meal,
     ready,
+    pos,
+    update,
     seconds,
     t,
     startTimer,
@@ -144,7 +146,10 @@ const CookingSession: React.FC<IProps> = () => {
             <h3>{tr("prepCookingSteps")}</h3>
             <ol className="cooking-instructions">
               {meal.steps.map((step, index) => (
-                <li key={`${meal.id}:${index}`}>
+                <li key={`${meal.id}:${index}`} className={pos === index ? "current-instruction" : ""}>
+                  <Button aria-pressed={pos === index} onClick={() => update((state) => ({ ...state, progress: { ...state.progress, cook: { ...state.progress.cook, [meal.id]: index } } }))}>
+                    {pos === index ? text("Đang làm bước này", "Current step") : text("Đánh dấu đang làm", "Mark as current")}
+                  </Button>
                   <div className="step-text">{t(step.text)}</div>
                   {step.minutes > 0 && (
                     <div className="step-timer">

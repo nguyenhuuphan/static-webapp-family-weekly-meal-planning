@@ -2681,6 +2681,7 @@ html[lang="vi"] .welcome h2 {
   font-weight: 700;
   color: #716029;
 }
+.cooking-instructions > li.current-instruction { background: #fff5cc; border-radius: 12px; padding-right: 12px; }
 .cooking-instructions .step-text {
   font-size: clamp(18px, 2vw, 23px);
   margin: 0 0 14px;

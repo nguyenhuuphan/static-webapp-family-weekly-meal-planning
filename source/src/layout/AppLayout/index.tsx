@@ -1,3 +1,4 @@
+import OfflineStatus from "src/components/OfflineStatus";
 import { LanguageSwitcher, useI18n, useText } from "src/i18n";
 import { useEffect, useRef } from "react";
 import {
@@ -119,6 +120,7 @@ const AppLayout: React.FC<IProps> = () => {
           </div>
         </header>
         <div className="page-content">
+          <OfflineStatus />
           {recoveryRaw !== null && (
             <section className="panel notice warning" role="alert">
               <div>

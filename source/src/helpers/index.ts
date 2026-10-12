@@ -145,6 +145,15 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   return {
     ...v,
     mealServings,
+    lastMealServings: Object.fromEntries(
+      Object.entries(v.lastMealServings || {}).filter(
+        ([id, count]) =>
+          v.plan.meals.some((m) => m.id === id) &&
+          Number.isInteger(count) &&
+          count > 0 &&
+          count <= v.servings,
+      ),
+    ),
     mealCredits:
       v.mealCredits && typeof v.mealCredits === "object"
         ? Object.fromEntries(

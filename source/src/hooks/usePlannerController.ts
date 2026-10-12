@@ -90,7 +90,10 @@ export function usePlannerController() {
           ][new Date().getDay()];
           return (
             initial.plan.meals.find(
-              (meal) => meal.day === day && !initial.progress.done[meal.id],
+              (meal) =>
+                meal.day === day &&
+                mealPortions(initial, meal) > 0 &&
+                !initial.progress.done[meal.id],
             )?.id || initial.plan.meals[0].id
           );
         });
@@ -243,7 +246,10 @@ export function usePlannerController() {
   if (!state || !defaults) return { error, model: null };
   const s = state,
     plan = s.plan,
-    meal = plan.meals.find((m) => m.id === selected) || plan.meals[0],
+    meal =
+      plan.meals.find((m) => m.id === selected && mealPortions(s, m) > 0) ||
+      plan.meals.find((m) => mealPortions(s, m) > 0) ||
+      plan.meals[0],
     factor = mealPortions(s, meal) / plan.servings,
     editing = plan.meals.find((m) => m.id === editId),
     pos = Math.min(
@@ -255,7 +261,9 @@ export function usePlannerController() {
       mealPortions(s, meal) > 0 &&
       isPrepared(s, meal) &&
       s.progress.ready[meal.id],
-    doneCount = plan.meals.filter((m) => s.progress.done[m.id]).length,
+    doneCount = plan.meals.filter(
+      (m) => mealPortions(s, m) > 0 && s.progress.done[m.id],
+    ).length,
     prepTotal = plan.meals.reduce(
       (n, m) =>
         n +

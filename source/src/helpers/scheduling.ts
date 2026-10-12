@@ -31,6 +31,8 @@ export function changePortions(state: State, id: string, count: number): State {
       };
   }
   const oldCount = mealPortions(state, meal);
+  if (oldCount > 0 && count === 0)
+    next.lastMealServings = { ...next.lastMealServings, [id]: oldCount };
   next.preparedTasks ??= {};
   const surplus: SavedFood["preparedTasks"] = {};
   meal.prep.forEach((_, index) => {
@@ -119,6 +121,7 @@ export function startWeek(state: State, weekStart: string): State {
     ...next,
     weekStart,
     mealServings: {},
+    lastMealServings: {},
     mealCredits: {},
     purchased: {},
     preparedTasks: {},

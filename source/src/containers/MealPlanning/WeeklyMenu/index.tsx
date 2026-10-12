@@ -15,7 +15,8 @@ import {
   Leaf,
 } from "lucide-react";
 import { DAYS } from "src/types";
-import { isPrepared } from "src/domain";
+import { changePortions } from "src/helpers/scheduling";
+import { isPrepared, mealPortions } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 
@@ -27,6 +28,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
   const { t: tr, content: ct, number: num, date: localizedDate } = useI18n();
   const {
     s,
+    update,
     plan,
     doneCount,
     edit,
@@ -39,11 +41,12 @@ const WeeklyMenu: React.FC<IProps> = () => {
     prepTotal,
   } = useMealPlanner();
   const text = useText();
+  const activeMeals = plan.meals.filter((m) => mealPortions(s, m) > 0);
   const today = new Date();
   const todayDay = DAYS[today.getDay() - 1];
   const nextMeal =
-    plan.meals.find((m) => m.day === todayDay && !s.progress.done[m.id]) ||
-    plan.meals.find((m) => !s.progress.done[m.id]);
+    activeMeals.find((m) => m.day === todayDay && !s.progress.done[m.id]) ||
+    activeMeals.find((m) => !s.progress.done[m.id]);
   const nextView =
     bought < needs.length ? "shop" : prepDone < prepTotal ? "prep" : "cook";
   return (
@@ -51,8 +54,9 @@ const WeeklyMenu: React.FC<IProps> = () => {
       <Heading
         eyebrow={tr("yourWeekdayKitchenSimplified")}
         title={tr("aLittlePlanningALotMoreEase")}
-        description={tr(
-          "tenComfortingMealsOneThoughtfulShoppingListACalmerRhythmForYour",
+        description={text(
+          "Lịch ăn linh hoạt: chỉnh số người, bỏ bữa hoặc đổi lịch. Danh sách mua và sơ chế cập nhật theo kế hoạch.",
+          "A flexible meal plan: adjust diners, skip meals or swap dates. Shopping and preparation follow your plans.",
         )}
       >
         <Button
@@ -62,6 +66,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
               : navigate(nextView)
           }
           primary
+          disabled={!activeMeals.length}
         >
           <ShoppingBag size={17} />
           {nextView === "shop"
@@ -92,7 +97,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
             <CalendarDays size={20} />
           </span>
           <div>
-            <strong>{tr("mealCount", { count: plan.meals.length })}</strong>
+            <strong>{tr("mealCount", { count: activeMeals.length })}</strong>
             <small>{tr("mondayThroughFriday")}</small>
           </div>
         </div>
@@ -113,7 +118,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
             <strong>
               {tr("enjoyedCount", {
                 count: doneCount,
-                total: plan.meals.length,
+                total: activeMeals.length,
               })}
             </strong>
             <small>{tr("aLittleProgressEveryDay")}</small>
@@ -141,15 +146,66 @@ const WeeklyMenu: React.FC<IProps> = () => {
                     <span>{localizedDate(s.weekStart, day)}</span>
                   </div>
                 </div>
+                <div className="day-plan-actions">
+                  <button
+                    className="text-button"
+                    disabled={plan.meals
+                      .filter((m) => m.day === day && !s.progress.done[m.id])
+                      .every((m) => mealPortions(s, m) === 0)}
+                    onClick={() =>
+                      update((state) => {
+                        let next = state;
+                        for (const m of state.plan.meals.filter(
+                          (m) => m.day === day && !state.progress.done[m.id],
+                        ))
+                          next = changePortions(next, m.id, 0);
+                        return next;
+                      })
+                    }
+                  >
+                    {text("Không ăn cả ngày", "Skip whole day")}: {ct(day)}
+                  </button>
+                  {plan.meals.some(
+                    (m) => m.day === day && mealPortions(s, m) === 0,
+                  ) && (
+                    <button
+                      className="text-button"
+                      onClick={() =>
+                        update((state) => {
+                          let next = state;
+                          for (const m of state.plan.meals.filter(
+                            (m) =>
+                              m.day === day &&
+                              !state.progress.done[m.id] &&
+                              mealPortions(state, m) === 0,
+                          ))
+                            next = changePortions(
+                              next,
+                              m.id,
+                              Math.min(
+                                state.servings,
+                                state.lastMealServings?.[m.id] ||
+                                  state.servings,
+                              ),
+                            );
+                          return next;
+                        })
+                      }
+                    >
+                      {text("Khôi phục các bữa", "Restore meals")}: {ct(day)}
+                    </button>
+                  )}
+                </div>
                 <div className="day-meals">
                   {(["Lunch", "Dinner"] as const).map((type) => {
                     const m = plan.meals.find(
                       (x) => x.day === day && x.type === type,
                     )!;
                     const done = s.progress.done[m.id];
+                    const skipped = mealPortions(s, m) === 0;
                     return (
                       <article
-                        className={`meal-card ${done ? "complete" : ""}`}
+                        className={`meal-card ${done ? "complete" : ""} ${skipped ? "skipped" : ""}`}
                         key={m.id}
                       >
                         <div className="card-meta">
@@ -172,7 +228,9 @@ const WeeklyMenu: React.FC<IProps> = () => {
                           <span
                             className={`pill ${done || (isPrepared(s, m) && s.progress.ready[m.id]) ? "green" : "amber"}`}
                           >
-                            {done ? (
+                            {skipped ? (
+                              text("Không ăn tại nhà", "Not eating at home")
+                            ) : done ? (
                               <>
                                 <Check size={12} />
                                 {tr("enjoyed")}
@@ -198,6 +256,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                             </button>
                             <button
                               className="text-button"
+                              disabled={skipped}
                               onClick={() => cook(m)}
                             >
                               {tr("cook")}
@@ -231,19 +290,24 @@ const WeeklyMenu: React.FC<IProps> = () => {
               <span>
                 {tr("enjoyedCount", {
                   count: doneCount,
-                  total: plan.meals.length,
+                  total: activeMeals.length,
                 })}
               </span>
             </div>
             <progress
               value={doneCount}
-              max={plan.meals.length}
+              max={activeMeals.length || 1}
               aria-label={tr("mealsEnjoyedThisWeek")}
             />
             <p>
-              {doneCount === plan.meals.length
-                ? tr("aFullWeekOfGoodFoodBeautifullyDone")
-                : tr("yourNextGoodMealStartsWithOneSmallStep")}
+              {activeMeals.length === 0
+                ? text(
+                    "Tuần này chưa có bữa ăn tại nhà. Anh có thể khôi phục bất kỳ bữa nào.",
+                    "No meals at home this week. Restore any meal when your plans change.",
+                  )
+                : doneCount === activeMeals.length
+                  ? tr("aFullWeekOfGoodFoodBeautifullyDone")
+                  : tr("yourNextGoodMealStartsWithOneSmallStep")}
             </p>
           </section>
           <section className="kitchen-shortcuts">

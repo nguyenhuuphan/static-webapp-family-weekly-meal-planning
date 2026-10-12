@@ -37,6 +37,21 @@ const CookingSession: React.FC<IProps> = () => {
     setSelected,
     setToast,
   } = useMealPlanner();
+  if (!plan.meals.some((m) => mealPortions(s, m) > 0))
+    return (
+      <section className="panel empty">
+        <h1>{text("Chưa có bữa cần nấu", "No meals to cook")}</h1>
+        <p>
+          {text(
+            "Các bữa đều đang không ăn tại nhà. Hãy khôi phục bữa trong lịch tuần hoặc sắp xếp đồ đã chuẩn bị.",
+            "All meals are skipped. Restore a meal in your weekly plan or arrange your prepared food.",
+          )}
+        </p>
+        <Button onClick={() => navigate("week")}>
+          {text("Về lịch tuần", "Back to weekly plan")}
+        </Button>
+      </section>
+    );
   return (
     <>
       <Heading
@@ -53,11 +68,13 @@ const CookingSession: React.FC<IProps> = () => {
             value={meal.id}
             onChange={(event) => setSelected(event.target.value)}
           >
-            {plan.meals.map((item) => (
-              <option key={item.id} value={item.id}>
-                {ct(item.day)} · {ct(item.type)} · {ct(item.main)}
-              </option>
-            ))}
+            {plan.meals
+              .filter((item) => mealPortions(s, item) > 0)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {ct(item.day)} · {ct(item.type)} · {ct(item.main)}
+                </option>
+              ))}
           </select>
         </label>
         <Button
@@ -65,8 +82,14 @@ const CookingSession: React.FC<IProps> = () => {
             const day = DAYS[new Date().getDay() - 1];
             const today =
               plan.meals.find(
-                (item) => item.day === day && !s.progress.done[item.id],
-              ) || plan.meals.find((item) => item.day === day);
+                (item) =>
+                  item.day === day &&
+                  mealPortions(s, item) > 0 &&
+                  !s.progress.done[item.id],
+              ) ||
+              plan.meals.find(
+                (item) => item.day === day && mealPortions(s, item) > 0,
+              );
             if (today) setSelected(today.id);
             else
               setToast(
@@ -87,7 +110,7 @@ const CookingSession: React.FC<IProps> = () => {
             <div key={d}>
               <h4>{ct(d)}</h4>
               {plan.meals
-                .filter((m) => m.day === d)
+                .filter((m) => m.day === d && mealPortions(s, m) > 0)
                 .sort((a, b) => (a.type === "Lunch" ? -1 : 1))
                 .map((m) => (
                   <button

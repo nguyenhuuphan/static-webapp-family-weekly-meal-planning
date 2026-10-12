@@ -54,6 +54,7 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  lastMealServings?: Record<string, number>;
   mealCredits?: Record<string, Ingredient[]>;
   preparedTasks?: Record<string, { servings: number; at: string }>;
   savedFood?: SavedFood[];

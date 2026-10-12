@@ -1,3 +1,4 @@
+import { mealPortions } from "src/utils";
 import { useI18n } from "src/i18n";
 import {
   CalendarDays,
@@ -29,7 +30,7 @@ const NAV = [
 interface IProps {}
 const Sidebar: React.FC<IProps> = () => {
   const { t: tr, content: ct } = useI18n();
-  const { navigate, view, editId, advanced, plan } = useMealPlanner();
+  const { navigate, view, editId, advanced, plan, s } = useMealPlanner();
   return (
     <aside className="sidebar">
       <a
@@ -64,7 +65,11 @@ const Sidebar: React.FC<IProps> = () => {
             >
               <Icon size={19} />
               <span>{ct(label)}</span>
-              {id === "week" && <small>{plan.meals.length}</small>}
+              {id === "week" && (
+                <small>
+                  {plan.meals.filter((m) => mealPortions(s, m) > 0).length}
+                </small>
+              )}
             </button>
           );
         })}

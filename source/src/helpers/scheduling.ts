@@ -208,6 +208,10 @@ export function assignFood(
     type: destination.type,
     prep: food.meal.prep.map((p) => ({
       ...p,
+      ingredients: p.ingredients?.map((ref) => ({
+        ...ref,
+        qty: (ref.qty * state.plan.servings) / food.baseServings,
+      })),
       text: p.text.replace(
         /\[([\d.]+) (g|ml|each|tsp|tbsp)\]/g,
         (_, n, u) =>
@@ -216,6 +220,10 @@ export function assignFood(
     })),
     steps: food.meal.steps.map((p) => ({
       ...p,
+      ingredients: p.ingredients?.map((ref) => ({
+        ...ref,
+        qty: (ref.qty * state.plan.servings) / food.baseServings,
+      })),
       text: p.text.replace(
         /\[([\d.]+) (g|ml|each|tsp|tbsp)\]/g,
         (_, n, u) =>

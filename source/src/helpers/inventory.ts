@@ -1,6 +1,10 @@
 import type { Ingredient, State } from "src/types";
 import { ingredientKey, mealPortions } from "src/utils";
-import { availableAcquisitions, reconcileShopping } from "./shopping";
+import {
+  availableAcquisitions,
+  ingredientCredit,
+  reconcileShopping,
+} from "./shopping";
 
 export const normalizedIngredient = (i: Ingredient): Ingredient =>
   i.unit === "tbsp" ? { ...i, qty: i.qty * 3, unit: "tsp" } : i;
@@ -16,10 +20,7 @@ export function consumeMeal(state: State, id: string, count?: number): State {
     ingredients: [] as Ingredient[],
   };
   for (const raw of meal.ingredients) {
-    const credit =
-      state.mealCredits?.[id]?.find(
-        (i) => ingredientKey(i) === ingredientKey(raw),
-      )?.qty || 0;
+    const credit = ingredientCredit(state.mealCredits?.[id], raw);
     const item = normalizedIngredient({
       ...raw,
       qty: Math.max(

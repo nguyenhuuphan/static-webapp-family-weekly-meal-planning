@@ -1,3 +1,4 @@
+import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import { useMemo, useState } from "react";
 import { usePersistentState } from "src/hooks/usePersistentState";
 import {
@@ -387,6 +388,35 @@ const PrepDay: React.FC = () => {
                                   }
                                 />
                               </div>
+                              {allocation.task.ingredients === undefined && (
+                                <PreparationLinks
+                                  meal={allocation.meal}
+                                  task={allocation.task}
+                                  onChange={(refs) =>
+                                    update((s) => ({
+                                      ...s,
+                                      plan: {
+                                        ...s.plan,
+                                        meals: s.plan.meals.map((m) =>
+                                          m.id === allocation.meal.id
+                                            ? {
+                                                ...m,
+                                                prep: m.prep.map((p, index) =>
+                                                  index === allocation.taskIndex
+                                                    ? {
+                                                        ...p,
+                                                        ingredients: refs,
+                                                      }
+                                                    : p,
+                                                ),
+                                              }
+                                            : m,
+                                        ),
+                                      },
+                                    }))
+                                  }
+                                />
+                              )}
                               <p className="prep-portion-instruction">
                                 {["sliceThin", "cutChicken"].includes(
                                   group.operation,

@@ -15,67 +15,115 @@
           "name": "Pork shoulder, boneless",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "mon-lunch-ingredient-0"
         },
         {
           "name": "Shrimp, peeled",
           "qty": 100,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "mon-lunch-ingredient-1"
         },
         {
           "name": "Winter melon, peeled",
           "qty": 350,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "mon-lunch-ingredient-2"
         },
         {
           "name": "Garlic",
           "qty": 3,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "mon-lunch-ingredient-3"
         },
         {
           "name": "Fish sauce",
           "qty": 3,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-lunch-ingredient-4"
         },
         {
           "name": "Sugar",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-lunch-ingredient-5"
         },
         {
           "name": "Cooking oil",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-lunch-ingredient-6"
         },
         {
           "name": "Black pepper",
           "qty": 0.125,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-lunch-ingredient-7"
         }
       ],
       "prep": [
         {
           "text": "Cut [300 g] pork into 3–4 mm slices. Mix with [2 tsp] fish sauce, [1 tsp] sugar, [3 g] minced garlic and [0.125 tsp] pepper. Label MON LUNCH — PORK.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-lunch-ingredient-0",
+              "qty": 300
+            },
+            {
+              "ingredientId": "mon-lunch-ingredient-3",
+              "qty": 3
+            },
+            {
+              "ingredientId": "mon-lunch-ingredient-4",
+              "qty": 2
+            },
+            {
+              "ingredientId": "mon-lunch-ingredient-5",
+              "qty": 1
+            },
+            {
+              "ingredientId": "mon-lunch-ingredient-7",
+              "qty": 0.125
+            }
+          ]
         },
         {
           "text": "Peel and devein [100 g] shrimp (or buy cleaned). Keep unseasoned in a separate sealed container labelled MON LUNCH — SOUP SHRIMP.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-lunch-ingredient-1",
+              "qty": 100
+            }
+          ]
         },
         {
           "text": "Peel winter melon, remove mature seeds, wash and slice 5 mm thick. Weigh [350 g]. Label MON LUNCH — MELON; refrigerate.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-lunch-ingredient-2",
+              "qty": 350
+            }
+          ]
         },
         {
           "text": "Measure [1 tsp] fish sauce into a separate soup-seasoning cup. Label and refrigerate.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-lunch-ingredient-4",
+              "qty": 1
+            }
+          ]
         }
       ],
       "steps": [
@@ -123,57 +171,94 @@
           "name": "Basa fillet",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "mon-dinner-ingredient-0"
         },
         {
           "name": "Water spinach, trimmed",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "mon-dinner-ingredient-1"
         },
         {
           "name": "Shallot",
           "qty": 5,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "mon-dinner-ingredient-2"
         },
         {
           "name": "Fish sauce",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-dinner-ingredient-3"
         },
         {
           "name": "Sugar",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-dinner-ingredient-4"
         },
         {
           "name": "Cooking oil",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-dinner-ingredient-5"
         },
         {
           "name": "Black pepper",
           "qty": 0.125,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "mon-dinner-ingredient-6"
         }
       ],
       "prep": [
         {
           "text": "Cut [300 g] basa into portions about 2 cm thick; pat dry. Label MON DINNER — FISH and refrigerate unseasoned.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-dinner-ingredient-0",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Mix [2 tsp] fish sauce, [1 tsp] sugar and [0.125 tsp] pepper into a sauce cup. Keep [5 g] minced shallot separate. Label both MON DINNER.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-dinner-ingredient-2",
+              "qty": 5
+            },
+            {
+              "ingredientId": "mon-dinner-ingredient-3",
+              "qty": 2
+            },
+            {
+              "ingredientId": "mon-dinner-ingredient-4",
+              "qty": 1
+            },
+            {
+              "ingredientId": "mon-dinner-ingredient-6",
+              "qty": 0.125
+            }
+          ]
         },
         {
           "text": "Trim tough water-spinach stems, remove damaged leaves, wash and drain thoroughly. Weigh [300 g]. Refrigerate in a clean container lined with paper towel.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "mon-dinner-ingredient-1",
+              "qty": 300
+            }
+          ]
         }
       ],
       "steps": [
@@ -217,69 +302,116 @@
           "name": "Chicken thigh, boneless",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "tue-lunch-ingredient-0"
         },
         {
           "name": "Mustard greens, trimmed",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-lunch-ingredient-1"
         },
         {
           "name": "Lemongrass, tender inner stem",
           "qty": 15,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-lunch-ingredient-2"
         },
         {
           "name": "Ginger",
           "qty": 5,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-lunch-ingredient-3"
         },
         {
           "name": "Chili (optional)",
           "qty": 1,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-lunch-ingredient-4"
         },
         {
           "name": "Fish sauce",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-lunch-ingredient-5"
         },
         {
           "name": "Sugar",
           "qty": 0.5,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-lunch-ingredient-6"
         },
         {
           "name": "Cooking oil",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-lunch-ingredient-7"
         },
         {
           "name": "Salt",
           "qty": 0.25,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-lunch-ingredient-8"
         }
       ],
       "prep": [
         {
           "text": "Cut [300 g] chicken into 2 cm pieces. Do not wash raw chicken. Mix with [2 tsp] fish sauce, [0.5 tsp] sugar, [15 g] minced lemongrass and optional [1 g] chili. Label TUE LUNCH — CHICKEN and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-lunch-ingredient-0",
+              "qty": 300
+            },
+            {
+              "ingredientId": "tue-lunch-ingredient-2",
+              "qty": 15
+            },
+            {
+              "ingredientId": "tue-lunch-ingredient-4",
+              "qty": 1
+            },
+            {
+              "ingredientId": "tue-lunch-ingredient-5",
+              "qty": 2
+            },
+            {
+              "ingredientId": "tue-lunch-ingredient-6",
+              "qty": 0.5
+            }
+          ]
         },
         {
           "text": "Wash [300 g] mustard greens and cut into 3–4 cm pieces. Blanch in boiling water for 1 minute, cool quickly in clean ice water and drain well; freeze in a meal bag. This is not the final cooking step.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-lunch-ingredient-1",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Slice [5 g] ginger thinly. Pack separately and freeze. Measure [0.25 tsp] salt into a labelled soup cup.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-lunch-ingredient-3",
+              "qty": 5
+            },
+            {
+              "ingredientId": "tue-lunch-ingredient-8",
+              "qty": 0.25
+            }
+          ]
         }
       ],
       "steps": [
@@ -323,73 +455,130 @@
           "name": "Beef, stir-fry cut",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "tue-dinner-ingredient-0"
         },
         {
           "name": "Onion, peeled",
           "qty": 200,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-dinner-ingredient-1"
         },
         {
           "name": "Cucumber",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-dinner-ingredient-2"
         },
         {
           "name": "Garlic",
           "qty": 5,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-dinner-ingredient-3"
         },
         {
           "name": "Lime juice",
           "qty": 15,
           "unit": "ml",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "tue-dinner-ingredient-4"
         },
         {
           "name": "Fish sauce",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-dinner-ingredient-5"
         },
         {
           "name": "Sugar",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-dinner-ingredient-6"
         },
         {
           "name": "Cooking oil",
           "qty": 3,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-dinner-ingredient-7"
         },
         {
           "name": "Black pepper",
           "qty": 0.125,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "tue-dinner-ingredient-8"
         }
       ],
       "prep": [
         {
           "text": "Slice [300 g] beef 3–4 mm thick. Mix with [1 tsp] oil and [0.125 tsp] pepper only. Label TUE DINNER — BEEF and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-dinner-ingredient-0",
+              "qty": 300
+            },
+            {
+              "ingredientId": "tue-dinner-ingredient-7",
+              "qty": 1
+            },
+            {
+              "ingredientId": "tue-dinner-ingredient-8",
+              "qty": 0.125
+            }
+          ]
         },
         {
           "text": "Peel and wash onion; slice [200 g] into thin wedges. Refrigerate separately. Wash and dry [300 g] cucumber; refrigerate WHOLE for better texture. Slicing is the one remaining fresh-prep task at dinner.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-dinner-ingredient-1",
+              "qty": 200
+            },
+            {
+              "ingredientId": "tue-dinner-ingredient-2",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Mix [15 ml] lime juice, [1 tsp] sugar and [1 tsp] fish sauce for the cucumber dressing; label and refrigerate.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-dinner-ingredient-4",
+              "qty": 15
+            },
+            {
+              "ingredientId": "tue-dinner-ingredient-6",
+              "qty": 1
+            },
+            {
+              "ingredientId": "tue-dinner-ingredient-5",
+              "qty": 1
+            }
+          ]
         },
         {
           "text": "Keep [5 g] minced garlic and [1 tsp] fish sauce for the stir-fry separate; label and freeze.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "tue-dinner-ingredient-3",
+              "qty": 5
+            },
+            {
+              "ingredientId": "tue-dinner-ingredient-5",
+              "qty": 1
+            }
+          ]
         }
       ],
       "steps": [
@@ -433,51 +622,83 @@
           "name": "Shrimp, peeled",
           "qty": 400,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "wed-lunch-ingredient-0"
         },
         {
           "name": "Malabar spinach, trimmed",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "wed-lunch-ingredient-1"
         },
         {
           "name": "Shallot",
           "qty": 5,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "wed-lunch-ingredient-2"
         },
         {
           "name": "Fish sauce",
           "qty": 3,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "wed-lunch-ingredient-3"
         },
         {
           "name": "Sugar",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "wed-lunch-ingredient-4"
         },
         {
           "name": "Cooking oil",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "wed-lunch-ingredient-5"
         }
       ],
       "prep": [
         {
           "text": "Divide cleaned shrimp into [300 g] for the main and [100 g] for soup. Keep both unseasoned, separately labelled WED LUNCH — MAIN SHRIMP / SOUP SHRIMP; freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-lunch-ingredient-0",
+              "qty": 400
+            }
+          ]
         },
         {
           "text": "Mix [2 tsp] fish sauce, [1 tsp] sugar and [5 g] minced shallot into a main-sauce cup. Freeze separately. Measure another [1 tsp] fish sauce into a soup cup.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-lunch-ingredient-2",
+              "qty": 5
+            },
+            {
+              "ingredientId": "wed-lunch-ingredient-3",
+              "qty": 3
+            },
+            {
+              "ingredientId": "wed-lunch-ingredient-4",
+              "qty": 1
+            }
+          ]
         },
         {
           "text": "Trim and wash [300 g] Malabar spinach. Cut into manageable pieces, blanch 1 minute, cool quickly in clean ice water and drain thoroughly; freeze in a labelled meal bag.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-lunch-ingredient-1",
+              "qty": 300
+            }
+          ]
         }
       ],
       "steps": [
@@ -521,61 +742,100 @@
           "name": "Ground pork",
           "qty": 150,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "wed-dinner-ingredient-0"
         },
         {
           "name": "Eggs",
           "qty": 3,
           "unit": "each",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "wed-dinner-ingredient-1"
         },
         {
           "name": "Cabbage, trimmed",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "wed-dinner-ingredient-2"
         },
         {
           "name": "Spring onion",
           "qty": 10,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "wed-dinner-ingredient-3"
         },
         {
           "name": "Fish sauce",
           "qty": 0.5,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "wed-dinner-ingredient-4"
         },
         {
           "name": "Cooking oil",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "wed-dinner-ingredient-5"
         },
         {
           "name": "Black pepper",
           "qty": 0.125,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "wed-dinner-ingredient-6"
         }
       ],
       "prep": [
         {
           "text": "Mix [150 g] ground pork with [0.5 tsp] fish sauce and [0.125 tsp] pepper. Label WED DINNER — PORK and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-dinner-ingredient-0",
+              "qty": 150
+            },
+            {
+              "ingredientId": "wed-dinner-ingredient-4",
+              "qty": 0.5
+            },
+            {
+              "ingredientId": "wed-dinner-ingredient-6",
+              "qty": 0.125
+            }
+          ]
         },
         {
           "text": "Keep [3 each] eggs intact in their carton in the refrigerator; do not crack or mix with raw pork in advance.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-dinner-ingredient-1",
+              "qty": 3
+            }
+          ]
         },
         {
           "text": "Wash and drain [300 g] cabbage, cut into 3 cm pieces and refrigerate separately. Check freshness before use; discard if spoiled.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-dinner-ingredient-2",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Wash and finely slice [10 g] spring onion, drain and freeze separately.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "wed-dinner-ingredient-3",
+              "qty": 10
+            }
+          ]
         }
       ],
       "steps": [
@@ -623,51 +883,83 @@
           "name": "Tilapia fillet",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "thu-lunch-ingredient-0"
         },
         {
           "name": "Pumpkin, peeled and deseeded",
           "qty": 350,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "thu-lunch-ingredient-1"
         },
         {
           "name": "Fish sauce",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-lunch-ingredient-2"
         },
         {
           "name": "Sugar",
           "qty": 0.5,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-lunch-ingredient-3"
         },
         {
           "name": "Cooking oil",
           "qty": 1,
           "unit": "tbsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-lunch-ingredient-4"
         },
         {
           "name": "Salt",
           "qty": 0.25,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-lunch-ingredient-5"
         }
       ],
       "prep": [
         {
           "text": "Portion [300 g] tilapia into pieces about 2 cm thick. Pat dry, leave unseasoned, label THU LUNCH — FISH and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "thu-lunch-ingredient-0",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Mix [2 tsp] fish sauce and [0.5 tsp] sugar into a separate sauce cup; label and freeze. Measure [0.25 tsp] salt separately for soup.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "thu-lunch-ingredient-2",
+              "qty": 2
+            },
+            {
+              "ingredientId": "thu-lunch-ingredient-3",
+              "qty": 0.5
+            },
+            {
+              "ingredientId": "thu-lunch-ingredient-5",
+              "qty": 0.25
+            }
+          ]
         },
         {
           "text": "Peel pumpkin, remove seeds, wash and weigh [350 g]. Cut 5 mm thick; freeze in a labelled soup bag.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "thu-lunch-ingredient-1",
+              "qty": 350
+            }
+          ]
         }
       ],
       "steps": [
@@ -715,53 +1007,88 @@
           "name": "Pork shoulder, boneless",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "thu-dinner-ingredient-0"
         },
         {
           "name": "Chayote, peeled",
           "qty": 400,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "thu-dinner-ingredient-1"
         },
         {
           "name": "Lemongrass, tender inner stem",
           "qty": 30,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "thu-dinner-ingredient-2"
         },
         {
           "name": "Chili (optional)",
           "qty": 1,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "thu-dinner-ingredient-3"
         },
         {
           "name": "Fish sauce",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-dinner-ingredient-4"
         },
         {
           "name": "Sugar",
           "qty": 0.5,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-dinner-ingredient-5"
         },
         {
           "name": "Cooking oil",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "thu-dinner-ingredient-6"
         }
       ],
       "prep": [
         {
           "text": "Slice [300 g] pork 3–4 mm thick. Mix with [2 tsp] fish sauce, [0.5 tsp] sugar, [30 g] minced lemongrass and optional [1 g] chili. Label THU DINNER — PORK and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "thu-dinner-ingredient-0",
+              "qty": 300
+            },
+            {
+              "ingredientId": "thu-dinner-ingredient-2",
+              "qty": 30
+            },
+            {
+              "ingredientId": "thu-dinner-ingredient-3",
+              "qty": 1
+            },
+            {
+              "ingredientId": "thu-dinner-ingredient-4",
+              "qty": 2
+            },
+            {
+              "ingredientId": "thu-dinner-ingredient-5",
+              "qty": 0.5
+            }
+          ]
         },
         {
           "text": "Peel chayote and remove mature seed. Wash, weigh [400 g] and cut into 5 mm slices. Blanch 2 minutes, cool quickly in clean ice water and drain well; freeze in a meal bag.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "thu-dinner-ingredient-1",
+              "qty": 400
+            }
+          ]
         }
       ],
       "steps": [
@@ -805,61 +1132,104 @@
           "name": "Chicken thigh, boneless",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "fri-lunch-ingredient-0"
         },
         {
           "name": "Ground pork",
           "qty": 100,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "fri-lunch-ingredient-1"
         },
         {
           "name": "Ginger",
           "qty": 15,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "fri-lunch-ingredient-2"
         },
         {
           "name": "Cabbage, trimmed",
           "qty": 250,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "fri-lunch-ingredient-3"
         },
         {
           "name": "Fish sauce",
           "qty": 4,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "fri-lunch-ingredient-4"
         },
         {
           "name": "Sugar",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "fri-lunch-ingredient-5"
         },
         {
           "name": "Cooking oil",
           "qty": 1,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "fri-lunch-ingredient-6"
         }
       ],
       "prep": [
         {
           "text": "Cut [300 g] chicken into 2 cm pieces. Mix with [1 tbsp] fish sauce, [1 tsp] sugar and [15 g] finely sliced ginger. Label FRI LUNCH — CHICKEN and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-lunch-ingredient-0",
+              "qty": 300
+            },
+            {
+              "ingredientId": "fri-lunch-ingredient-2",
+              "qty": 15
+            },
+            {
+              "ingredientId": "fri-lunch-ingredient-4",
+              "qty": 3
+            },
+            {
+              "ingredientId": "fri-lunch-ingredient-5",
+              "qty": 1
+            }
+          ]
         },
         {
           "text": "Keep [100 g] ground pork unseasoned in a separate bag labelled FRI LUNCH — SOUP PORK; freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-lunch-ingredient-1",
+              "qty": 100
+            }
+          ]
         },
         {
           "text": "Wash [250 g] cabbage and cut into 1 cm strips. Blanch 1 minute, cool quickly and drain thoroughly; freeze.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-lunch-ingredient-3",
+              "qty": 250
+            }
+          ]
         },
         {
           "text": "Measure [1 tsp] fish sauce into a separate soup cup, label and freeze.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-lunch-ingredient-4",
+              "qty": 1
+            }
+          ]
         }
       ],
       "steps": [
@@ -907,73 +1277,126 @@
           "name": "Beef, stir-fry cut",
           "qty": 300,
           "unit": "g",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "fri-dinner-ingredient-0"
         },
         {
           "name": "Green beans, trimmed",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "fri-dinner-ingredient-1"
         },
         {
           "name": "Tomato",
           "qty": 300,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "fri-dinner-ingredient-2"
         },
         {
           "name": "Eggs",
           "qty": 2,
           "unit": "each",
-          "category": "Protein"
+          "category": "Protein",
+          "id": "fri-dinner-ingredient-3"
         },
         {
           "name": "Garlic",
           "qty": 5,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "fri-dinner-ingredient-4"
         },
         {
           "name": "Spring onion",
           "qty": 10,
           "unit": "g",
-          "category": "Produce"
+          "category": "Produce",
+          "id": "fri-dinner-ingredient-5"
         },
         {
           "name": "Fish sauce",
           "qty": 2,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "fri-dinner-ingredient-6"
         },
         {
           "name": "Cooking oil",
           "qty": 3,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "fri-dinner-ingredient-7"
         },
         {
           "name": "Black pepper",
           "qty": 0.125,
           "unit": "tsp",
-          "category": "Pantry"
+          "category": "Pantry",
+          "id": "fri-dinner-ingredient-8"
         }
       ],
       "prep": [
         {
           "text": "Slice [300 g] beef 3–4 mm thick. Mix with [1 tsp] oil and [0.125 tsp] pepper; leave fish sauce out. Label FRI DINNER — BEEF and freeze promptly.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-dinner-ingredient-0",
+              "qty": 300
+            },
+            {
+              "ingredientId": "fri-dinner-ingredient-7",
+              "qty": 1
+            },
+            {
+              "ingredientId": "fri-dinner-ingredient-8",
+              "qty": 0.125
+            }
+          ]
         },
         {
           "text": "Trim ends and strings from green beans, wash, weigh [300 g] and cut into 3–4 cm pieces. Blanch 2 minutes, cool quickly in clean ice water and drain; freeze.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-dinner-ingredient-1",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Wash [300 g] tomato, remove stems and cut into wedges; freeze in a soup bag.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-dinner-ingredient-2",
+              "qty": 300
+            }
+          ]
         },
         {
           "text": "Keep [5 g] minced garlic, [1 tsp] fish sauce for beef, another [1 tsp] fish sauce for soup, and [10 g] sliced spring onion in separately labelled portions; freeze. Keep [2 each] eggs intact in their carton in the refrigerator.",
-          "minutes": 0
+          "minutes": 0,
+          "ingredients": [
+            {
+              "ingredientId": "fri-dinner-ingredient-3",
+              "qty": 2
+            },
+            {
+              "ingredientId": "fri-dinner-ingredient-4",
+              "qty": 5
+            },
+            {
+              "ingredientId": "fri-dinner-ingredient-5",
+              "qty": 10
+            },
+            {
+              "ingredientId": "fri-dinner-ingredient-6",
+              "qty": 2
+            }
+          ]
         }
       ],
       "steps": [

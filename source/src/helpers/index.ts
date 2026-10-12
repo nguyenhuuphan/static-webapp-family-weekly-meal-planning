@@ -1,5 +1,6 @@
 import { type Plan, type Meal, type State, type Progress } from "src/types";
 import { defaultMonday, isMonday, aggregate, ingredientKey } from "src/utils";
+import { normalizeIngredientLinks } from "./ingredientLinks";
 import { validateFoodStorage } from "./foodStorage";
 import { changePortions } from "./scheduling";
 import { parseBackup, validatePlan } from "src/validations";
@@ -13,7 +14,7 @@ export const freshProgress = (): Progress => ({
 });
 export function freshState(plan: Plan): State {
   return {
-    plan,
+    plan: normalizeIngredientLinks(plan),
     servings: plan.servings,
     weekStart: defaultMonday(),
     progress: freshProgress(),
@@ -22,9 +23,10 @@ export function freshState(plan: Plan): State {
   };
 }
 export function hydrateState(raw: unknown, defaults: Plan): State {
-  const v = raw as State;
+  let v = raw as State;
   if (!v) return freshState(defaults);
   parseBackup(v);
+  v = { ...v, plan: normalizeIngredientLinks(v.plan) };
   const progress = freshProgress();
   for (const k of Object.keys(progress) as (keyof Progress)[]) {
     const map = v.progress?.[k];
@@ -92,9 +94,15 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   }
   for (const storage of Object.values(v.mealStorage || {}))
     validateFoodStorage(storage);
-  const savedFood = Array.isArray(v.savedFood) ? v.savedFood : [];
+  const savedFood = Array.isArray(v.savedFood)
+    ? structuredClone(v.savedFood)
+    : [];
   const ids = new Set<string>();
   for (const food of savedFood) {
+    food.meal = normalizeIngredientLinks({
+      ...v.plan,
+      meals: [food.meal],
+    }).meals[0];
     const errors = validatePlan({
       ...v.plan,
       meals: v.plan.meals.map((m, i) =>

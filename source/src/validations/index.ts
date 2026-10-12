@@ -1,4 +1,46 @@
-import { DAYS, type Plan } from "src/types";
+import { DAYS, type Plan, type Meal } from "src/types";
+export function validatePreparationLinks(meal: Meal): string[] {
+  const errors: string[] = [],
+    allocated = new Map<string, number>(),
+    ids = new Set<string>();
+  for (const i of meal.ingredients || [])
+    if (i?.id !== undefined) {
+      if (typeof i.id !== "string" || !i.id || ids.has(i.id))
+        errors.push("Ingredient IDs must be unique.");
+      ids.add(i.id);
+    }
+  for (const task of meal.prep || []) {
+    if (task?.ingredients === undefined) continue;
+    if (!Array.isArray(task.ingredients)) {
+      errors.push("Invalid preparation ingredient links.");
+      continue;
+    }
+    const seen = new Set<string>();
+    for (const ref of task.ingredients) {
+      const item = meal.ingredients?.find((i) => i?.id === ref?.ingredientId);
+      if (
+        !ref ||
+        !item ||
+        !Number.isFinite(ref.qty) ||
+        ref.qty <= 0 ||
+        seen.has(ref.ingredientId)
+      )
+        errors.push("Invalid preparation ingredient allocation.");
+      else
+        allocated.set(
+          ref.ingredientId,
+          (allocated.get(ref.ingredientId) || 0) + ref.qty,
+        );
+      seen.add(ref?.ingredientId);
+    }
+  }
+  for (const i of meal.ingredients || [])
+    if (i && (allocated.get(i.id || "") || 0) > i.qty + 0.000001)
+      errors.push(
+        "Prepared allocations exceed the recipe ingredient quantity.",
+      );
+  return errors;
+}
 export function validatePlan(p: unknown): string[] {
   const errors: string[] = [];
   const v = p as Plan;
@@ -10,6 +52,7 @@ export function validatePlan(p: unknown): string[] {
   const ids = new Set(),
     slots = new Set();
   for (const m of v.meals) {
+    if (m) errors.push(...validatePreparationLinks(m));
     if (
       !m ||
       typeof m.id !== "string" ||

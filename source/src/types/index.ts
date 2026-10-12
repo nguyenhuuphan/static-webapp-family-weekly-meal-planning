@@ -8,12 +8,14 @@ export const DAYS = [
 export type Day = (typeof DAYS)[number];
 export type Unit = "g" | "ml" | "each" | "tsp" | "tbsp";
 export type Ingredient = {
+  id?: string;
   name: string;
   qty: number;
   unit: Unit;
   category: string;
 };
 export type Step = {
+  ingredients?: { ingredientId: string; qty: number }[];
   text: string;
   minutes: number;
   storage?: string;

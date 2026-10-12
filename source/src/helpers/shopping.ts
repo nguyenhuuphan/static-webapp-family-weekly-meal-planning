@@ -1,33 +1,34 @@
 import type { Ingredient, SavedFood, State } from "src/types";
 import { aggregate, ingredientKey, mealPortions } from "src/utils";
-import { groupPreparation } from "./preparation";
+export const ingredientCredit = (
+  credits: Ingredient[] | undefined,
+  ingredient: Ingredient,
+) =>
+  credits?.find((c) =>
+    c.id && ingredient.id
+      ? c.id === ingredient.id
+      : ingredientKey(c) === ingredientKey(ingredient),
+  )?.qty || 0;
 
 /** Credit only ingredient allocations identified by a reviewed preparation profile. */
 export function savedFoodCredits(food: SavedFood, count: number): Ingredient[] {
   if (food.kind !== "prepared") return [];
-  const groups = groupPreparation(
-    {
-      schemaVersion: 1,
-      name: "saved",
-      servings: food.baseServings,
-      meals: [food.meal],
-    },
-    food.baseServings,
-  );
   return food.meal.ingredients.flatMap((ingredient) => {
-    const tasks = groups
-      .filter((g) => g.ingredient === ingredient.name)
-      .flatMap((g) => g.allocations);
-    if (!tasks.length) return [];
-    const portions = Math.min(
-      count,
-      ...tasks.map((task) => food.preparedTasks[task.taskIndex]?.servings || 0),
-    );
-    return portions > 0
+    const qty = food.meal.prep.reduce((total, task, index) => {
+      const ref = task.ingredients?.find(
+        (r) => r.ingredientId === ingredient.id,
+      );
+      const portions = Math.min(
+        count,
+        food.preparedTasks[index]?.servings || 0,
+      );
+      return total + (ref ? (ref.qty * portions) / food.baseServings : 0);
+    }, 0);
+    return qty > 0
       ? [
           {
             ...ingredient,
-            qty: (ingredient.qty * portions) / food.baseServings,
+            qty: Math.min(qty, (ingredient.qty * count) / food.baseServings),
           },
         ]
       : [];
@@ -48,10 +49,7 @@ export function shoppingRequirements(state: State) {
               ? Math.max(
                   0,
                   i.qty -
-                    (state.mealCredits?.[meal.id]?.find(
-                      (c) => ingredientKey(c) === ingredientKey(i),
-                    )?.qty || 0) /
-                      factor,
+                    ingredientCredit(state.mealCredits?.[meal.id], i) / factor,
                 )
               : 0,
           }))
@@ -82,9 +80,7 @@ export function shoppingRequirements(state: State) {
           ...i,
           qty: Math.max(
             0,
-            ((i.qty * factor -
-              (credits.find((c) => ingredientKey(c) === ingredientKey(i))
-                ?.qty || 0)) *
+            ((i.qty * factor - ingredientCredit(credits, i)) *
               state.plan.servings) /
               food.servings,
           ),

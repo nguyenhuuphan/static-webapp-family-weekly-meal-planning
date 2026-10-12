@@ -1,3 +1,4 @@
+import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
 import { useState } from "react";
 import type { SavedFood } from "src/types";
@@ -214,6 +215,22 @@ function FoodCard({ food }: { food: SavedFood }) {
           {food.meal.prep.map((p, index) => (
             <li key={index}>
               {currentMealLabel(instruction(p.text, factor), label)}{" "}
+              {p.ingredients === undefined && (
+                <PreparationLinks
+                  meal={food.meal}
+                  task={p}
+                  onChange={(refs) =>
+                    change({
+                      meal: {
+                        ...food.meal,
+                        prep: food.meal.prep.map((step, i) =>
+                          i === index ? { ...step, ingredients: refs } : step,
+                        ),
+                      },
+                    })
+                  }
+                />
+              )}
               {food.preparedTasks[index]?.servings >= food.servings
                 ? text("(Đã sơ chế)", "(Prepared)")
                 : text(

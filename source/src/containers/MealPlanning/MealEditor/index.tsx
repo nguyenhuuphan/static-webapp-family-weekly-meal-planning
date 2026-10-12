@@ -1,3 +1,4 @@
+import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import { useI18n, useText } from "src/i18n";
 import { useEffect, useState, useRef } from "react";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
@@ -180,7 +181,13 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
             onClick={() =>
               field("ingredients", [
                 ...draft.ingredients,
-                { name: "", qty: 1, unit: "g", category: "Produce" },
+                {
+                  id: crypto.randomUUID(),
+                  name: "",
+                  qty: 1,
+                  unit: "g",
+                  category: "Produce",
+                },
               ])
             }
           >
@@ -245,10 +252,16 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                 className="icon-button danger"
                 aria-label={tr("removeIngredientLabel", { count: n + 1 })}
                 onClick={() =>
-                  field(
-                    "ingredients",
-                    draft.ingredients.filter((_, j) => j !== n),
-                  )
+                  setDraft((s) => ({
+                    ...s,
+                    ingredients: s.ingredients.filter((_, j) => j !== n),
+                    prep: s.prep.map((p) => ({
+                      ...p,
+                      ingredients: p.ingredients?.filter(
+                        (ref) => ref.ingredientId !== i.id,
+                      ),
+                    })),
+                  }))
                 }
               >
                 <Trash2 size={17} />
@@ -359,6 +372,20 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
                   }
                 />
               </label>
+              {kind === "prep" && (
+                <PreparationLinks
+                  meal={draft}
+                  task={s}
+                  onChange={(refs) =>
+                    setDraft((d) => ({
+                      ...d,
+                      prep: d.prep.map((p, index) =>
+                        index === n ? { ...p, ingredients: refs } : p,
+                      ),
+                    }))
+                  }
+                />
+              )}
               {kind === "prep" && (
                 <div className="field-grid">
                   <label>

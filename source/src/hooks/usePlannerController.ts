@@ -23,7 +23,11 @@ import {
   parseBackup,
 } from "src/domain";
 import { queryMealPlan } from "src/queries";
-import { storageService } from "src/services/storageService";
+import { STORAGE_KEY } from "src/appConfig";
+import {
+  storageService,
+  StorageConflictError,
+} from "src/services/storageService";
 import { useAppDispatch, useAppSelector, useAppStore } from "src/redux/hooks";
 import {
   initialized,
@@ -63,6 +67,11 @@ export function usePlannerController() {
     before: State;
     after: State;
   } | null>(null);
+  const expectedRaw = useRef<string | null>(null);
+  const conflictBlocked = useRef(false);
+  const [externalChange, setExternalChange] = useState<{
+    raw: string | null;
+  } | null>(null);
   const recoveryBlocked = useRef(false);
   const [recoveryRaw, setRecoveryRaw] = useState<string | null>(null);
   const [hasLastGood, setHasLastGood] = useState(false);
@@ -78,6 +87,7 @@ export function usePlannerController() {
         if (!active) return;
         let initial = freshState(p);
         try {
+          expectedRaw.current = storageService.raw();
           const saved = storageService.read();
           if (saved) initial = hydrateState(saved, p);
         } catch {
@@ -126,16 +136,97 @@ export function usePlannerController() {
     };
   }, [dispatch]);
   useEffect(() => {
-    if (!state || recoveryBlocked.current) return;
-    try {
-      storageService.write(state);
-      setStorageError("");
-    } catch {
+    if (!state || recoveryBlocked.current || conflictBlocked.current) return;
+    let disposed = false;
+    const write = () => {
+      if (disposed || conflictBlocked.current || recoveryBlocked.current)
+        return;
+      try {
+        expectedRaw.current = storageService.write(state, expectedRaw.current);
+        setStorageError("");
+      } catch (error) {
+        if (error instanceof StorageConflictError) {
+          conflictBlocked.current = true;
+          setExternalChange({ raw: storageService.raw() });
+          setStorageError(
+            "Saved data changed in another tab. Choose which copy to use.",
+          );
+        } else
+          setStorageError(
+            "Browser storage is unavailable or full. Export a backup; changes are temporary.",
+          );
+      }
+    };
+    if (navigator.locks)
+      navigator.locks
+        .request("weekday-table:" + STORAGE_KEY, write)
+        .catch(() => {
+          if (!disposed)
+            setStorageError(
+              "Browser storage is unavailable or full. Export a backup; changes are temporary.",
+            );
+        });
+    else write();
+    return () => {
+      disposed = true;
+    };
+  }, [state]);
+  useEffect(() => {
+    const changed = (event: StorageEvent) => {
+      if (
+        (event.key !== STORAGE_KEY && event.key !== null) ||
+        (event.storageArea && event.storageArea !== localStorage)
+      )
+        return;
+      const raw = storageService.raw();
+      if (raw === expectedRaw.current) return;
+      conflictBlocked.current = true;
+      setExternalChange({ raw });
       setStorageError(
-        "Browser storage is unavailable or full. Export a backup; changes are temporary.",
+        "Saved data changed in another tab. Choose which copy to use.",
+      );
+      setUndoEntry(null);
+    };
+    window.addEventListener("storage", changed);
+    return () => window.removeEventListener("storage", changed);
+  }, []);
+  function loadExternalCopy() {
+    try {
+      const raw = storageService.raw();
+      if (raw === null || !defaults) return;
+      const next = hydrateState(JSON.parse(raw), defaults);
+      expectedRaw.current = raw;
+      conflictBlocked.current = false;
+      recoveryBlocked.current = false;
+      setRecoveryRaw(null);
+      setExternalChange(null);
+      setStorageError("");
+      setUndoEntry(null);
+      setEditId(null);
+      setAdvanced(false);
+      dispatch(stateChanged(next));
+    } catch {
+      setToast(
+        "The other copy could not be read. Export this tab before restoring a backup.",
       );
     }
-  }, [state]);
+  }
+  function keepLocalCopy() {
+    if (!state || !confirm(tr("replaceExternalCopyConfirm"))) return;
+    try {
+      const raw = storageService.raw();
+      if (raw)
+        localStorage.setItem(STORAGE_KEY + ":conflict:" + Date.now(), raw);
+      expectedRaw.current = raw;
+      conflictBlocked.current = false;
+      setExternalChange(null);
+      setStorageError("");
+      setUndoEntry(null);
+      dispatch(stateChanged(structuredClone(state)));
+    } catch {
+      setToast("The other copy could not be preserved. Export this tab first.");
+    }
+  }
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
@@ -199,26 +290,36 @@ export function usePlannerController() {
     navigate("cook");
   }
   function update(fn: (s: State) => State) {
+    if (conflictBlocked.current) {
+      setToast(tr("resolveTabConflictFirst"));
+      return false;
+    }
     const current = store.getState().planner.current;
     if (current) {
       try {
         const next = fn(current);
-        if (next === current) return;
+        if (next === current) return true;
         dispatch(stateChanged(next));
         setUndoEntry({
           before: current,
           after: store.getState().planner.current!,
         });
+        return true;
       } catch (error) {
         setToast((error as Error).message);
       }
     }
+    return false;
   }
   function toggle(
     group: Exclude<keyof Progress, "cook">,
     key: string,
     value: boolean,
   ) {
+    if (conflictBlocked.current) {
+      setToast(tr("resolveTabConflictFirst"));
+      return;
+    }
     if (group === "done" && !value) {
       update((s) => undoCooking(s, key));
       return;
@@ -229,6 +330,7 @@ export function usePlannerController() {
       setUndoEntry({ before, after: store.getState().planner.current! });
   }
   function undoLastAction() {
+    if (conflictBlocked.current) return;
     const current = store.getState().planner.current;
     if (!undoEntry || current !== undoEntry.after) return;
     const physical =
@@ -302,10 +404,14 @@ export function usePlannerController() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function finishRecovery(next: State) {
+    if (conflictBlocked.current) {
+      setToast(tr("resolveTabConflictFirst"));
+      return false;
+    }
     try {
       if (recoveryBlocked.current && recoveryRaw)
         storageService.preserveFailed(recoveryRaw);
-      storageService.write(next);
+      expectedRaw.current = storageService.write(next, expectedRaw.current);
       recoveryBlocked.current = false;
       setRecoveryRaw(null);
       setStorageError("");
@@ -428,6 +534,13 @@ export function usePlannerController() {
   return {
     error,
     model: {
+      externalChange,
+      loadExternalCopy,
+      keepLocalCopy,
+      downloadExternalCopy: () => {
+        if (externalChange?.raw)
+          downloadRaw(externalChange.raw, "weekday-table-other-tab.json");
+      },
       canUndo: !!undoEntry && state === undoEntry.after,
       undoLastAction,
       recoveryRaw,

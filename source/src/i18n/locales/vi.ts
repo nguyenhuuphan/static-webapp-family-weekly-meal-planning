@@ -1,5 +1,9 @@
 import type { Messages } from "./en";
 export const vi = {
+  replaceExternalCopyConfirm:
+    "Dùng bản của tab này? Bản từ tab khác sẽ được lưu riêng trên thiết bị trước khi thay.",
+  resolveTabConflictFirst:
+    "Hãy xử lý thay đổi từ tab khác trước khi chỉnh sửa.",
   undoPhysicalRecordConfirm:
     "Chỉ hoàn tác ghi nhận nhầm. Nếu đã ăn hoặc bỏ thực phẩm thực tế, hãy giữ ghi nhận. Sửa ghi nhận này?",
   actionUndone: "Đã hoàn tác. Lần sửa được giữ trong lịch sử.",

@@ -1,5 +1,6 @@
 import { STORAGE_KEY } from "src/appConfig";
 import type { State } from "src/types";
+export class StorageConflictError extends Error {}
 export const storageService = {
   raw: () => localStorage.getItem(STORAGE_KEY),
   lastGood: () => localStorage.getItem(STORAGE_KEY + ":last-good"),
@@ -9,9 +10,15 @@ export const storageService = {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   },
-  write: (state: State) => {
+  write: (state: State, expected?: string | null) => {
+    if (
+      expected !== undefined &&
+      localStorage.getItem(STORAGE_KEY) !== expected
+    )
+      throw new StorageConflictError("Saved data changed in another tab.");
     const raw = JSON.stringify(state);
     localStorage.setItem(STORAGE_KEY + ":last-good", raw);
     localStorage.setItem(STORAGE_KEY, raw);
+    return raw;
   },
 };

@@ -101,6 +101,17 @@ const HouseholdSettings: React.FC<IProps> = () => {
           </ul>
         </details>
       )}
+      <p className="caption">
+        {text(
+          "Dữ liệu chỉ đồng bộ giữa các tab trên cùng trình duyệt; chưa chia sẻ giữa hai điện thoại.",
+          "Changes sync between tabs in this browser; sharing between phones is not available.",
+        )}{" "}
+        {!navigator.locks &&
+          text(
+            "Trình duyệt không hỗ trợ khóa ghi giữa các tab; chỉ chỉnh sửa ở một tab.",
+            "Cross-tab write locks are unavailable; edit in one tab at a time.",
+          )}
+      </p>
       <AvoidanceProfiles />
       <div className="settings-grid">
         <section className="panel">

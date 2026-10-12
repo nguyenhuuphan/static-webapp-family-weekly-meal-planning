@@ -140,6 +140,26 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       ))
   )
     throw Error("Invalid avoidance profiles.");
+  if (
+    v.corrections !== undefined &&
+    (!Array.isArray(v.corrections) ||
+      v.corrections.some(
+        (entry) =>
+          !entry ||
+          !Number.isFinite(Date.parse(entry.at)) ||
+          !Array.isArray(entry.food) ||
+          !entry.results ||
+          !entry.uses ||
+          entry.food.some(
+            (food) =>
+              !food ||
+              typeof food.meal?.main !== "string" ||
+              !Number.isInteger(food.servings) ||
+              typeof food.status !== "string",
+          ),
+      ))
+  )
+    throw Error("Invalid correction history.");
   const mealServings = Object.fromEntries(
     Object.entries(v.mealServings || {}).filter(
       ([id, count]) =>

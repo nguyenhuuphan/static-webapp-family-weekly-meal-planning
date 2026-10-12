@@ -35,6 +35,11 @@ const AppLayout: React.FC<IProps> = () => {
     error: translateError,
   } = useI18n();
   const {
+    externalChange,
+    loadExternalCopy,
+    keepLocalCopy,
+    downloadExternalCopy,
+    exportJSON,
     canUndo,
     undoLastAction,
     recoveryRaw,
@@ -121,6 +126,54 @@ const AppLayout: React.FC<IProps> = () => {
         </header>
         <div className="page-content">
           <OfflineStatus />
+          {externalChange && (
+            <section className="panel notice warning" role="alert">
+              <h2>
+                {text(
+                  "Dữ liệu đã thay đổi ở tab khác",
+                  "Data changed in another tab",
+                )}
+              </h2>
+              <p>
+                {text(
+                  "Tạm dừng lưu và chỉnh sửa để tránh ghi đè. Chọn bản muốn dùng; có thể tải bản của tab này trước.",
+                  "Saving and editing are paused to prevent overwrites. Choose a copy, or download this tab first.",
+                )}
+              </p>
+              <div className="actions">
+                <Button onClick={exportJSON}>
+                  {text("Tải bản của tab này", "Download this tab's copy")}
+                </Button>
+                <Button
+                  disabled={externalChange.raw === null}
+                  onClick={downloadExternalCopy}
+                >
+                  {text("Tải bản từ tab khác", "Download other tab’s copy")}
+                </Button>
+                <Button
+                  disabled={externalChange.raw === null}
+                  onClick={loadExternalCopy}
+                >
+                  {text(
+                    "Tải thay đổi từ tab khác",
+                    "Load changes from other tab",
+                  )}
+                </Button>
+                <Button onClick={keepLocalCopy}>
+                  {text("Dùng bản của tab này", "Use this tab's copy")}
+                </Button>
+              </div>
+              {!navigator.locks && (
+                <p>
+                  {text(
+                    "Trình duyệt chưa hỗ trợ khóa ghi giữa các tab. Nên chỉ chỉnh sửa ở một tab.",
+                    "Cross-tab write locks are unavailable. Edit in one tab at a time.",
+                  )}
+                </p>
+              )}
+            </section>
+          )}
+
           {recoveryRaw !== null && (
             <section className="panel notice warning" role="alert">
               <div>
@@ -178,7 +231,7 @@ const AppLayout: React.FC<IProps> = () => {
                 plan={plan}
                 onCancel={() => setEditId(null)}
                 onSave={(m) => {
-                  update((x) => replaceMeal(x, m.id, m));
+                  if (!update((x) => replaceMeal(x, m.id, m))) return;
                   setEditId(null);
                   setToast(source("mealSavedReviewYourPreparationAndStorage"));
                 }}
@@ -222,7 +275,8 @@ const AppLayout: React.FC<IProps> = () => {
                             "Review preparation-specific storage for this new day. Refrigerate Monday protein or freeze later-day protein promptly after prep. Frozen vegetables stay frozen until cooking.",
                           thaw: "Move frozen proteins and sauces to the fridge the morning before this meal. Confirm they are fully thawed before cooking.",
                         };
-                        update((x) => replaceMeal(x, editing.id, copy));
+                        if (!update((x) => replaceMeal(x, editing.id, copy)))
+                          return;
                         setEditId(null);
                         setSwapId("");
                         setToast(

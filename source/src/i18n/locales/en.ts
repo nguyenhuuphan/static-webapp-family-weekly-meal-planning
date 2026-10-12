@@ -1,4 +1,7 @@
 export const en = {
+  replaceExternalCopyConfirm:
+    "Keep this tab’s copy? The other copy will be archived on this device before replacement.",
+  resolveTabConflictFirst: "Resolve the other-tab change before editing.",
   undoPhysicalRecordConfirm:
     "Undo only a mistaken entry. If food was actually eaten or discarded, keep the record. Correct this entry?",
   actionUndone: "Action undone. The correction is kept in history.",

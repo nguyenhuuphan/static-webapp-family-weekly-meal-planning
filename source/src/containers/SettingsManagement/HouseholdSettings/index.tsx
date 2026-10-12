@@ -32,6 +32,8 @@ const HouseholdSettings: React.FC<IProps> = () => {
     setJson,
     setJsonError,
     setToast,
+    soundEnabled,
+    enableSound,
   } = useMealPlanner();
   const text = useText();
   const [servingsDraft, setServingsDraft] = useState(String(s.servings));
@@ -49,6 +51,17 @@ const HouseholdSettings: React.FC<IProps> = () => {
         {tr("languageHelp")} {tr("sourceRecipeHelp")}
       </p>
       <div className="settings-grid">
+        <section className="panel">
+          <h2>{text("Thông báo hẹn giờ", "Timer alerts")}</h2>
+          <label><input type="checkbox" checked={soundEnabled} onChange={async (event) => {
+            if (!await enableSound(event.target.checked)) setToast(text("Trình duyệt chưa hỗ trợ âm báo.", "Audio alerts are unavailable in this browser."));
+          }} />{text("Bật âm báo trong phiên này", "Enable sound in this session")}</label>
+          <p className="caption">{text("Sau khi tải lại trang, hãy bật lại âm báo. Thông báo nền tùy thuộc trình duyệt.", "After reloading, re-enable sound. Background notifications depend on your browser.")}</p>
+          {typeof Notification !== "undefined" && <Button onClick={async () => {
+            const permission = await Notification.requestPermission();
+            setToast(permission === "granted" ? text("Đã bật thông báo.", "Notifications enabled.") : text("Chưa cấp quyền thông báo. Hẹn giờ vẫn hiển thị trong ứng dụng.", "Notifications are not allowed. The timer remains visible in the app."));
+          }}>{text("Cho phép thông báo hẹn giờ", "Allow timer notifications")}</Button>}
+        </section>
         <section className="panel">
           <span className="tile-icon">
             <Users size={22} />

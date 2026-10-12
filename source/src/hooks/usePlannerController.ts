@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePersistentState } from "./usePersistentState";
+import { useTimerAlarm } from "./useTimerAlarm";
 import { useI18n } from "src/i18n";
 import { isCookingPreparation } from "src/helpers/preparation";
 import type { Meal, Plan, State, View, Progress } from "src/types";
@@ -39,6 +40,7 @@ export function usePlannerController() {
     [now, setNow] = useState(Date.now()),
     [search, setSearch] = useState(""),
     [swapId, setSwapId] = useState("");
+  const alarm = useTimerAlarm(state?.timer ?? null, timerSeconds(state?.timer ?? null, now));
   useEffect(() => {
     let active = true;
     queryMealPlan()
@@ -219,6 +221,7 @@ export function usePlannerController() {
   return {
     error,
     model: {
+      ...alarm,
       s,
       plan,
       factor,

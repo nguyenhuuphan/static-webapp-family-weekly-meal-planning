@@ -1,3 +1,4 @@
+import QuickCompletion from "./QuickCompletion";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useEffect, useState } from "react";
 import { CALENDAR_DAYS, calendarDate } from "src/helpers/calendar";
@@ -355,6 +356,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                             );
                           })()}
                         <AllergyWarnings ingredients={m.ingredients} />
+                        {!readOnly && <QuickCompletion meal={m} />}
                         {!readOnly && <ScheduleControls meal={m} />}
                         <CalendarMeals date={date} type={type} />
                         {done && !readOnly && (

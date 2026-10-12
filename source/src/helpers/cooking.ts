@@ -35,9 +35,6 @@ export function finishCooking(
   at = new Date().toISOString(),
 ): State {
   const meal = state.plan.meals.find((m) => m.id === id);
-  const batch =
-    state.cookingBatches?.[id]?.servings ??
-    (meal ? mealPortions(state, meal) : 0);
   if (
     !meal ||
     state.progress.done[id] ||
@@ -45,6 +42,32 @@ export function finishCooking(
     !state.progress.ready[id]
   )
     throw Error("Confirm preparation and storage before finishing.");
+  return recordMealCompletion(state, id, cooked, eaten, at);
+}
+
+/** Record an already finished meal without inventing preparation or storage checks. */
+export function completeMealQuickly(
+  state: State,
+  id: string,
+  cooked: number,
+  eaten: number,
+  at = new Date().toISOString(),
+): State {
+  return recordMealCompletion(state, id, cooked, eaten, at);
+}
+
+function recordMealCompletion(
+  state: State,
+  id: string,
+  cooked: number,
+  eaten: number,
+  at: string,
+): State {
+  const meal = state.plan.meals.find((m) => m.id === id);
+  if (!meal || state.progress.done[id] || mealPortions(state, meal) === 0)
+    throw Error("Choose an active unfinished meal.");
+  const batch =
+    state.cookingBatches?.[id]?.servings ?? mealPortions(state, meal);
   if (
     !Number.isInteger(cooked) ||
     cooked < 1 ||

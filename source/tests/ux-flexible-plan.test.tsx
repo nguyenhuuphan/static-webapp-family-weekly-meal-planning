@@ -54,8 +54,9 @@ it("preserves food after cancellation and schedules it into the next week", asyn
       .disabled,
   ).toBe(true);
   fireEvent.click(panel.getByRole("checkbox"));
+  const future = "2026-10-20";
   fireEvent.change(panel.getByLabelText("Meal date"), {
-    target: { value: "2026-10-20" },
+    target: { value: future },
   });
   fireEvent.click(panel.getByRole("button", { name: "Save meal date" }));
   expect(readState().savedFood![0].date).toBe("2026-10-20");
@@ -78,4 +79,28 @@ it("shows an empty cooking state when the entire week is skipped", async () => {
     screen.getByRole("heading", { name: "No meals to cook" }),
   ).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Finish meal" })).toBeNull();
+});
+
+it("offers weekend and next-week meals directly in the destination selector", async () => {
+  const initial = freshState(structuredClone(plan));
+  initial.weekStart = "2026-10-12";
+  initial.progress.prep[plan.meals[0].id + ":0"] = true;
+  await boot(changePortions(initial, plan.meals[0].id, 0));
+  const panel = within(screen.getByRole("region", { name: "Food to arrange" }));
+  fireEvent.click(panel.getByText("Review and arrange"));
+  const selector = panel.getByLabelText("Choose destination meal");
+  expect(
+    within(selector).getByRole("option", {
+      name: "Saturday · 2026-10-17 · Lunch",
+    }),
+  ).toBeTruthy();
+  fireEvent.change(selector, { target: { value: "date:2026-10-20:Dinner" } });
+  fireEvent.click(panel.getByRole("checkbox"));
+  fireEvent.click(panel.getByRole("button", { name: "Save meal date" }));
+  expect(readState().savedFood![0]).toMatchObject({
+    status: "scheduled",
+    date: "2026-10-20",
+    type: "Dinner",
+  });
+  expect(readState().weekStart).toBe("2026-10-12");
 });

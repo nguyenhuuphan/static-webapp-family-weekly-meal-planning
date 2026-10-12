@@ -1,3 +1,4 @@
+import FutureMealOptions from "./FutureMealOptions";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { finishSavedFood } from "src/helpers/cooking";
 import CookedFoodCard from "./CookedFoodCard";
@@ -117,8 +118,19 @@ function FoodCard({ food }: { food: SavedFood }) {
         </>
       )}
       <label>
-        {text("Thay một bữa chưa chuẩn bị", "Replace an unprepared meal")}
-        <select value={target} onChange={(e) => setTarget(e.target.value)}>
+        {text("Chọn bữa để sắp xếp", "Choose destination meal")}
+        <select
+          value={target}
+          onChange={(e) => {
+            const value = e.target.value;
+            setTarget(value);
+            if (value.startsWith("date:")) {
+              const [, date, type] = value.split(":");
+              setDate(date);
+              setType(type as "Lunch" | "Dinner");
+            } else setDate("");
+          }}
+        >
           <option value="">{text("Chọn bữa", "Choose meal")}</option>
           {s.plan.meals
             .filter(
@@ -135,6 +147,7 @@ function FoodCard({ food }: { food: SavedFood }) {
                 {ct(m.day)} · {ct(m.type)} · {ct(m.main)} ({mealPortions(s, m)})
               </option>
             ))}
+          <FutureMealOptions />
         </select>
       </label>
       {destination && (
@@ -146,48 +159,52 @@ function FoodCard({ food }: { food: SavedFood }) {
           )}
         </p>
       )}
-      <Button
-        disabled={
-          !destination ||
-          (destination && mealPortions(s, destination) > food.servings) ||
-          (food.kind === "prepared" && !reviewed)
-        }
-        onClick={() => {
-          try {
-            update((s) => assignFood(s, food.id, target));
-          } catch (e) {
-            setToast((e as Error).message);
-          }
-        }}
-      >
-        {text("Xác nhận thay bữa", "Confirm replacement")}
-      </Button>
-      <Button
-        disabled={!destination || (food.kind === "prepared" && !reviewed)}
-        onClick={() => {
-          try {
-            update((s) => mergeFood(s, food.id, target));
-          } catch (e) {
-            setToast((e as Error).message);
-          }
-        }}
-      >
-        {text(
-          "Gộp phần vào cùng công thức",
-          "Merge portions into the same recipe",
-        )}
-      </Button>
-      <details>
-        <summary>
+      {destination && (
+        <>
+          <Button
+            disabled={
+              !destination ||
+              (destination && mealPortions(s, destination) > food.servings) ||
+              (food.kind === "prepared" && !reviewed)
+            }
+            onClick={() => {
+              try {
+                update((s) => assignFood(s, food.id, target));
+              } catch (e) {
+                setToast((e as Error).message);
+              }
+            }}
+          >
+            {text("Xác nhận thay bữa", "Confirm replacement")}
+          </Button>
+          <Button
+            disabled={!destination || (food.kind === "prepared" && !reviewed)}
+            onClick={() => {
+              try {
+                update((s) => mergeFood(s, food.id, target));
+              } catch (e) {
+                setToast((e as Error).message);
+              }
+            }}
+          >
+            {text(
+              "Gộp phần vào cùng công thức",
+              "Merge portions into the same recipe",
+            )}
+          </Button>
+        </>
+      )}
+      <fieldset>
+        <legend>
           {text(
             "Chọn ngày khác / cuối tuần / tuần sau",
             "Choose another date / weekend / next week",
           )}
-        </summary>
+        </legend>
         <p>
           {text(
-            "Đây là bữa bổ sung, không thay món đang có trong lịch. Chọn “Thay một bữa” nếu muốn thay món.",
-            "This adds a separate meal without replacing the weekly menu. Choose replacement above to replace a planned meal.",
+            "Đây là bữa bổ sung, không thay món đang có trong lịch. Chọn bữa có tên món ở trên nếu muốn thay món.",
+            "This adds a separate meal without replacing the weekly menu. Choose an existing recipe above to replace a planned meal.",
           )}
         </p>
         <label>
@@ -219,7 +236,7 @@ function FoodCard({ food }: { food: SavedFood }) {
         >
           {text("Lưu lịch ăn", "Save meal date")}
         </Button>
-      </details>
+      </fieldset>
       <details>
         <summary>
           {text("Xem nguyên liệu và hướng dẫn", "Ingredients and instructions")}

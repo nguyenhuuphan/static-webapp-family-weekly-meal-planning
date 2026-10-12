@@ -1,3 +1,4 @@
+import FutureMealOptions from "./FutureMealOptions";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useState } from "react";
 import type { SavedFood } from "src/types";
@@ -89,6 +90,20 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
           "Add cooked food to the seven-day calendar. Review and skip the original meal if these portions replace a planned meal.",
         )}
       </p>
+      <label>
+        {text("Chọn nhanh cuối tuần / tuần sau", "Choose weekend / next week")}
+        <select
+          value={`date:${date}:${type}`}
+          onChange={(e) => {
+            const [, date, type] = e.target.value.split(":");
+            setDate(date || "");
+            setType((type as "Lunch" | "Dinner") || "Dinner");
+          }}
+        >
+          <option value="">{text("Chọn bữa", "Choose meal")}</option>
+          <FutureMealOptions />
+        </select>
+      </label>
       <label>
         {text("Ngày ăn", "Meal date")}
         <input

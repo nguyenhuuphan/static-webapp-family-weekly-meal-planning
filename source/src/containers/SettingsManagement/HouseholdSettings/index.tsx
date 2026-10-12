@@ -98,19 +98,20 @@ const HouseholdSettings: React.FC<IProps> = () => {
               value={s.weekStart}
               onChange={(e) => {
                 const v = e.target.value;
-                if (!isMonday(v)) {
-                  setToast(source("pleaseChooseAMonday"));
-                  return;
-                }
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return;
+                const date = new Date(v + "T12:00:00");
+                date.setDate(date.getDate() - (date.getDay() + 6) % 7);
+                const monday = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
                 if (confirm(tr("startANewWeekWithThisMenuAndFreshChecklists")))
                   update((x) => ({
                     ...x,
-                    weekStart: v,
+                    weekStart: monday,
                     progress: freshProgress(),
                     timer: null, timers: [],
                   }));
               }}
             />
+            <small>{text("Chọn ngày bất kỳ; ứng dụng sẽ lấy thứ Hai của tuần đó.", "Choose any day; the app uses the Monday of that week.")}</small>
           </label>
           <Button onClick={resetProgress}>
             <RotateCcw size={15} />

@@ -153,6 +153,7 @@ describe("bilingual meal planner", () => {
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("vi");
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(before);
     navigation("Đi chợ");
+    fireEvent.click(screen.getByRole("button", { name: "Tất cả" }));
     const shrimp = screen.getByRole("checkbox", {
       name: "Đã mua Tôm đã bóc vỏ",
     }) as HTMLInputElement;
@@ -174,7 +175,11 @@ describe("bilingual meal planner", () => {
     switchLanguage("vi");
     view.unmount();
     await boot();
-    expect(within(screen.getByRole("navigation")).getByRole("button", { name: "Đi chợ" }).getAttribute("aria-current")).toBe("page");
+    expect(
+      within(screen.getByRole("navigation"))
+        .getByRole("button", { name: "Đi chợ" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
     navigation("Tuần này");
     expect(
       screen.getByRole("heading", { name: "Thịt heo rim tỏi nước mắm" }),

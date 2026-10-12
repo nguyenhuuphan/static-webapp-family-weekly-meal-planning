@@ -1,4 +1,5 @@
-import { useI18n } from "src/i18n";
+import { useI18n, useText } from "src/i18n";
+import { usePersistentState } from "src/hooks/usePersistentState";
 import { ShoppingBag, Printer, X, Search } from "lucide-react";
 
 import { ingredientKey } from "src/domain";
@@ -7,6 +8,8 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 
 interface IProps {}
 const ShoppingList: React.FC<IProps> = () => {
+  const text = useText();
+  const [filter, setFilter] = usePersistentState("planner:shopping-filter", "needed");
   const { t: tr, content: ct, number: num, unit } = useI18n();
   const { s, needs, bought, shopping, toggle, search, setSearch } =
     useMealPlanner();
@@ -61,10 +64,15 @@ const ShoppingList: React.FC<IProps> = () => {
           </button>
         )}
       </div>
+      <div className="actions" role="group" aria-label={text("Lọc danh sách", "Filter shopping list")}>
+        {[["needed", text("Cần mua", "To buy")], ["bought", text("Đã mua", "Bought")], ["owned", text("Có sẵn", "At home")], ["all", text("Tất cả", "All")]].map(([value, label]) =>
+          <Button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</Button>)}
+      </div>
       <div className="shopping-grid">
         {[...new Set(shopping.map((i) => i.category))].map((category) => {
           const items = shopping.filter(
-            (i) => i.category === category && matches(i.name),
+            (i) => i.category === category && matches(i.name) &&
+              (filter === "all" || (filter === "owned" ? s.progress.owned[ingredientKey(i)] : filter === "bought" ? s.progress.shopping[ingredientKey(i)] && !s.progress.owned[ingredientKey(i)] : !s.progress.owned[ingredientKey(i)] && !s.progress.shopping[ingredientKey(i)])),
           );
           if (!items.length) return null;
           return (
@@ -119,6 +127,7 @@ const ShoppingList: React.FC<IProps> = () => {
           );
         })}
       </div>
+      {filter === "needed" && bought === needs.length && <p role="status">{text("Đã đủ nguyên liệu cần mua.", "Your shopping is complete.")}</p>}
       {!shopping.some((i) => matches(i.name)) && (
         <div className="panel empty">
           {tr("noSearchResults", { query: search })}

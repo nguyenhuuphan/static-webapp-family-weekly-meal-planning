@@ -71,6 +71,7 @@ describe("React feature parity", () => {
       within(screen.getByRole("main")).getAllByRole("button", { name: "Cook" }),
     ).toHaveLength(11);
     nav("Shopping");
+    fireEvent.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByText("500 g")).toBeTruthy();
     fireEvent.click(
       screen.getByRole("checkbox", { name: "Bought Shrimp, peeled" }),

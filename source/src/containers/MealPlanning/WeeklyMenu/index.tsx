@@ -19,6 +19,8 @@ import { isPrepared } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 
+import ScheduleControls from "./ScheduleControls";
+
 interface IProps {}
 const WeeklyMenu: React.FC<IProps> = () => {
   const { t: tr, content: ct, number: num, date: localizedDate } = useI18n();
@@ -201,6 +203,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                             </button>
                           </div>
                         </div>
+                        <ScheduleControls meal={m} />
                         {done && (
                           <button
                             className="undo caption"

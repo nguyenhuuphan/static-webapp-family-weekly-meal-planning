@@ -22,12 +22,27 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 interface IProps {}
 const WeeklyMenu: React.FC<IProps> = () => {
   const { t: tr, content: ct, number: num, date: localizedDate } = useI18n();
-  const { s, plan, doneCount, edit, navigate, cook, toggle, bought, needs, prepDone, prepTotal } = useMealPlanner();
+  const {
+    s,
+    plan,
+    doneCount,
+    edit,
+    navigate,
+    cook,
+    toggle,
+    bought,
+    needs,
+    prepDone,
+    prepTotal,
+  } = useMealPlanner();
   const text = useText();
   const today = new Date();
   const todayDay = DAYS[today.getDay() - 1];
-  const nextMeal = plan.meals.find((m) => m.day === todayDay && !s.progress.done[m.id]) || plan.meals.find((m) => !s.progress.done[m.id]);
-  const nextView = bought < needs.length ? "shop" : prepDone < prepTotal ? "prep" : "cook";
+  const nextMeal =
+    plan.meals.find((m) => m.day === todayDay && !s.progress.done[m.id]) ||
+    plan.meals.find((m) => !s.progress.done[m.id]);
+  const nextView =
+    bought < needs.length ? "shop" : prepDone < prepTotal ? "prep" : "cook";
   return (
     <>
       <Heading
@@ -37,17 +52,36 @@ const WeeklyMenu: React.FC<IProps> = () => {
           "tenComfortingMealsOneThoughtfulShoppingListACalmerRhythmForYour",
         )}
       >
-        <Button onClick={() => nextView === "cook" && nextMeal ? cook(nextMeal) : navigate(nextView)} primary>
+        <Button
+          onClick={() =>
+            nextView === "cook" && nextMeal
+              ? cook(nextMeal)
+              : navigate(nextView)
+          }
+          primary
+        >
           <ShoppingBag size={17} />
-          {nextView === "shop" ? tr("startShopping") : nextView === "prep" ? tr("prepGuide") : tr("startCooking")}
+          {nextView === "shop"
+            ? tr("startShopping")
+            : nextView === "prep"
+              ? tr("prepGuide")
+              : tr("startCooking")}
         </Button>
       </Heading>
-      {nextMeal && <section className="panel">
-        <span className="eyebrow">{text("Bữa ăn tiếp theo", "Your next meal")}</span>
-        <h2>{ct(nextMeal.day)} · {ct(nextMeal.type)} — {ct(nextMeal.main)}</h2>
-        <p>{ct(nextMeal.side)}</p>
-        <Button primary onClick={() => cook(nextMeal)}>{tr("cook")} <ArrowRight size={16} /></Button>
-      </section>}
+      {nextMeal && (
+        <section className="panel">
+          <span className="eyebrow">
+            {text("Bữa ăn tiếp theo", "Your next meal")}
+          </span>
+          <h2>
+            {ct(nextMeal.day)} · {ct(nextMeal.type)} — {ct(nextMeal.main)}
+          </h2>
+          <p>{ct(nextMeal.side)}</p>
+          <Button primary onClick={() => cook(nextMeal)}>
+            {tr("cook")} <ArrowRight size={16} />
+          </Button>
+        </section>
+      )}
       <div className="metric-grid">
         <div>
           <span className="metric-icon">
@@ -189,15 +223,20 @@ const WeeklyMenu: React.FC<IProps> = () => {
             <h2>{tr("aWeekWellSpent")}</h2>
             <div className="progress-total">
               <strong>{num(doneCount)}</strong>
-              <span>{tr("of10MealsEnjoyed")}</span>
+              <span>
+                {tr("enjoyedCount", {
+                  count: doneCount,
+                  total: plan.meals.length,
+                })}
+              </span>
             </div>
             <progress
               value={doneCount}
-              max={10}
+              max={plan.meals.length}
               aria-label={tr("mealsEnjoyedThisWeek")}
             />
             <p>
-              {doneCount === 10
+              {doneCount === plan.meals.length
                 ? tr("aFullWeekOfGoodFoodBeautifullyDone")
                 : tr("yourNextGoodMealStartsWithOneSmallStep")}
             </p>

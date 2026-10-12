@@ -34,6 +34,11 @@ const AppLayout: React.FC<IProps> = () => {
     error: translateError,
   } = useI18n();
   const {
+    recoveryRaw,
+    hasLastGood,
+    downloadRecovery,
+    recoverLastGood,
+    createAfterRecovery,
     s,
     plan,
     editing,
@@ -112,6 +117,50 @@ const AppLayout: React.FC<IProps> = () => {
           </div>
         </header>
         <div className="page-content">
+          {recoveryRaw !== null && (
+            <section className="panel notice warning" role="alert">
+              <div>
+                <h2>
+                  {text(
+                    "Dữ liệu đã lưu cần phục hồi",
+                    "Saved data needs recovery",
+                  )}
+                </h2>
+                <p>
+                  {text(
+                    "App đang tạm dừng tự lưu. Bản gốc được giữ nguyên; mọi chỉnh sửa hiện tại chỉ là tạm thời.",
+                    "Autosave is paused. Original data is preserved; current changes are temporary.",
+                  )}
+                </p>
+                <div className="actions">
+                  <Button onClick={downloadRecovery}>
+                    {text("Tải dữ liệu gốc", "Download original data")}
+                  </Button>
+                  {hasLastGood && (
+                    <Button onClick={recoverLastGood}>
+                      {text(
+                        "Khôi phục bản hợp lệ gần nhất",
+                        "Restore last valid snapshot",
+                      )}
+                    </Button>
+                  )}
+                  <Button onClick={() => navigate("settings")}>
+                    {text(
+                      "Nhập backup để phục hồi",
+                      "Import backup to recover",
+                    )}
+                  </Button>
+                  <Button onClick={createAfterRecovery}>
+                    {text(
+                      "Tạo kế hoạch mới và lưu",
+                      "Create and save a new plan",
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
           {storageError && (
             <div className="notice warning" role="alert">
               {ct(storageError)}

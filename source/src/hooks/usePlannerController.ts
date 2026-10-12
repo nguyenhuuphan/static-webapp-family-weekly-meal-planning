@@ -58,6 +58,9 @@ export function usePlannerController() {
     [now, setNow] = useState(Date.now()),
     [search, setSearch] = useState(""),
     [swapId, setSwapId] = useState("");
+  const recoveryBlocked = useRef(false);
+  const [recoveryRaw, setRecoveryRaw] = useState<string | null>(null);
+  const [hasLastGood, setHasLastGood] = useState(false);
   const [pendingImport, setPendingImport] = useState<State | null>(null);
   const alarm = useTimerAlarm(
     [...(state?.timers || []), ...(state?.timer ? [state.timer] : [])],
@@ -73,6 +76,13 @@ export function usePlannerController() {
           const saved = storageService.read();
           if (saved) initial = hydrateState(saved, p);
         } catch {
+          recoveryBlocked.current = true;
+          try {
+            setRecoveryRaw(storageService.raw() || "");
+            setHasLastGood(!!storageService.lastGood());
+          } catch {
+            setRecoveryRaw("");
+          }
           setStorageError(
             "Saved data could not be read. The original menu is shown. Export changes to keep a backup.",
           );
@@ -111,7 +121,7 @@ export function usePlannerController() {
     };
   }, [dispatch]);
   useEffect(() => {
-    if (!state) return;
+    if (!state || recoveryBlocked.current) return;
     try {
       storageService.write(state);
       setStorageError("");
@@ -216,6 +226,33 @@ export function usePlannerController() {
     setSelected(plan.meals[0].id);
     navigate("week");
     setToast("Plan updated. Checklists are fresh.");
+  }
+  function downloadRaw(raw: string, filename: string) {
+    const url = URL.createObjectURL(
+      new Blob([raw], { type: "application/json" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  function finishRecovery(next: State) {
+    try {
+      if (recoveryBlocked.current && recoveryRaw)
+        storageService.preserveFailed(recoveryRaw);
+      storageService.write(next);
+      recoveryBlocked.current = false;
+      setRecoveryRaw(null);
+      setStorageError("");
+      update(() => next);
+      return true;
+    } catch {
+      setToast(
+        "Recovery could not be saved. Download the original data first; nothing was replaced.",
+      );
+      return false;
+    }
   }
   function exportJSON() {
     if (!state) return;
@@ -325,11 +362,27 @@ export function usePlannerController() {
   return {
     error,
     model: {
+      recoveryRaw,
+      hasLastGood,
+      downloadRecovery: () =>
+        downloadRaw(recoveryRaw || "", "weekday-table-recovery-original.json"),
+      recoverLastGood: () => {
+        try {
+          const raw = storageService.lastGood();
+          if (!raw) throw Error("No valid snapshot available.");
+          finishRecovery(hydrateState(JSON.parse(raw), defaults));
+        } catch {
+          setToast(
+            "The snapshot could not be restored. Import a backup or download the original data.",
+          );
+        }
+      },
+      createAfterRecovery: () => finishRecovery(freshState(defaults)),
       pendingImport,
       setPendingImport,
       restoreBackup: () => {
         if (!pendingImport) return;
-        update(() => pendingImport);
+        if (!finishRecovery(pendingImport)) return;
         setSelected(pendingImport.plan.meals[0].id);
         setPendingImport(null);
         navigate("week");

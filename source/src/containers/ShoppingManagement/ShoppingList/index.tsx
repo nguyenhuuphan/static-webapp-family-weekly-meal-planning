@@ -1,3 +1,5 @@
+import type { Ingredient } from "src/types";
+import PurchaseEntry from "./PurchaseEntry";
 import { useI18n, useText } from "src/i18n";
 import { usePersistentState } from "src/hooks/usePersistentState";
 import { ShoppingBag, Printer, X, Search } from "lucide-react";
@@ -20,11 +22,10 @@ const ShoppingList: React.FC<IProps> = () => {
     useMealPlanner();
   const surplus = Object.entries(s.purchased || {}).flatMap(([key, item]) => {
     const required = shopping.find((i) => ingredientKey(i) === key)?.qty || 0;
+    const available = availableAcquisitions(s, key);
     const extra = Math.max(
       0,
-      Math.round(
-        (item.qty - Math.max(0, required - (s.pantry?.[key] || 0))) * 100,
-      ) / 100,
+      Math.round((available.home + available.purchased - required) * 100) / 100,
     );
     return extra > 0 ? [{ ...item, qty: extra }] : [];
   });
@@ -159,7 +160,13 @@ const ShoppingList: React.FC<IProps> = () => {
                     <label className="item-check">
                       <input
                         type="checkbox"
-                        disabled={owned}
+                        disabled={
+                          owned ||
+                          s.purchaseReceipts?.some((r) => r.key === k) ||
+                          Object.values(s.stockUses || {}).some(
+                            (use) => (use.purchased[k] || 0) > 0,
+                          )
+                        }
                         checked={!!checked}
                         onChange={(e) =>
                           toggle("shopping", k, e.target.checked)
@@ -200,6 +207,11 @@ const ShoppingList: React.FC<IProps> = () => {
                         </small>
                       )}
                     </span>
+                    <PurchaseEntry
+                      key={`${k}:${i.toBuy}`}
+                      item={i as Ingredient}
+                      needed={i.toBuy}
+                    />
                     <label className="pantry-amount">
                       {text("Lượng có sẵn", "Amount at home")} ({unit(i.unit)})
                       <input

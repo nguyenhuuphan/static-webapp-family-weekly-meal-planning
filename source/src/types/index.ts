@@ -56,6 +56,16 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  purchaseReceipts?: {
+    id: string;
+    key: string;
+    qty: number;
+    unit: string;
+    packages?: number;
+    packageSize?: number;
+    location: string;
+    at: string;
+  }[];
   corrections?: {
     at: string;
     food: SavedFood[];

@@ -113,6 +113,19 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
     )
       throw Error("Invalid meal result.");
   }
+  if (
+    v.purchaseReceipts !== undefined &&
+    (!Array.isArray(v.purchaseReceipts) ||
+      v.purchaseReceipts.some(
+        (r) =>
+          !r ||
+          typeof r.key !== "string" ||
+          !Number.isFinite(r.qty) ||
+          r.qty <= 0 ||
+          !Number.isFinite(Date.parse(r.at)),
+      ))
+  )
+    throw Error("Invalid purchase history.");
   const mealServings = Object.fromEntries(
     Object.entries(v.mealServings || {}).filter(
       ([id, count]) =>

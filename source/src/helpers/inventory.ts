@@ -85,3 +85,53 @@ export function updateHomeStock(
   const next = { ...state, pantry: { ...state.pantry, [key]: amount + used } };
   return reconcileShopping(next);
 }
+
+export function recordPurchase(
+  state: State,
+  item: Ingredient,
+  qty: number,
+  location: string,
+  packages?: number,
+  packageSize?: number,
+): State {
+  if (
+    !Number.isFinite(qty) ||
+    qty <= 0 ||
+    qty > 1000000 ||
+    !["unknown", "pantry", "fridge", "freezer"].includes(location)
+  )
+    throw Error("Invalid actual purchase.");
+  if (
+    packages !== undefined &&
+    (!Number.isInteger(packages) ||
+      packages < 1 ||
+      !Number.isFinite(packageSize) ||
+      packageSize! <= 0 ||
+      Math.abs(packages * packageSize! - qty) > 0.00001)
+  )
+    throw Error("Check package quantities.");
+  const normalized = normalizedIngredient({ ...item, qty }),
+    key = ingredientKey(normalized);
+  const next = structuredClone(state);
+  next.purchased = {
+    ...next.purchased,
+    [key]: {
+      ...normalized,
+      qty: (next.purchased?.[key]?.qty || 0) + normalized.qty,
+    },
+  };
+  next.purchaseReceipts = [
+    ...(next.purchaseReceipts || []),
+    {
+      id: crypto.randomUUID(),
+      key,
+      qty: normalized.qty,
+      unit: normalized.unit,
+      packages,
+      packageSize,
+      location,
+      at: new Date().toISOString(),
+    },
+  ];
+  return reconcileShopping(next);
+}

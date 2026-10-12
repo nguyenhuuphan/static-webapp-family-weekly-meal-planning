@@ -12,6 +12,7 @@ import type { MessageKey } from "src/i18n/locales/en";
 import { groupPreparation, type PrepOperation } from "src/helpers/preparation";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
+import { currentMealLabel, movedFromOriginal } from "src/helpers/mealLabels";
 import { mealPortions } from "src/utils";
 import MealDetails from "./MealDetails";
 
@@ -67,6 +68,11 @@ const PrepDay: React.FC = () => {
   } | null>("prep:undo", null);
   const { t: tr, content: ct, number, unit, instruction } = useI18n();
   const { s, plan, navigate, toggle, update } = useMealPlanner();
+  const prepInstruction = (value: string, meal: (typeof plan.meals)[number]) =>
+    currentMealLabel(
+      instruction(value, mealPortions(s, meal) / plan.servings),
+      `${ct(meal.day)} · ${ct(meal.type)}`,
+    );
   const prepIdentity = JSON.stringify([
     plan,
     s.servings,
@@ -385,18 +391,16 @@ const PrepDay: React.FC = () => {
                                 {["sliceThin", "cutChicken"].includes(
                                   group.operation,
                                 )
-                                  ? instruction(
+                                  ? prepInstruction(
                                       allocation.task.text,
-                                      mealPortions(s, allocation.meal) /
-                                        plan.servings,
+                                      allocation.meal,
                                     )
                                       .split(/\.\s+/)
                                       .slice(1)
                                       .join(". ")
-                                  : instruction(
+                                  : prepInstruction(
                                       allocation.task.text,
-                                      mealPortions(s, allocation.meal) /
-                                        plan.servings,
+                                      allocation.meal,
                                     )}
                               </p>
                               {["sliceThin", "cutChicken"].includes(
@@ -407,13 +411,20 @@ const PrepDay: React.FC = () => {
                                     {tr("prepOriginalInstruction")}
                                   </summary>
                                   <p>
-                                    {instruction(
+                                    {prepInstruction(
                                       allocation.task.text,
-                                      mealPortions(s, allocation.meal) /
-                                        plan.servings,
+                                      allocation.meal,
                                     )}
                                   </p>
                                 </details>
+                              )}
+                              {movedFromOriginal(allocation.meal) && (
+                                <p className="notice warning">
+                                  {text(
+                                    "Đã đổi lịch. Hướng dẫn bảo quản dưới đây thuộc lịch gốc; hãy kiểm tra thực tế trước khi dùng.",
+                                    "Meal moved. Storage guidance below refers to the original schedule; review actual storage before use.",
+                                  )}
+                                </p>
                               )}
                               <div className="prep-storage-inline">
                                 <Snowflake size={16} />

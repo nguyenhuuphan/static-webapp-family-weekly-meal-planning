@@ -4,6 +4,7 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useI18n, useText } from "src/i18n";
 import { reconcileShopping } from "src/helpers/shopping";
 import { assignFood } from "src/helpers/scheduling";
+import { currentMealLabel } from "src/helpers/mealLabels";
 import { mealPortions } from "src/utils";
 import { Button } from "src/modules/shared-main/components";
 
@@ -26,6 +27,9 @@ function FoodCard({ food }: { food: SavedFood }) {
       }),
     );
   const destination = s.plan.meals.find((m) => m.id === target);
+  const label = food.date
+    ? `${food.date} · ${ct(food.type || "Dinner")}`
+    : text("Chưa có lịch ăn", "Not scheduled");
   const tasks = Object.entries(food.preparedTasks);
   const factor = food.servings / food.baseServings;
   return (
@@ -67,6 +71,12 @@ function FoodCard({ food }: { food: SavedFood }) {
           ))}
         </ul>
       )}
+      <p className="notice warning">
+        {text(
+          "Hướng dẫn dưới đây theo công thức gốc; không xác nhận thực phẩm còn dùng được ở ngày mới.",
+          "Guidance below belongs to the original recipe; it does not confirm food is usable on the new date.",
+        )}
+      </p>
       <p className="caption">
         {ct(food.meal.storage)} {ct(food.meal.thaw)}
       </p>
@@ -196,7 +206,7 @@ function FoodCard({ food }: { food: SavedFood }) {
         <ul>
           {food.meal.prep.map((p, index) => (
             <li key={index}>
-              {instruction(p.text, factor)}{" "}
+              {currentMealLabel(instruction(p.text, factor), label)}{" "}
               {food.preparedTasks[index]?.servings >= food.servings
                 ? text("(Đã sơ chế)", "(Prepared)")
                 : text(

@@ -1,4 +1,5 @@
 import { useI18n, useText } from "src/i18n";
+import { currentMealLabel, movedFromOriginal } from "src/helpers/mealLabels";
 import { isCookingPreparation } from "src/helpers/preparation";
 import {
   ShoppingBag,
@@ -140,6 +141,14 @@ const CookingSession: React.FC<IProps> = () => {
             </div>
             <h2>{ct(meal.main)}</h2>
             <p>{ct(meal.side)}</p>
+            {movedFromOriginal(meal) && (
+              <p className="notice warning">
+                {text(
+                  "Đã đổi lịch. Hướng dẫn bảo quản và rã đông gốc không tự cập nhật theo ngày ăn mới. Hãy kiểm tra thực tế.",
+                  "Meal moved. Original storage and thawing guidance does not automatically change with the new meal date. Review actual conditions.",
+                )}
+              </p>
+            )}
             <details>
               <summary>
                 <ShoppingBag size={15} />
@@ -163,7 +172,12 @@ const CookingSession: React.FC<IProps> = () => {
                 <ul>
                   {meal.prep.map((task, index) =>
                     isCookingPreparation(meal, index) ? (
-                      <li key={index}>{t(task.text)}</li>
+                      <li key={index}>
+                        {currentMealLabel(
+                          t(task.text),
+                          `${ct(meal.day)} · ${ct(meal.type)}`,
+                        )}
+                      </li>
                     ) : null,
                   )}
                 </ul>

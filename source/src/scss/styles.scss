@@ -2935,3 +2935,15 @@ select:focus-visible {
 .batch-status {
   margin-block: 12px;
 }
+
+.undo-action {
+  position: sticky;
+  bottom: 12px;
+  z-index: 25;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  width: fit-content;
+  margin: 12px auto;
+}

@@ -56,6 +56,12 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  corrections?: {
+    at: string;
+    food: SavedFood[];
+    results: NonNullable<State["mealResults"]>;
+    uses: Record<string, StockUse>;
+  }[];
   cookingBatches?: Record<string, { servings: number; startedAt: string }>;
   mealResults?: Record<
     string,

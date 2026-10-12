@@ -34,6 +34,8 @@ const AppLayout: React.FC<IProps> = () => {
     error: translateError,
   } = useI18n();
   const {
+    canUndo,
+    undoLastAction,
     recoveryRaw,
     hasLastGood,
     downloadRecovery,
@@ -329,6 +331,14 @@ const AppLayout: React.FC<IProps> = () => {
               </div>
             );
           })}
+        </div>
+      )}
+      {canUndo && (
+        <div className="undo-action panel" role="status">
+          <span>{text("Đã cập nhật", "Changes saved")}</span>
+          <Button onClick={undoLastAction}>
+            {text("Hoàn tác thao tác vừa rồi", "Undo last action")}
+          </Button>
         </div>
       )}
       {toast && (

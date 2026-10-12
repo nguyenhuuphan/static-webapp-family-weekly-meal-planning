@@ -66,6 +66,40 @@ const HouseholdSettings: React.FC<IProps> = () => {
           close={() => setPendingWeek(null)}
         />
       )}
+      {!!s.corrections?.length && (
+        <details className="panel">
+          <summary>
+            {text("Lịch sử sửa ghi nhận", "Correction history")} (
+            {s.corrections.length})
+          </summary>
+          <ul>
+            {s.corrections.map((entry, index) => (
+              <li key={index}>
+                {new Date(entry.at).toLocaleString()} ·{" "}
+                {text(
+                  "Đã sửa thao tác ghi nhận nhầm; lưu trạng thái trước khi sửa",
+                  "Mistaken entry corrected; previous records retained",
+                )}
+                <details>
+                  <summary>
+                    {text(
+                      "Xem ghi nhận trước khi sửa",
+                      "View records before correction",
+                    )}
+                  </summary>
+                  <ul>
+                    {entry.food.map((food) => (
+                      <li key={food.id}>
+                        {ct(food.meal.main)} · {food.servings} · {food.status}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       <div className="settings-grid">
         <section className="panel">
           <h2>{text("Thông báo hẹn giờ", "Timer alerts")}</h2>

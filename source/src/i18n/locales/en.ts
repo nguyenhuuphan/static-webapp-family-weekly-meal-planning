@@ -1,4 +1,7 @@
 export const en = {
+  undoPhysicalRecordConfirm:
+    "Undo only a mistaken entry. If food was actually eaten or discarded, keep the record. Correct this entry?",
+  actionUndone: "Action undone. The correction is kept in history.",
   backupRestored: "Backup restored, including saved progress.",
   prepCookingSteps: "Cooking instructions",
   cookTimerStep: "Start timer for step {count}",

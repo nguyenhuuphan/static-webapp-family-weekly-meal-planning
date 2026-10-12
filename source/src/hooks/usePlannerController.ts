@@ -59,6 +59,10 @@ export function usePlannerController() {
     [now, setNow] = useState(Date.now()),
     [search, setSearch] = useState(""),
     [swapId, setSwapId] = useState("");
+  const [undoEntry, setUndoEntry] = useState<{
+    before: State;
+    after: State;
+  } | null>(null);
   const recoveryBlocked = useRef(false);
   const [recoveryRaw, setRecoveryRaw] = useState<string | null>(null);
   const [hasLastGood, setHasLastGood] = useState(false);
@@ -198,7 +202,13 @@ export function usePlannerController() {
     const current = store.getState().planner.current;
     if (current) {
       try {
-        dispatch(stateChanged(fn(current)));
+        const next = fn(current);
+        if (next === current) return;
+        dispatch(stateChanged(next));
+        setUndoEntry({
+          before: current,
+          after: store.getState().planner.current!,
+        });
       } catch (error) {
         setToast((error as Error).message);
       }
@@ -213,7 +223,39 @@ export function usePlannerController() {
       update((s) => undoCooking(s, key));
       return;
     }
+    const before = store.getState().planner.current;
     dispatch(progressToggled({ group, key, value }));
+    if (before)
+      setUndoEntry({ before, after: store.getState().planner.current! });
+  }
+  function undoLastAction() {
+    const current = store.getState().planner.current;
+    if (!undoEntry || current !== undoEntry.after) return;
+    const physical =
+      JSON.stringify([
+        current.savedFood,
+        current.stockUses,
+        current.mealResults,
+      ]) !==
+      JSON.stringify([
+        undoEntry.before.savedFood,
+        undoEntry.before.stockUses,
+        undoEntry.before.mealResults,
+      ]);
+    if (physical && !confirm(tr("undoPhysicalRecordConfirm"))) return;
+    const next = structuredClone(undoEntry.before);
+    next.corrections = [
+      ...(current.corrections || []),
+      {
+        at: new Date().toISOString(),
+        food: current.savedFood || [],
+        results: current.mealResults || {},
+        uses: current.stockUses || {},
+      },
+    ].slice(-20);
+    dispatch(stateChanged(next));
+    setUndoEntry(null);
+    setToast(tr("actionUndone"));
   }
   function resetProgress() {
     if (confirm(tr("resetConfirm"))) {
@@ -386,6 +428,8 @@ export function usePlannerController() {
   return {
     error,
     model: {
+      canUndo: !!undoEntry && state === undoEntry.after,
+      undoLastAction,
       recoveryRaw,
       hasLastGood,
       downloadRecovery: () =>

@@ -1,5 +1,8 @@
 import type { Messages } from "./en";
 export const vi = {
+  undoPhysicalRecordConfirm:
+    "Chỉ hoàn tác ghi nhận nhầm. Nếu đã ăn hoặc bỏ thực phẩm thực tế, hãy giữ ghi nhận. Sửa ghi nhận này?",
+  actionUndone: "Đã hoàn tác. Lần sửa được giữ trong lịch sử.",
   backupRestored: "Đã khôi phục bản sao và tiến độ đã lưu.",
   prepCookingSteps: "Hướng dẫn nấu ăn",
   cookTimerStep: "Hẹn giờ bước {count}",

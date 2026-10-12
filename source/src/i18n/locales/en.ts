@@ -50,7 +50,7 @@ export const en = {
   chicken74CGroundMeatEggDishes71CFish63C:
     "Chicken 74°C · ground meat/egg dishes 71°C · fish 63°C · whole-cut pork/beef 63°C + 3-minute rest · shrimp fully opaque. A timer is not a safety check.",
   saveChangesShoppingChecksAndThisMealSPrepReadinessAndCompletion:
-    "Save changes? Shopping checks and this meal’s prep, readiness and completion will reset. Prepared food does not change automatically.",
+    "Save changes? Preparation, readiness and completion for this meal will reset. Shopping checks reset only for ingredients whose quantities change. Already prepared food does not change.",
   makeItYours: "Make it yours ·",
   editYourMeal: "Edit your meal.",
   amountsDescribe: "Amounts describe",

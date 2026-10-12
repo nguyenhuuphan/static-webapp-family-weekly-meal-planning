@@ -75,7 +75,7 @@ describe("weekday meal data", () => {
     expect(n.plan.meals[0].main).toBe("New pork");
     expect(n.progress.done["mon-lunch"]).toBeUndefined();
     expect(n.progress.done["mon-dinner"]).toBe(true);
-    expect(n.progress.shopping).toEqual({});
+    expect(n.progress.shopping).toEqual({ x: true });
     expect(s.plan.meals[0].main).not.toBe("New pork");
   });
   it("timer math survives refresh and does not run negative", () => {

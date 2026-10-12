@@ -52,7 +52,7 @@ export const vi = {
   chicken74CGroundMeatEggDishes71CFish63C:
     "Thịt gà 74°C · thịt xay/món trứng 71°C · cá 63°C · thịt heo/bò nguyên miếng 63°C và nghỉ 3 phút · tôm chín đục hoàn toàn. Hẹn giờ không thay thế kiểm tra an toàn.",
   saveChangesShoppingChecksAndThisMealSPrepReadinessAndCompletion:
-    "Lưu thay đổi? Danh sách mua sắm và tiến độ sơ chế, sẵn sàng nấu, hoàn thành của bữa này sẽ đặt lại. Thức ăn đã chuẩn bị không tự thay đổi.",
+    "Lưu thay đổi? Tiến độ sơ chế, sẵn sàng nấu và hoàn tất của bữa này sẽ đặt lại. Chỉ đặt lại đánh dấu mua sắm của nguyên liệu đổi định lượng. Thức ăn đã chuẩn bị không tự thay đổi.",
   makeItYours: "ĐIỀU CHỈNH THEO Ý BẠN ·",
   editYourMeal: "Chỉnh sửa bữa ăn.",
   amountsDescribe: "Định lượng dành cho",

@@ -1,5 +1,5 @@
 import { type Plan, type Meal, type State, type Progress } from "src/types";
-import { defaultMonday, isMonday } from "src/utils";
+import { defaultMonday, isMonday, aggregate, ingredientKey } from "src/utils";
 import { parseBackup, validatePlan } from "src/validations";
 export const freshProgress = (): Progress => ({
   shopping: {},
@@ -58,14 +58,20 @@ export function resetForMeal(s: State, id: string): State {
   delete next.progress.ready[id];
   delete next.progress.done[id];
   delete next.progress.cook[id];
-  next.progress.shopping = {};
-  next.progress.owned = {};
   if (next.timer?.mealId === id) next.timer = null;
   return next;
 }
 export function replaceMeal(s: State, id: string, updated: Meal): State {
   const next = resetForMeal(s, id);
   next.plan.meals = next.plan.meals.map((m) => (m.id === id ? updated : m));
+  const before = new Map(aggregate(s.plan, s.servings).map((i) => [ingredientKey(i), i.qty]));
+  const after = new Map(aggregate(next.plan, next.servings).map((i) => [ingredientKey(i), i.qty]));
+  for (const key of new Set([...before.keys(), ...after.keys()])) {
+    if (before.get(key) !== after.get(key)) {
+      delete next.progress.shopping[key];
+      delete next.progress.owned[key];
+    }
+  }
   const e = validatePlan(next.plan);
   if (e.length) throw Error(e.join("\n"));
   return next;

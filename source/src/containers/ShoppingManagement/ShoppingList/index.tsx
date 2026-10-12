@@ -9,7 +9,10 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 interface IProps {}
 const ShoppingList: React.FC<IProps> = () => {
   const text = useText();
-  const [filter, setFilter] = usePersistentState("planner:shopping-filter", "needed");
+  const [filter, setFilter] = usePersistentState(
+    "planner:shopping-filter",
+    "needed",
+  );
   const { t: tr, content: ct, number: num, unit } = useI18n();
   const { s, needs, bought, shopping, toggle, search, setSearch, update } =
     useMealPlanner();
@@ -64,15 +67,40 @@ const ShoppingList: React.FC<IProps> = () => {
           </button>
         )}
       </div>
-      <div className="actions" role="group" aria-label={text("Lọc danh sách", "Filter shopping list")}>
-        {[["needed", text("Cần mua", "To buy")], ["bought", text("Đã mua", "Bought")], ["owned", text("Có sẵn", "At home")], ["all", text("Tất cả", "All")]].map(([value, label]) =>
-          <Button key={value} aria-pressed={filter === value} onClick={() => setFilter(value)}>{label}</Button>)}
+      <div
+        className="actions"
+        role="group"
+        aria-label={text("Lọc danh sách", "Filter shopping list")}
+      >
+        {[
+          ["needed", text("Cần mua", "To buy")],
+          ["bought", text("Đã mua", "Bought")],
+          ["owned", text("Có sẵn", "At home")],
+          ["all", text("Tất cả", "All")],
+        ].map(([value, label]) => (
+          <Button
+            key={value}
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {label}
+          </Button>
+        ))}
       </div>
       <div className="shopping-grid">
         {[...new Set(shopping.map((i) => i.category))].map((category) => {
           const items = shopping.filter(
-            (i) => i.category === category && matches(i.name) &&
-              (filter === "all" || (filter === "owned" ? s.progress.owned[ingredientKey(i)] : filter === "bought" ? s.progress.shopping[ingredientKey(i)] && !s.progress.owned[ingredientKey(i)] : !s.progress.owned[ingredientKey(i)] && !s.progress.shopping[ingredientKey(i)])),
+            (i) =>
+              i.category === category &&
+              matches(i.name) &&
+              (filter === "all" ||
+                (filter === "owned"
+                  ? s.progress.owned[ingredientKey(i)]
+                  : filter === "bought"
+                    ? s.progress.shopping[ingredientKey(i)] &&
+                      !s.progress.owned[ingredientKey(i)]
+                    : !s.progress.owned[ingredientKey(i)] &&
+                      !s.progress.shopping[ingredientKey(i)])),
           );
           if (!items.length) return null;
           return (
@@ -111,18 +139,57 @@ const ShoppingList: React.FC<IProps> = () => {
                     </label>
                     <span className="quantity">
                       {num(owned ? 0 : i.toBuy)} {unit(i.unit)}
-                      <small>{text("Cần dùng", "Required")}: {num(i.qty)} {unit(i.unit)}</small>
+                      <small>
+                        {text("Cần dùng", "Required")}: {num(i.qty)}{" "}
+                        {unit(i.unit)}
+                      </small>
+                      {!owned && i.toBuy > 0 && (
+                        <small>
+                          {text("Gợi ý mua", "Suggested purchase")}:{" "}
+                          {num(
+                            i.unit === "each"
+                              ? Math.ceil(i.toBuy)
+                              : ["g", "ml"].includes(i.unit)
+                                ? Math.ceil(i.toBuy / 50) * 50
+                                : i.toBuy,
+                          )}{" "}
+                          {unit(i.unit)}
+                        </small>
+                      )}
                     </span>
-                    <label className="pantry-amount">{text("Lượng có sẵn", "Amount at home")} ({unit(i.unit)})
-                      <input type="number" min="0" step="any" defaultValue={s.pantry?.[k] || 0}
+                    <label className="pantry-amount">
+                      {text("Lượng có sẵn", "Amount at home")} ({unit(i.unit)})
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        defaultValue={s.pantry?.[k] || 0}
                         aria-label={`${text("Lượng có sẵn", "Amount at home")}: ${ct(i.name)} (${unit(i.unit)})`}
                         key={`${k}:${s.pantry?.[k] || 0}`}
                         onBlur={(event) => {
                           const amount = Number(event.target.value);
-                          if (!Number.isFinite(amount) || amount < 0) { event.target.value = String(s.pantry?.[k] || 0); return; }
+                          if (!Number.isFinite(amount) || amount < 0) {
+                            event.target.value = String(s.pantry?.[k] || 0);
+                            return;
+                          }
                           if (amount === (s.pantry?.[k] || 0)) return;
-                          update((state) => ({ ...state, pantry: { ...state.pantry, [k]: amount }, progress: { ...state.progress, owned: { ...state.progress.owned, [k]: amount >= i.qty }, shopping: { ...state.progress.shopping, [k]: false } } }));
-                        }} />
+                          update((state) => ({
+                            ...state,
+                            pantry: { ...state.pantry, [k]: amount },
+                            progress: {
+                              ...state.progress,
+                              owned: {
+                                ...state.progress.owned,
+                                [k]: amount >= i.qty,
+                              },
+                              shopping: {
+                                ...state.progress.shopping,
+                                [k]: false,
+                              },
+                            },
+                          }));
+                        }}
+                      />
                     </label>
                     <label className="pantry-check">
                       <input
@@ -130,7 +197,14 @@ const ShoppingList: React.FC<IProps> = () => {
                         checked={!!owned}
                         onChange={(event) => {
                           const owned = event.target.checked;
-                          update((state) => ({ ...state, pantry: { ...state.pantry, [k]: owned ? i.qty : 0 }, progress: { ...state.progress, owned: { ...state.progress.owned, [k]: owned } } }));
+                          update((state) => ({
+                            ...state,
+                            pantry: { ...state.pantry, [k]: owned ? i.qty : 0 },
+                            progress: {
+                              ...state.progress,
+                              owned: { ...state.progress.owned, [k]: owned },
+                            },
+                          }));
                         }}
                       />
                       {tr("atHome")}
@@ -142,7 +216,11 @@ const ShoppingList: React.FC<IProps> = () => {
           );
         })}
       </div>
-      {filter === "needed" && bought === needs.length && <p role="status">{text("Đã đủ nguyên liệu cần mua.", "Your shopping is complete.")}</p>}
+      {filter === "needed" && bought === needs.length && (
+        <p role="status">
+          {text("Đã đủ nguyên liệu cần mua.", "Your shopping is complete.")}
+        </p>
+      )}
       {!shopping.some((i) => matches(i.name)) && (
         <div className="panel empty">
           {tr("noSearchResults", { query: search })}
@@ -156,6 +234,12 @@ const ShoppingList: React.FC<IProps> = () => {
         </p>
       </div>
       <details className="panel">
+        <p className="caption">
+          {text(
+            "Gợi ý mua làm tròn lên theo đơn vị hoặc 50 g/ml; chọn quy cách đóng gói phù hợp. Lượng cần dùng trong công thức không thay đổi.",
+            "Purchase suggestions round up to whole items or 50 g/ml; choose a suitable package. Recipe quantities stay exact.",
+          )}
+        </p>
         <summary>{tr("buyingWholeVegetables")}</summary>
         <p>
           {tr("forTheDefaultTwoServingsBuyApproximately450500GWinterMelon")}

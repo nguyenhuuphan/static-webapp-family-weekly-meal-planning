@@ -12,10 +12,13 @@
     "format": "prettier --write src tests"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.1.6",
     "@reduxjs/toolkit": "2.13.0",
+    "i18next": "^26.5.10",
     "lucide-react": "0.468.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-i18next": "^17.1.8",
     "react-redux": "9.3.0"
   },
   "devDependencies": {

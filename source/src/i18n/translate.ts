@@ -1,5 +1,7 @@
+import { automaticContent } from "./automatic";
 import { languages, type Language } from "./catalog";
 import { en, type MessageKey } from "./locales/en";
+import { translationEngine } from "./engine";
 
 export type Values = Record<string, string | number>;
 export type Translator = (key: MessageKey, values?: Values) => string;
@@ -7,39 +9,24 @@ const sourceKeys = new Map<string, MessageKey>(
   Object.entries(en).map(([key, value]) => [value, key as MessageKey]),
 );
 
-export function createTranslator(language: Language) {
+export function createTranslator(language: Language, automatic = false) {
   const config = languages[language];
-  const messages: Partial<Record<string, string>> = config.messages;
+  const engine = translationEngine(language);
   const recipes: Record<string, string> = config.recipes;
   const numbers = new Intl.NumberFormat(config.locale, {
     maximumFractionDigits: 2,
   });
-  const plurals = new Intl.PluralRules(config.locale);
   const number = (value: number) => numbers.format(value);
 
-  const t: Translator = (key, values = {}) => {
-    const category =
-      typeof values.count === "number"
-        ? plurals.select(values.count)
-        : undefined;
-    const template =
-      (category && messages[`${key}_${category}`]) || messages[key] || en[key];
-    return template.replace(/\{(\w+)\}/g, (match, name: string) => {
-      const value = values[name];
-      return value === undefined
-        ? match
-        : typeof value === "number"
-          ? number(value)
-          : value;
-    });
-  };
+  const t: Translator = (key, values = {}) =>
+    engine.t(key, { ...values, defaultValue: en[key] });
 
   // Exact-source matching prevents an edited/imported instruction from receiving
   // an out-of-date translation. Unknown user content is displayed verbatim.
   const content = (value: string): string => {
     if (Object.hasOwn(recipes, value)) return recipes[value];
     const key = sourceKeys.get(value);
-    return key ? t(key) : value;
+    return key ? t(key) : automatic ? automaticContent(value, language) : value;
   };
 
   const unit = (value: string) => {

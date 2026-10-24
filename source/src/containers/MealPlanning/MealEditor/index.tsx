@@ -1,7 +1,8 @@
+import { createTranslator } from "src/i18n/translate";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import { useI18n, useText } from "src/i18n";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
 import type { Meal, Ingredient, Step, Unit } from "src/types";
 import { validateMealDraft } from "./schema";
@@ -17,7 +18,9 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
   const editor = useRef<HTMLDivElement>(null);
   const [attempted, setAttempted] = useState(false);
   const draftKey = `meal-draft:${meal.id}`;
-  const { t: tr, content: ct, unit, error: translateError } = useI18n();
+  const { t: tr, language, unit, error: translateError } = useI18n();
+  // Keep input values stable while the user types; translate saved content only.
+  const { content: ct } = useMemo(() => createTranslator(language), [language]);
   const [draft, setDraft] = useState<Meal>(() => {
       try {
         const saved = JSON.parse(sessionStorage.getItem(draftKey) || "null");

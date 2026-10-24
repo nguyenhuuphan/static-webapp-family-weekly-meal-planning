@@ -1,9 +1,13 @@
+import { subscribeTranslations, translationVersion } from "./automatic";
+import { I18nextProvider } from "react-i18next";
+import { translationEngine } from "./engine";
 import {
   createContext,
   useContext,
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -41,9 +45,14 @@ function initialLanguage(): Language {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(initialLanguage);
+  const translationRevision = useSyncExternalStore(
+    subscribeTranslations,
+    translationVersion,
+    () => 0,
+  );
   const value = useMemo(
-    () => ({ ...createTranslator(language), language, setLanguage }),
-    [language],
+    () => ({ ...createTranslator(language, true), language, setLanguage }),
+    [language, translationRevision],
   );
 
   useEffect(() => {
@@ -65,7 +74,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", sync);
   }, []);
 
-  return <Context.Provider value={value}>{children}</Context.Provider>;
+  return (
+    <I18nextProvider i18n={translationEngine(language)}>
+      <Context.Provider value={value}>{children}</Context.Provider>
+    </I18nextProvider>
+  );
 }
 
 export function useI18n(): I18n {

@@ -1,6 +1,10 @@
 # Weekday Table · React edition
 
-React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No backend, no API keys, no account, no runtime CDN requests.
+React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No account or paid API keys. Optional family sharing uses Netlify Functions + Blobs; new saved content uses the free MyMemory translation service. UI translations and built-in recipe translations are bundled locally.
+
+## Netlify shared data and automatic translation
+
+See [setup instructions](../docs/netlify-sync.md). Configure a private `FAMILY_ACCESS_CODE` (at least 16 characters) in Netlify Functions environment variables and deploy from Git so both static assets and functions are included. Uploading only `dist` supports local editing and bundled translations but cannot provide shared storage or automatic custom-content translation.
 
 ## Deploy the ready-made build
 
@@ -59,7 +63,7 @@ The browser key remains `weekday-table:v1` and the JSON schema remains 1. Deploy
 
 ## Defaults versus personal edits
 
-The file `public/meal-plan.json` (or `dist/meal-plan.json` in a manual deployment) is the default menu for new browsers. Existing browser edits take precedence. Export provides `{plan, servings}`; to update deployment defaults, use the `plan` object as meal-plan.json and redeploy. Export includes menu and serving setting, not progress, timers or week-start. No automatic cloud sync occurs.
+The file `public/meal-plan.json` (or `dist/meal-plan.json` in a manual deployment) is the default menu for new browsers. Existing browser edits take precedence. Export provides `{plan, servings}`; to update deployment defaults, use the `plan` object as meal-plan.json and redeploy. Export includes menu and serving setting, not progress, timers or week-start. Family sync is opt-in per page session using the configured family code. JSON is stored in Netlify Blobs, not committed into this repository.
 
 Exactly 10 unique Monday–Friday lunch/dinner slots must exist. Ingredient units: g, ml, each, tsp, tbsp. Tablespoons and teaspoons are consolidated by volume in shopping; no volume-to-weight conversion is invented. Edible weights exclude peel/bones/shells. Rice and cooking water are managed separately.
 

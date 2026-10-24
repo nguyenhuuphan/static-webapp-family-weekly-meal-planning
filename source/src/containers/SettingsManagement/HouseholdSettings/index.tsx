@@ -58,7 +58,11 @@ const HouseholdSettings: React.FC<IProps> = () => {
         )}
       />
       <p className="caption">
-        {tr("languageHelp")} {tr("sourceRecipeHelp")}
+        {tr("languageHelp")}{" "}
+        {text(
+          "Nội dung mới được gửi tới MyMemory để dịch tự động miễn phí. Bản dịch máy có thể sai; hãy kiểm tra nội dung gốc, đặc biệt hướng dẫn an toàn. Khi hết hạn mức hoặc không dịch được, nội dung gốc được giữ nguyên.",
+          "New content is sent to MyMemory for free automatic translation. Machine translations may be inaccurate; check the original, especially safety instructions. When the quota is reached or translation is unavailable, original text is retained.",
+        )}
       </p>
       {pendingWeek && (
         <Stocktake
@@ -103,8 +107,8 @@ const HouseholdSettings: React.FC<IProps> = () => {
       )}
       <p className="caption">
         {text(
-          "Dữ liệu chỉ đồng bộ giữa các tab trên cùng trình duyệt; chưa chia sẻ giữa hai điện thoại.",
-          "Changes sync between tabs in this browser; sharing between phones is not available.",
+          "Dùng mục Đồng bộ gia đình để chia sẻ dữ liệu giữa các thiết bị.",
+          "Use Family sync to share data between devices.",
         )}{" "}
         {!navigator.locks &&
           text(
@@ -236,7 +240,10 @@ const HouseholdSettings: React.FC<IProps> = () => {
           </span>
           <h2>{tr("yourDataKeptSimple")}</h2>
           <p>
-            {tr("savedInThisBrowserOnlyNoAutomaticSyncBetweenDevicesExportTo")}
+            {text(
+              "Dữ liệu được lưu trên thiết bị và đồng bộ khi kết nối bằng mã gia đình. Xuất backup để giữ bản riêng.",
+              "Data is saved on this device and synced when connected with your family code. Export a backup to keep a separate copy.",
+            )}
           </p>
           <div className="actions">
             <Button primary onClick={exportJSON}>

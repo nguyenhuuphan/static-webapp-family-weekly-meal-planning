@@ -51,3 +51,32 @@ it("chunks long content within the provider limit without splitting quantity tok
   ).toBe(true);
   expect(automaticContent(source, "vi")).toBe(source);
 });
+it("reports sign-in failures and allows retry without replacing original data", async () => {
+  vi.resetModules();
+  const {
+    automaticContent,
+    automaticTranslationState,
+    retryAutomaticTranslations,
+  } = await import("../src/i18n/automatic");
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({}, { status: 401 }))
+    .mockResolvedValue(Response.json({ translation: "Súp gà" }));
+  vi.stubGlobal("fetch", fetcher);
+  automaticContent("Chicken soup", "vi");
+  await waitFor(() =>
+    expect(automaticTranslationState()).toMatchObject({
+      failed: 1,
+      needsLogin: true,
+      pending: 0,
+    }),
+  );
+  expect(automaticContent("Chicken soup", "vi")).toBe("Chicken soup");
+  retryAutomaticTranslations();
+  automaticContent("Chicken soup", "vi");
+  await waitFor(() =>
+    expect(automaticContent("Chicken soup", "vi")).toBe("Súp gà"),
+  );
+  expect(automaticTranslationState().failed).toBe(0);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});

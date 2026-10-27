@@ -37,3 +37,11 @@ MyMemory requires outbound HTTPS access to `api.mymemory.translated.net`. No pai
 Run `npm ci`, `npm test` and `npm run build` in `source`. TypeScript checks include Netlify Functions. Function tests mock Netlify Blobs and MyMemory and exercise authentication, conditional writes, validation and translation fallback. React tests cover loading shared state, sending subsequent changes with the fetched revision and preserving data on conflicts. To run real functions locally, use Netlify CLI `netlify dev` with an authorized linked development site and a private `FAMILY_ACCESS_CODE` in an ignored local `.env`; plain `npm run dev` runs only Vite, so cloud features fall back to local mode there.
 
 Automated local checks are not proof of a deployed Netlify site. Real cross-device persistence and provider access must be verified on the deployed site after the environment variable is configured.
+
+## Receiving application updates
+
+Online navigation fetches current HTML, with cached HTML used only as an offline fallback. New workers activate as soon as their complete offline bundle is installed, without forcibly reloading an editor or timer in an open tab. Refresh the page to load the new UI. HTML and `sw.js` use `Cache-Control: no-cache`; hashed assets remain cached for offline use. Historical cooking batches do not block the manual update button. A version identifier appears beside the offline status to help verify the loaded deploy.
+
+Family sync is an expanded panel above the planner, rather than a collapsed disclosure. Custom-content translation shows pending/failure status and an explicit retry action. Bundled interface translations still require no network requests. Netlify SSO protection can return 401 before a Function executes; in that case the user must sign in to Netlify, or the site owner must explicitly choose to remove that separate site-access requirement. The family access code authenticates the planner Function; it does not bypass Netlify SSO.
+
+Do not clear browser storage to update: it may contain unsynced meal plans. An old installation may need the page reopened once for its worker to update and refreshed once more to display the latest UI.

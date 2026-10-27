@@ -33,6 +33,9 @@ async function boot(state?: State) {
     "fetch",
     vi.fn(async () => ({ ok: true, json: async () => structuredClone(plan) })),
   );
+  // These fixtures exercise Monday lunch independently of today's weekday.
+  if (!localStorage.getItem("planner:selected"))
+    localStorage.setItem("planner:selected", "mon-lunch");
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   vi.spyOn(window, "confirm").mockReturnValue(true);
   if (state) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));

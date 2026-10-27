@@ -74,6 +74,8 @@ describe("ingredient preparation groups", () => {
       })),
     );
     vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    // The cooking assertions below exercise the Monday lunch fixture.
+    localStorage.setItem("planner:selected", "mon-lunch");
     render(<App />);
     await screen.findByRole("heading", {
       name: "A little planning. A lot more ease.",

@@ -12,7 +12,7 @@ it("boots saved data without requiring a network fetch and has a bundled first-l
   localStorage.clear();
   expect((await fetchMealPlan()).meals).toHaveLength(10);
 });
-it("serves cached navigation and assets offline and activates updates only on request", async () => {
+it("serves cached pages offline and activates new workers without reloading clients", async () => {
   const events: Record<string, (event: any) => void> = {},
     stored = new Map<string, string>();
   const skipWaiting = vi.fn(),
@@ -58,7 +58,7 @@ it("serves cached navigation and assets offline and activates updates only on re
     },
   });
   await work;
-  expect(skipWaiting).not.toHaveBeenCalled();
+  expect(skipWaiting).toHaveBeenCalledOnce();
   events.fetch({
     request: {
       method: "GET",
@@ -77,7 +77,42 @@ it("serves cached navigation and assets offline and activates updates only on re
     },
   });
   expect(await work).toBe("cached:https://example.test/meals/assets/app.js");
-  expect(network).not.toHaveBeenCalled();
+  expect(network).toHaveBeenCalledOnce();
   events.message({ data: "ACTIVATE_UPDATE" });
-  expect(skipWaiting).toHaveBeenCalledOnce();
+  expect(skipWaiting).toHaveBeenCalledTimes(2);
+});
+
+it("fetches current HTML online and leaves function requests uncached", async () => {
+  const events: Record<string, (event: any) => void> = {};
+  const response = { ok: true, redirected: false, body: "new deployment" };
+  const network = vi.fn().mockResolvedValue(response);
+  const match = vi.fn().mockResolvedValue("old page");
+  runInNewContext(workerSource("v2", ["index.html", "assets/app.js"]), {
+    self: {
+      registration: { scope: "https://example.test/" },
+      location: { origin: "https://example.test" },
+      addEventListener: (name: string, fn: any) => {
+        events[name] = fn;
+      },
+    },
+    caches: { open: async () => ({ match }) },
+    URL,
+    fetch: network,
+  });
+  const respondWith = vi.fn();
+  events.fetch({
+    request: { method: "GET", mode: "navigate", url: "https://example.test/" },
+    respondWith,
+  });
+  expect(await respondWith.mock.calls[0][0]).toBe(response);
+  expect(match).not.toHaveBeenCalled();
+  respondWith.mockClear();
+  events.fetch({
+    request: {
+      method: "GET",
+      url: "https://example.test/.netlify/functions/family-plan",
+    },
+    respondWith,
+  });
+  expect(respondWith).not.toHaveBeenCalled();
 });

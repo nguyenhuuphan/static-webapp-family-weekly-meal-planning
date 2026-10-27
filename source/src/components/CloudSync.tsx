@@ -148,11 +148,11 @@ export default function CloudSync() {
     ),
   };
   return (
-    <details
+    <section
       className="panel"
-      open={status === "error" || status === "conflict" || undefined}
+      aria-label={text("Đồng bộ gia đình", "Family sync")}
     >
-      <summary>{text("Đồng bộ gia đình", "Family sync")}</summary>
+      <h2>{text("Đồng bộ gia đình", "Family sync")}</h2>
       <p role="status">{messages[displayStatus]}</p>
       {!session ? (
         <>
@@ -204,6 +204,6 @@ export default function CloudSync() {
       <Button onClick={model.exportJSON}>
         {text("Xuất backup", "Export backup")}
       </Button>
-    </details>
+    </section>
   );
 }

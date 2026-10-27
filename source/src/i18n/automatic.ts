@@ -2,6 +2,18 @@ import type { Language } from "./catalog";
 
 const cache = new Map<string, string>();
 const pending = new Set<string>();
+const failures = new Map<string, "access" | "unavailable">();
+export const automaticTranslationState = () => ({
+  pending: pending.size,
+  failed: failures.size,
+  needsLogin: [...failures.values()].includes("access"),
+});
+export function retryAutomaticTranslations() {
+  failures.forEach((_, key) => cache.delete(key));
+  failures.clear();
+  version++;
+  listeners.forEach((listener) => listener());
+}
 const listeners = new Set<() => void>();
 const queue: (() => Promise<void>)[] = [];
 let running = false;
@@ -16,6 +28,8 @@ export const translationVersion = () => version;
 async function drain() {
   if (running) return;
   running = true;
+  version++;
+  listeners.forEach((listener) => listener());
   while (queue.length) await queue.shift()!();
   running = false;
 }
@@ -56,11 +70,18 @@ export function automaticContent(value: string, target: Language): string {
           body: JSON.stringify({ text: value, target }),
           signal: AbortSignal.timeout(10000),
         });
-        if (!response.ok) throw Error();
+        if (!response.ok) {
+          failures.set(
+            key,
+            [401, 403].includes(response.status) ? "access" : "unavailable",
+          );
+          throw Error();
+        }
         const result = await response.json();
         if (typeof result.translation !== "string") throw Error();
         cache.set(key, result.translation);
       } catch {
+        if (!failures.has(key)) failures.set(key, "unavailable");
         cache.set(key, value);
       } finally {
         pending.delete(key);

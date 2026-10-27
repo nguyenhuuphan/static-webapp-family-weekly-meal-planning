@@ -11,7 +11,14 @@ export default function OfflineStatus() {
     [waiting, setWaiting] = useState<ServiceWorker | null>(null);
   const refreshing = useRef(false);
   useEffect(() => {
-    const change = () => setOnline(navigator.onLine);
+    const change = () => {
+      setOnline(navigator.onLine);
+      if (navigator.onLine) void registration?.update().catch(() => {});
+    };
+    const foreground = () => {
+      if (document.visibilityState === "visible") change();
+    };
+    document.addEventListener("visibilitychange", foreground);
     window.addEventListener("online", change);
     window.addEventListener("offline", change);
     let disposed = false,
@@ -53,6 +60,7 @@ export default function OfflineStatus() {
     }
     return () => {
       disposed = true;
+      document.removeEventListener("visibilitychange", foreground);
       window.removeEventListener("online", change);
       window.removeEventListener("offline", change);
       registration?.removeEventListener("updatefound", installed);
@@ -64,12 +72,7 @@ export default function OfflineStatus() {
     };
   }, []);
   const busy =
-    !!editing ||
-    advanced ||
-    !!storageError ||
-    Object.keys(s.cookingBatches || {}).length > 0 ||
-    !!s.timer ||
-    !!s.timers?.length;
+    !!editing || advanced || !!storageError || !!s.timer || !!s.timers?.length;
   return (
     <div className="offline-status" role="status">
       {!online
@@ -90,6 +93,9 @@ export default function OfflineStatus() {
                   "Offline use needs HTTPS and browser support; allow the initial download to finish.",
                 )
               : null}
+      <span>
+        {text("Phiên bản", "Version")} {import.meta.env.APP_BUILD}
+      </span>
       {waiting && (
         <>
           <span>{text("Có phiên bản mới", "Update available")}</span>

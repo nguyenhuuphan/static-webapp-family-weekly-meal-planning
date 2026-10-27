@@ -1,3 +1,4 @@
+import TranslationStatus from "src/components/TranslationStatus";
 import CloudSync from "src/components/CloudSync";
 import OfflineStatus from "src/components/OfflineStatus";
 import { LanguageSwitcher, useI18n, useText } from "src/i18n";
@@ -129,6 +130,7 @@ const AppLayout: React.FC<IProps> = () => {
         <div className="page-content">
           <OfflineStatus />
           <CloudSync />
+          <TranslationStatus />
           {externalChange && (
             <section className="panel notice warning" role="alert">
               <h2>

@@ -147,6 +147,29 @@ function responseSchema(input: MenuInput) {
     },
   };
 }
+// Numeric/array bounds multiply decoder states across nested recipe lists.
+// Constrain the required bilingual shape at Google; enforce all limits locally.
+function decoderSchema(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(decoderSchema);
+  if (schema && typeof schema === "object")
+    return Object.fromEntries(
+      Object.entries(schema)
+        .filter(
+          ([key]) =>
+            ![
+              "minimum",
+              "maximum",
+              "exclusiveMinimum",
+              "exclusiveMaximum",
+              "minItems",
+              "maxItems",
+              "enum",
+            ].includes(key),
+        )
+        .map(([key, value]) => [key, decoderSchema(value)]),
+    );
+  return schema;
+}
 export class GenerationError extends Error {
   constructor(
     public code: string,
@@ -564,7 +587,7 @@ export async function generateMenu(
         response_format: {
           type: "text",
           mime_type: "application/json",
-          schema: responseSchema(input),
+          schema: decoderSchema(responseSchema(input)),
         },
         generation_config: {
           max_output_tokens:

@@ -184,7 +184,7 @@ export const vi = {
   shrimpMustBeFullyOpaqueCheckMeatTemperatureInTheThickestPart:
     "Tôm phải chín đục hoàn toàn. Đo nhiệt độ ở phần thịt dày nhất; thời gian và màu sắc không bảo đảm an toàn.",
   riceIsSeparateDoNotLeaveCookedRiceOnTheCounterFor:
-    "Cơm chuẩn bị riêng; không để cơm chín trên bàn bếp trong nhiều giờ.",
+    "Không để cơm chín trên bàn bếp trong nhiều giờ.",
   referenceGuidance: "Tài liệu tham khảo",
   foodsafetyGovColdFoodStorage: "FoodSafety.gov · Bảo quản thực phẩm lạnh",
   foodsafetyGovCookingTemperatures: "FoodSafety.gov · Nhiệt độ nấu",
@@ -201,7 +201,7 @@ export const vi = {
   yourKitchenYourWay: "BẾP NHÀ, THEO CÁCH CỦA BẠN",
   makeRoomForYourFavourites: "Thêm những món cả nhà yêu thích.",
   editRecipesAdjustYourHouseholdAndKeepABackupNoAccountOr:
-    "Chỉnh công thức, điều chỉnh số người và lưu bản sao. Không cần tài khoản hay máy chủ.",
+    "Chỉnh công thức, điều chỉnh số người và lưu bản sao. Kết nối Đồng bộ gia đình để chia sẻ thay đổi giữa các thiết bị.",
   yourHousehold: "Gia đình của bạn",
   peoplePerMeal: "Số người mỗi bữa",
   changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch:
@@ -247,7 +247,7 @@ export const vi = {
   noIngredientsMatch: "Không có nguyên liệu khớp với “",
   donTForgetTheBasics: "Đừng quên những thứ cơ bản.",
   riceAbout152KgForTwoAdultsCleanWaterFood:
-    "Gạo (khoảng 1,5–2 kg cho hai người lớn), nước sạch, hộp đựng thực phẩm, nhãn và nhiệt kế. “Có sẵn ở nhà” nghĩa là có đủ toàn bộ lượng đã liệt kê. Có thể bỏ ớt tùy chọn.",
+    "Menu mặc định chuẩn bị cơm riêng; thêm gạo phù hợp với gia đình. Chuẩn bị nước sạch, hộp thực phẩm, nhãn và nhiệt kế. “Có sẵn ở nhà” nghĩa là có đủ toàn bộ lượng đã liệt kê. Có thể bỏ ớt tùy chọn.",
   buyingWholeVegetables: "Mua rau củ nguyên quả?",
   forTheDefaultTwoServingsBuyApproximately450500GWinterMelon:
     "Với hai khẩu phần mặc định, mua khoảng 450–500 g bí đao, 450–500 g bí đỏ, 500–600 g su su, 650–750 g bắp cải và thêm rau lá để bù phần cắt bỏ. Yêu cầu đúng khối lượng phi lê và tôm đã bóc vỏ. Cân phần đã làm sạch khi sơ chế.",
@@ -281,8 +281,8 @@ export const vi = {
   aLittleCare: "Chăm chút một chút,",
   everyDay: "mỗi ngày.",
   safetyStorage: "An toàn và bảo quản",
-  localToThisBrowser: "Lưu trong trình duyệt này.",
-  noAccountNoAutomaticSync: "Không tài khoản. Không tự đồng bộ.",
+  localToThisBrowser: "Luôn giữ bản trên thiết bị.",
+  noAccountNoAutomaticSync: "Dùng mã gia đình để đồng bộ thiết bị.",
   thisWeek: "Tuần này",
   shopping: "Đi chợ",
   prepDay: "Sơ chế",

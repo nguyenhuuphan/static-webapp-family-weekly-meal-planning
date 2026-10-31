@@ -1,6 +1,6 @@
 import { signInUrl } from "src/services/signIn";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Check } from "lucide-react";
 import { useI18n, useText } from "src/i18n";
 import { createTranslator } from "src/i18n/translate";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -18,6 +18,7 @@ import {
 import { MenuApiError, menuRequest } from "src/ai/client";
 import { applyGeneratedMenu } from "src/ai/apply";
 import { validatePlan } from "src/validations";
+import { isMonday } from "src/utils";
 import MealEditor from "../MealEditor";
 
 type Settings = {
@@ -31,6 +32,12 @@ const CUISINES = [
   ["European", "Âu", "European"],
   ["Asian", "Châu Á", "Asian"],
   ["Mixed", "Kết hợp", "Mixed"],
+] as const;
+const DIETS = [
+  ["Balanced", "Cân bằng", "Balanced"],
+  ["Vegetarian", "Ăn chay", "Vegetarian"],
+  ["Vegan", "Thuần chay", "Vegan"],
+  ["Low-carb", "Ít tinh bột", "Low carb"],
 ] as const;
 export default function AiMenuGenerator() {
   const model = useMealPlanner(),
@@ -88,6 +95,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const dialog = useRef<HTMLDialogElement>(null),
+    stepHeading = useRef<HTMLHeadingElement>(null),
     alive = useRef(true),
     inflight = useRef(false),
     submissionId = useRef<string | null>(null);
@@ -102,6 +110,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
     setInput((old) => ({ ...old, [key]: value }));
   const requestInput = () => ({
     ...input,
+    diet: input.diet === "other" ? "" : input.diet,
     equipment: [
       ...new Set([
         ...input.equipment,
@@ -115,6 +124,45 @@ function GeneratorDialog({ close }: { close: () => void }) {
       ]),
     ],
   });
+  const stepLabels = [
+    text("Gia đình & lịch ăn", "Household & schedule"),
+    text("Sở thích & yêu cầu", "Preferences & requests"),
+    text("Xác nhận", "Review request"),
+    text("Bản nháp", "Draft"),
+  ];
+  const stepDescriptions = [
+    text(
+      "Chọn tuần, số người và những bữa cần chuẩn bị.",
+      "Choose the week, diners and meals you need.",
+    ),
+    text(
+      "Chọn thiết bị đang có và món cả nhà thích. Có thể bỏ qua các thông tin thêm.",
+      "Choose your cooking equipment and food preferences. Extra details are optional.",
+    ),
+    text(
+      "Kiểm tra yêu cầu trước khi dùng một lượt tạo thực đơn.",
+      "Check your choices before using a menu generation.",
+    ),
+    text(
+      "Xem và chỉnh sửa bản nháp. Chỉ thay thực đơn khi bạn bấm áp dụng.",
+      "Review and edit your draft. Your menu changes only when you apply it.",
+    ),
+  ];
+  const validSchedule =
+    isMonday(input.weekStart) &&
+    Number.isInteger(input.servings) &&
+    input.servings >= 1 &&
+    input.servings <= 12 &&
+    !!input.days.length &&
+    !!input.mealTypes.length;
+  const validRequirements = (() => {
+    try {
+      validateMenuInput(requestInput());
+      return true;
+    } catch {
+      return false;
+    }
+  })();
   const receive = (next: MenuJob) => {
     if (
       !next ||
@@ -184,6 +232,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
       previouslyFocused?.focus();
     };
   }, []);
+  useEffect(() => {
+    if (dialog.current) dialog.current.scrollTop = 0;
+    stepHeading.current?.focus({ preventScroll: true });
+  }, [step]);
   useEffect(() => {
     if (!job || !["queued", "running"].includes(job.status)) return;
     let disposed = false,
@@ -311,6 +363,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
     return false;
   }
   const errors: Record<string, string> = {
+    incomplete_recipe: text(
+      "Bản nháp thiếu nguyên liệu hoặc hướng dẫn nấu còn quá sơ sài. Menu hiện tại vẫn được giữ; hãy chỉnh yêu cầu trước khi tạo lại.",
+      "The draft is missing ingredients or useful cooking detail. Your current menu is retained; revise the request before generating again.",
+    ),
     draft_conflict: text(
       "Bản nháp đã đổi trên thiết bị khác. Đóng và mở lại popup để tải bản mới.",
       "The draft changed on another device. Reopen this dialog to load the latest copy.",
@@ -377,6 +433,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
     preview &&
     !running &&
     !busy &&
+    !editMeal &&
     !model.externalChange &&
     model.recoveryRaw === null &&
     !model.storageError &&
@@ -408,6 +465,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
       ref={dialog}
       className="ai-menu-dialog"
       aria-labelledby="ai-menu-title"
+      aria-describedby="ai-step-help"
       onCancel={close}
     >
       <div className="ai-dialog-header">
@@ -422,23 +480,31 @@ function GeneratorDialog({ close }: { close: () => void }) {
         </Button>
       </div>
       <p className="caption">
-        {text(
-          "Gemini · chỉ tạo khi bạn bấm nút. Xem trước rồi mới thay menu.",
-          "Gemini · generates only when you ask. Review before replacing your menu.",
-        )}
+        {text("Gemini · Tạo khi bạn yêu cầu", "Gemini · Generates on request")}
       </p>
       <ol className="ai-steps" aria-label={text("Các bước", "Steps")}>
-        {[
-          text("Gia đình & lịch ăn", "Household & schedule"),
-          text("Sở thích & yêu cầu", "Preferences & requests"),
-          text("Xác nhận", "Review request"),
-          text("Bản nháp", "Draft"),
-        ].map((label, index) => (
-          <li key={label} aria-current={step === index ? "step" : undefined}>
-            {label}
+        {stepLabels.map((label, index) => (
+          <li
+            key={label}
+            className={index < step ? "complete" : ""}
+            aria-current={step === index ? "step" : undefined}
+          >
+            <span className="ai-step-number" aria-hidden="true">
+              {index < step ? <Check size={15} /> : index + 1}
+            </span>
+            <span>{label}</span>
           </li>
         ))}
       </ol>
+      <div className="ai-step-intro">
+        <span className="eyebrow">
+          {text("Bước", "Step")} {step + 1} / 4
+        </span>
+        <h3 ref={stepHeading} tabIndex={-1}>
+          {stepLabels[step]}
+        </h3>
+        <p id="ai-step-help">{stepDescriptions[step]}</p>
+      </div>
       {error && (
         <p role="alert" className="notice warning">
           {errors[error] ||
@@ -481,6 +547,12 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   >
                     {text("Kết nối", "Connect AI settings")}
                   </Button>
+                  <p className="caption">
+                    {text(
+                      "Dùng cùng mã với Đồng bộ gia đình để tiếp tục.",
+                      "Use the same code as Family sync to continue.",
+                    )}
+                  </p>
                 </section>
               )}
               {settings && !settings.configured && (
@@ -493,7 +565,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
                     type="date"
                     value={input.weekStart}
                     onChange={(e) => {
-                      if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
+                      if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) {
+                        patch("weekStart", "");
+                        return;
+                      }
                       const d = new Date(e.target.value + "T12:00:00");
                       d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
                       patch(
@@ -509,6 +584,11 @@ function GeneratorDialog({ close }: { close: () => void }) {
                     type="number"
                     min="1"
                     max="12"
+                    aria-invalid={
+                      !Number.isInteger(input.servings) ||
+                      input.servings < 1 ||
+                      input.servings > 12
+                    }
                     value={input.servings}
                     onChange={(e) => patch("servings", Number(e.target.value))}
                   />
@@ -516,6 +596,27 @@ function GeneratorDialog({ close }: { close: () => void }) {
               </div>
               <fieldset>
                 <legend>{text("Ngày cần tạo menu", "Days to plan")}</legend>
+                <div className="ai-presets">
+                  <Button
+                    type="button"
+                    className="small"
+                    aria-pressed={
+                      input.days.length === 5 &&
+                      DAYS.slice(0, 5).every((day) => input.days.includes(day))
+                    }
+                    onClick={() => patch("days", [...DAYS.slice(0, 5)])}
+                  >
+                    {text("Ngày trong tuần", "Weekdays")}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="small"
+                    aria-pressed={input.days.length === 7}
+                    onClick={() => patch("days", [...DAYS])}
+                  >
+                    {text("Cả 7 ngày", "All 7 days")}
+                  </Button>
+                </div>
                 <div className="ai-options">
                   {DAYS.map((day) => (
                     <label key={day}>
@@ -558,12 +659,13 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   ))}
                 </div>
               </fieldset>
-              <p>
+              <p className="ai-plan-total" aria-live="polite">
                 <strong>
                   {input.days.length * input.mealTypes.length}{" "}
                   {text("bữa ăn", "meals")}
                 </strong>{" "}
-                · {input.servings} {text("người", "people")}
+                · {Number.isFinite(input.servings) ? input.servings : "—"}{" "}
+                {text("người", "people")}
               </p>
             </>
           )}
@@ -668,18 +770,23 @@ function GeneratorDialog({ close }: { close: () => void }) {
               <div className="ai-form-grid">
                 <label>
                   {text("Chế độ ăn", "Diet")}
-                  <input
-                    list="ai-diets"
-                    maxLength={2000}
-                    value={input.diet}
+                  <select
+                    value={
+                      DIETS.some(([value]) => value === input.diet)
+                        ? input.diet
+                        : "other"
+                    }
                     onChange={(e) => patch("diet", e.target.value)}
-                  />
-                  <datalist id="ai-diets">
-                    <option value="Balanced" />
-                    <option value="Vegetarian" />
-                    <option value="Vegan" />
-                    <option value="Low-carb" />
-                  </datalist>
+                  >
+                    {DIETS.map(([value, vi, en]) => (
+                      <option key={value} value={value}>
+                        {text(vi, en)}
+                      </option>
+                    ))}
+                    <option value="other">
+                      {text("Chế độ ăn khác", "Other diet")}
+                    </option>
+                  </select>
                 </label>
                 <label>
                   {text(
@@ -690,6 +797,11 @@ function GeneratorDialog({ close }: { close: () => void }) {
                     type="number"
                     min="5"
                     max="240"
+                    aria-invalid={
+                      !Number.isInteger(input.maxMinutes) ||
+                      input.maxMinutes < 5 ||
+                      input.maxMinutes > 240
+                    }
                     value={input.maxMinutes}
                     onChange={(e) =>
                       patch("maxMinutes", Number(e.target.value))
@@ -697,6 +809,21 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   />
                 </label>
               </div>
+              {!DIETS.some(([value]) => value === input.diet) && (
+                <label>
+                  {text(
+                    "Chế độ ăn khác (không bắt buộc)",
+                    "Other diet details (optional)",
+                  )}
+                  <input
+                    maxLength={2000}
+                    value={input.diet === "other" ? "" : input.diet}
+                    onChange={(event) =>
+                      patch("diet", event.target.value || "other")
+                    }
+                  />
+                </label>
+              )}
               <label>
                 {text(
                   "Dị ứng / nguyên liệu cần tránh",
@@ -708,25 +835,33 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   onChange={(e) => patch("avoid", e.target.value)}
                 />
               </label>
-              <label>
-                {text(
-                  "Ngân sách dự kiến (không bắt buộc)",
-                  "Budget preference (optional)",
-                )}
-                <input
-                  maxLength={2000}
-                  value={input.budget}
-                  onChange={(e) => patch("budget", e.target.value)}
-                />
-              </label>
-              <label>
-                {text("Nguyên liệu đang có", "Ingredients on hand")}
-                <textarea
-                  maxLength={2000}
-                  value={input.pantry}
-                  onChange={(e) => patch("pantry", e.target.value)}
-                />
-              </label>
+              <details className="ai-optional">
+                <summary>
+                  {text(
+                    "Ngân sách & nguyên liệu đang có (không bắt buộc)",
+                    "Budget & ingredients on hand (optional)",
+                  )}
+                </summary>
+                <label>
+                  {text(
+                    "Ngân sách dự kiến (không bắt buộc)",
+                    "Budget preference (optional)",
+                  )}
+                  <input
+                    maxLength={2000}
+                    value={input.budget}
+                    onChange={(e) => patch("budget", e.target.value)}
+                  />
+                </label>
+                <label>
+                  {text("Nguyên liệu đang có", "Ingredients on hand")}
+                  <textarea
+                    maxLength={2000}
+                    value={input.pantry}
+                    onChange={(e) => patch("pantry", e.target.value)}
+                  />
+                </label>
+              </details>
               <label>
                 {text("Yêu cầu thêm", "Additional request")}
                 <textarea
@@ -769,6 +904,14 @@ function GeneratorDialog({ close }: { close: () => void }) {
               <h3>
                 {text("Kiểm tra trước khi tạo", "Review before generating")}
               </h3>
+              <div className="ai-review-edit actions">
+                <Button className="small" onClick={() => setStep(0)}>
+                  {text("Sửa lịch ăn", "Change schedule")}
+                </Button>
+                <Button className="small" onClick={() => setStep(1)}>
+                  {text("Sửa sở thích", "Change preferences")}
+                </Button>
+              </div>
               <p>
                 {input.weekStart} · {input.servings} {text("người", "people")} ·{" "}
                 {input.days.length * input.mealTypes.length}{" "}
@@ -793,9 +936,28 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   ],
                   [
                     text("Ẩm thực", "Cuisines"),
-                    requestInput().cuisines.join(", "),
+                    requestInput()
+                      .cuisines.map((value) => {
+                        const option = CUISINES.find(
+                          ([name]) => name === value,
+                        );
+                        return option ? text(option[1], option[2]) : value;
+                      })
+                      .join(", "),
                   ],
-                  [text("Chế độ ăn", "Diet"), input.diet],
+                  [
+                    text("Chế độ ăn", "Diet"),
+                    (() => {
+                      const option = DIETS.find(
+                        ([value]) => value === input.diet,
+                      );
+                      return option
+                        ? text(option[1], option[2])
+                        : input.diet === "other"
+                          ? ""
+                          : input.diet;
+                    })(),
+                  ],
                   [text("Cần tránh", "Avoid"), input.avoid],
                   [
                     text("Thời gian", "Time"),
@@ -840,11 +1002,9 @@ function GeneratorDialog({ close }: { close: () => void }) {
                 primary
                 disabled={
                   busy ||
-                  !input.days.length ||
-                  !input.mealTypes.length ||
-                  input.servings < 1 ||
-                  input.servings > 12 ||
-                  (step === 1 && !requestInput().equipment.length)
+                  !validSchedule ||
+                  (step === 0 && !settings) ||
+                  (step === 1 && !validRequirements)
                 }
                 onClick={() => {
                   setError("");
@@ -868,8 +1028,16 @@ function GeneratorDialog({ close }: { close: () => void }) {
       {step === 3 && (
         <>
           {running && (
-            <div role="status">
+            <div role="status" className="ai-generating">
+              <Sparkles size={28} aria-hidden="true" />
               <h3>{text("Đang tạo menu…", "Creating your menu…")}</h3>
+              <p>
+                <strong>
+                  {input.days.length * input.mealTypes.length}{" "}
+                  {text("bữa", "meals")} · {input.servings}{" "}
+                  {text("người", "people")}
+                </strong>
+              </p>
               <p>
                 {text(
                   "Bạn có thể đóng popup và mở lại để xem tác vụ. Menu hiện tại chưa thay đổi.",
@@ -1018,7 +1186,19 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   {text("Áp dụng menu này", "Apply this menu")}
                 </Button>
               </div>
-              {!canApply && <p>{errors.cooking}</p>}
+              {editMeal ? (
+                <p role="status">
+                  {text(
+                    "Lưu hoặc hủy chỉnh sửa bữa ăn trước khi áp dụng.",
+                    "Save or cancel your meal edits before applying.",
+                  )}
+                </p>
+              ) : !canApply &&
+                (!!model.s.timer ||
+                  !!model.s.timers?.length ||
+                  !!Object.keys(model.s.cookingBatches || {}).length) ? (
+                <p>{errors.cooking}</p>
+              ) : null}
             </>
           )}
         </>

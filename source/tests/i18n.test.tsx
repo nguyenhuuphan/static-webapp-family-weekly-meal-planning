@@ -230,7 +230,8 @@ describe("bilingual meal planner", () => {
     expect(
       screen.getByRole("heading", { name: "Món riêng của gia đình" }),
     ).toBeTruthy();
-  });
+    // This multi-screen journey also exercises both catalogues on shared CI CPUs.
+  }, 10000);
 
   it("uses saved preferences before browser preferences and safely ignores an unsupported saved language", async () => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, "vi");

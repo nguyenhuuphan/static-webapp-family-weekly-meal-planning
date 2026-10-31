@@ -14,6 +14,10 @@ React 19 + TypeScript + Vite. English/Vietnamese family meal planner with ten de
 
 Use **Create menu with AI** in the weekly plan. The guided popup collects diners, meal slots, cuisines, available cooking appliances and custom preferences, then previews a Gemini-generated bilingual draft before applying it. Configure `GEMINI_API_KEY` privately on the Cloudflare Worker. See [AI setup and limits](../docs/ai-menu.md) for free-tier configuration, background jobs, quota limits and schema-v2 compatibility.
 
+The generator uses the bundled default recipe as a formatting/detail reference and checks ingredient coverage, actionable cooking steps and scalable instruction quantities. The guided form keeps answers when moving between steps, offers weekday/full-week presets and separates request review from applying a draft. Family connection controls are disclosed on demand so planning remains visible on mobile. See [the UX research and implementation rationale](../docs/ux-research.md).
+
+Family sync keeps a device copy, debounces local saves, checks visible idle tabs every five seconds, pauses hidden/offline polling and refreshes on return. A failed or conflicting write pauses for explicit recovery instead of overwriting another device.
+
 ## Legacy Netlify deployment
 
 See [setup instructions](../docs/netlify-sync.md). Configure a private `FAMILY_ACCESS_CODE` (at least 16 characters) in Netlify Functions environment variables and deploy from Git so both static assets and functions are included. Uploading only `dist` supports local editing and bundled translations but cannot provide shared storage or automatic custom-content translation.
@@ -85,7 +89,7 @@ Changing servings, importing, restoring defaults or choosing a new week resets p
 
 The app validates structure and slot coverage, not the safety of user-created recipes. Manual prep/thaw checkboxes are not certification. Cooking times are estimates and do not scale with servings: allow batches, check doneness and use a thermometer. Egg quantities can be fractional; round appropriately. The displayed USDA/FoodSafety.gov references have not reviewed this app or its recipes.
 
-Timers keep the deadline across refresh/view changes. There are no OS notifications or guaranteed alarms while the tab is closed/asleep. Pantry exclusions assume the **full** listed quantity is available; partial inventory is not modelled. This is a static app, not an offline PWA.
+Timers keep the deadline across refresh/view changes. There are no OS notifications or guaranteed alarms while the tab is closed/asleep. The **At home** checkbox marks the full listed quantity; stocktake and purchase records also support measured amounts. Offline use retains the device copy; family updates and new AI generation need a network connection.
 
 ## Tests and verification
 

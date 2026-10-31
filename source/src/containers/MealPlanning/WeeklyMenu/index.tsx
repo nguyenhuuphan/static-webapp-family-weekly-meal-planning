@@ -2,7 +2,11 @@ import AiMenuGenerator from "../AiMenuGenerator";
 import QuickCompletion from "./QuickCompletion";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useEffect, useState } from "react";
-import { CALENDAR_DAYS, calendarDate } from "src/helpers/calendar";
+import {
+  CALENDAR_DAYS,
+  calendarDate,
+  calendarFood,
+} from "src/helpers/calendar";
 import Stocktake from "src/containers/SettingsManagement/HouseholdSettings/Stocktake";
 import CalendarMeals from "./CalendarMeals";
 import { useI18n, useText } from "src/i18n";
@@ -66,10 +70,10 @@ const WeeklyMenu: React.FC<IProps> = () => {
     <>
       <Heading
         eyebrow={tr("yourWeekdayKitchenSimplified")}
-        title={tr("aLittlePlanningALotMoreEase")}
+        title={text("Thực đơn gia đình", "Family meal plan")}
         description={text(
-          "Lịch ăn linh hoạt: chỉnh số người, bỏ bữa hoặc đổi lịch. Danh sách mua và sơ chế cập nhật theo kế hoạch.",
-          "A flexible meal plan: adjust diners, skip meals or swap dates. Shopping and preparation follow your plans.",
+          "Lên món cho cả tuần, mua vừa đủ và nấu theo từng bước. Cả nhà dùng chung một kế hoạch.",
+          "Plan the week, shop for what you need and cook step by step. One shared plan for your family.",
         )}
       >
         <Button
@@ -78,7 +82,6 @@ const WeeklyMenu: React.FC<IProps> = () => {
               ? cook(nextMeal)
               : navigate(nextView)
           }
-          primary
           disabled={!activeMeals.length}
         >
           <ShoppingBag size={17} />
@@ -151,7 +154,9 @@ const WeeklyMenu: React.FC<IProps> = () => {
               <h2>{tr("yourWeekAtAGlance")}</h2>
             </div>
             <span className="caption">
-              {tr("lunchDinnerRiceHandledSeparately")}
+              {plan.schemaVersion === 2
+                ? text("Theo các bữa đã chọn", "Your selected meal times")
+                : tr("lunchDinnerRiceHandledSeparately")}
             </span>
           </div>
           <div className="calendar-navigation actions">
@@ -253,9 +258,13 @@ const WeeklyMenu: React.FC<IProps> = () => {
                   </div>
                 )}
                 <div className="day-meals">
-                  {(shownPlan?.schemaVersion === 2
-                    ? MEAL_TYPES
-                    : (["Lunch", "Dinner"] as const)
+                  {MEAL_TYPES.filter(
+                    (type) =>
+                      (shownPlan
+                        ? shownPlan.meals.some((meal) => meal.type === type)
+                        : type !== "Breakfast") ||
+                      calendarFood(s, calendarDate(calendarWeek, index), type)
+                        .length > 0,
                   ).map((type) => {
                     const date = calendarDate(calendarWeek, index);
                     const m = shownPlan?.meals.find(
@@ -263,7 +272,11 @@ const WeeklyMenu: React.FC<IProps> = () => {
                     );
                     if (!m)
                       return (
-                        <article className="meal-card" key={type}>
+                        <article
+                          className="meal-card"
+                          data-meal-type={type}
+                          key={type}
+                        >
                           <span className="card-meta">{ct(type)}</span>
                           <p>
                             {text("Chưa có bữa chính", "No main meal planned")}
@@ -282,6 +295,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                       <article
                         className={`meal-card ${done ? "complete" : ""} ${skipped ? "skipped" : ""}`}
                         key={m.id}
+                        data-meal-type={type}
                       >
                         <div className="card-meta">
                           <span>

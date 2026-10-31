@@ -78,7 +78,7 @@ describe("ingredient preparation groups", () => {
     localStorage.setItem("planner:selected", "mon-lunch");
     render(<App />);
     await screen.findByRole("heading", {
-      name: "A little planning. A lot more ease.",
+      name: "Family meal plan",
     });
     fireEvent.click(
       within(screen.getByRole("navigation")).getByRole("button", {

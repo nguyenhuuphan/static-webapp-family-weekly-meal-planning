@@ -73,6 +73,7 @@ export default function OfflineStatus() {
   }, []);
   const busy =
     !!editing || advanced || !!storageError || !!s.timer || !!s.timers?.length;
+  if (online && !failed && !waiting) return null;
   return (
     <div className="offline-status" role="status">
       {!online

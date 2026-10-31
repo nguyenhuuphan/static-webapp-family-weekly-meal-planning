@@ -180,7 +180,7 @@ export const en = {
   shrimpMustBeFullyOpaqueCheckMeatTemperatureInTheThickestPart:
     "Shrimp must be fully opaque. Check meat temperature in the thickest part; time/colour are not guarantees.",
   riceIsSeparateDoNotLeaveCookedRiceOnTheCounterFor:
-    "Rice is separate; do not leave cooked rice on the counter for hours.",
+    "Do not leave cooked rice on the counter for hours.",
   referenceGuidance: "Reference guidance",
   foodsafetyGovColdFoodStorage: "FoodSafety.gov · Cold food storage",
   foodsafetyGovCookingTemperatures: "FoodSafety.gov · Cooking temperatures",
@@ -197,7 +197,7 @@ export const en = {
   yourKitchenYourWay: "YOUR KITCHEN, YOUR WAY",
   makeRoomForYourFavourites: "Make room for your favourites.",
   editRecipesAdjustYourHouseholdAndKeepABackupNoAccountOr:
-    "Edit recipes, adjust your household and keep a backup. No account or backend needed.",
+    "Edit recipes, adjust your household and keep a backup. Connect Family sync to share changes across devices.",
   yourHousehold: "Your household",
   peoplePerMeal: "People per meal",
   changeServingsAllProgressResetsBecausePreparedQuantitiesMayNoLongerMatch:
@@ -243,7 +243,7 @@ export const en = {
   noIngredientsMatch: "No ingredients match “",
   donTForgetTheBasics: "Don’t forget the basics.",
   riceAbout152KgForTwoAdultsCleanWaterFood:
-    "Rice (about 1.5–2 kg for two adults), clean water, food-safe containers, labels and a thermometer. “At home” means the full listed quantity is available. Optional chili can be omitted.",
+    "The default recipes handle rice separately; add it for your household. Have clean water, food-safe containers, labels and a thermometer ready. “At home” means the full listed quantity is available. Optional chili can be omitted.",
   buyingWholeVegetables: "Buying whole vegetables?",
   forTheDefaultTwoServingsBuyApproximately450500GWinterMelon:
     "For the default two servings, buy approximately 450–500 g winter melon, 450–500 g pumpkin, 500–600 g chayote, 650–750 g cabbage, plus extra leafy greens for trimming. Ask for the listed edible fillet and peeled-shrimp weights. Weigh cleaned portions during prep.",
@@ -277,8 +277,8 @@ export const en = {
   aLittleCare: "A little care,",
   everyDay: "every day.",
   safetyStorage: "Safety & storage",
-  localToThisBrowser: "Local to this browser.",
-  noAccountNoAutomaticSync: "No account. No automatic sync.",
+  localToThisBrowser: "A device copy is kept.",
+  noAccountNoAutomaticSync: "A family code connects your devices.",
   thisWeek: "This Week",
   shopping: "Shopping",
   prepDay: "Prep Day",

@@ -378,6 +378,18 @@ const HouseholdSettings: React.FC<IProps> = () => {
           </button>
         </p>
       </div>
+      <details className="app-details">
+        <summary>{text("Thông tin ứng dụng", "About this app")}</summary>
+        <p>
+          {text("Phiên bản", "Version")} {import.meta.env.APP_BUILD}
+        </p>
+        <p>
+          {text(
+            "Dữ liệu được giữ trên thiết bị. Kết nối Đồng bộ gia đình để chia sẻ thay đổi; AI cần kết nối mạng.",
+            "A device copy is retained. Connect Family sync to share changes; AI requires an internet connection.",
+          )}
+        </p>
+      </details>
     </>
   );
 };

@@ -269,7 +269,12 @@ const ShoppingList: React.FC<IProps> = () => {
         <ShoppingBag size={20} />
         <p>
           <strong>{tr("donTForgetTheBasics")}</strong>{" "}
-          {tr("riceAbout152KgForTwoAdultsCleanWaterFood")}
+          {s.plan.schemaVersion === 2
+            ? text(
+                "Danh sách tính từ nguyên liệu từng món, gồm gạo hoặc bánh mì khi công thức dùng. Chuẩn bị thêm nước sạch, hộp thực phẩm và nhãn. Chỉ chọn đã có khi đủ lượng cần dùng.",
+                "The list follows each recipe, including rice or bread when used. Have clean water, food-safe containers and labels ready. Mark an item at home only when the full quantity is available.",
+              )
+            : tr("riceAbout152KgForTwoAdultsCleanWaterFood")}
         </p>
       </div>
       <details className="panel">

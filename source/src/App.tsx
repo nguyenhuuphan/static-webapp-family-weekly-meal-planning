@@ -19,7 +19,9 @@ const PlannerRoot: React.FC = () => {
       ),
       currentPlan?.translations?.vi || {},
     ];
-    setContentTranslations(Object.assign({}, ...maps));
+    setContentTranslations(
+      Object.fromEntries(maps.flatMap((map) => Object.entries(map))),
+    );
   }, [currentPlan, archivedPlans, setContentTranslations]);
   if (error || !model) return <LoadingState error={error} />;
   return (

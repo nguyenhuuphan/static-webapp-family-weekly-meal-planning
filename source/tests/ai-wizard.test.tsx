@@ -15,7 +15,7 @@ import { aiInput, aiPlan } from "./ai-fixtures";
 const code = "test-only-family-access-code",
   id = "20000000-0000-4000-8000-000000000001";
 afterEach(() => vi.unstubAllGlobals());
-async function boot(configured = true, ready = false) {
+async function boot(configured = true, ready = false, savedPlan?: Plan) {
   const initial = freshState(data as Plan);
   initial.weekStart = "2026-10-26";
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
@@ -28,7 +28,7 @@ async function boot(configured = true, ready = false) {
         masterPrompt: DEFAULT_MASTER_PROMPT,
         recentMeals: [],
         createdAt: new Date().toISOString(),
-        plan: aiPlan(),
+        plan: savedPlan || aiPlan(),
       }
     : null;
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});
@@ -72,6 +72,13 @@ async function boot(configured = true, ready = false) {
   await screen.findByRole("navigation");
   fireEvent.click(screen.getByRole("button", { name: "Create menu with AI" }));
   const dialog = screen.getByRole("dialog");
+  expect(
+    (
+      within(dialog).getByRole("button", {
+        name: "Continue",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
   fireEvent.change(within(dialog).getByLabelText("Family code for AI"), {
     target: { value: code },
   });
@@ -136,6 +143,10 @@ it("collects equipment and custom preferences, previews and edits before applyin
     servings: 3,
   });
   fireEvent.click(ui.getByRole("button", { name: "Edit this meal" }));
+  expect(
+    (ui.getByRole("button", { name: "Apply this menu" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
   fireEvent.change(ui.getByRole("textbox", { name: "Main dish" }), {
     target: { value: "My edited breakfast" },
   });
@@ -175,4 +186,85 @@ it("reopens the latest draft and lets users start another week without calling A
   expect(
     fetcher.mock.calls.filter(([, init]) => init?.method === "POST"),
   ).toHaveLength(0);
+});
+it("supports day presets, validates each step and retains answers when changing the review", async () => {
+  const { dialog, fetcher } = await boot();
+  const ui = within(dialog);
+  fireEvent.change(ui.getByLabelText("Week beginning"), {
+    target: { value: "" },
+  });
+  expect(
+    (ui.getByRole("button", { name: "Continue" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  fireEvent.change(ui.getByLabelText("Week beginning"), {
+    target: { value: "2026-11-02" },
+  });
+  fireEvent.click(ui.getByRole("button", { name: "All 7 days" }));
+  expect(
+    (ui.getByRole("checkbox", { name: "Sunday" }) as HTMLInputElement).checked,
+  ).toBe(true);
+  fireEvent.click(ui.getByRole("button", { name: "Weekdays" }));
+  expect(
+    (ui.getByRole("checkbox", { name: "Sunday" }) as HTMLInputElement).checked,
+  ).toBe(false);
+  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  expect(document.activeElement).toBe(
+    ui.getByRole("heading", { name: "Preferences & requests", level: 3 }),
+  );
+  fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
+  fireEvent.change(ui.getByRole("combobox", { name: "Diet" }), {
+    target: { value: "other" },
+  });
+  fireEvent.change(ui.getByLabelText("Other diet details (optional)"), {
+    target: { value: "Pescatarian" },
+  });
+  fireEvent.change(ui.getByLabelText("Maximum cooking minutes per meal"), {
+    target: { value: "2" },
+  });
+  expect(
+    (ui.getByRole("button", { name: "Continue" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  fireEvent.change(ui.getByLabelText("Maximum cooking minutes per meal"), {
+    target: { value: "25" },
+  });
+  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  expect(ui.getByText("Pescatarian")).toBeTruthy();
+  fireEvent.click(ui.getByRole("button", { name: "Change preferences" }));
+  expect(
+    (ui.getByRole("checkbox", { name: "Gas stove" }) as HTMLInputElement)
+      .checked,
+  ).toBe(true);
+  expect(
+    (ui.getByLabelText("Other diet details (optional)") as HTMLInputElement)
+      .value,
+  ).toBe("Pescatarian");
+  expect(
+    ui.getByLabelText("Allergies / ingredients to avoid").closest("details"),
+  ).toBeNull();
+  expect(
+    fetcher.mock.calls.filter(([, init]) => init?.method === "POST"),
+  ).toHaveLength(0);
+});
+it("keeps prototype-like translation source keys after a generated menu is applied", async () => {
+  const plan = aiPlan();
+  plan.meals[0].main = "__proto__";
+  Object.defineProperty(plan.translations!.vi, "__proto__", {
+    value: "Món ăn được dịch đúng",
+    enumerable: true,
+  });
+  const { dialog } = await boot(true, true, plan);
+  fireEvent.click(
+    await within(dialog).findByRole("button", { name: "Apply this menu" }),
+  );
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+    target: { value: "vi" },
+  });
+  await waitFor(() =>
+    expect(screen.getAllByText("Món ăn được dịch đúng").length).toBeGreaterThan(
+      0,
+    ),
+  );
 });

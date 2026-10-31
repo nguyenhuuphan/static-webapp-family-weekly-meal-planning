@@ -66,7 +66,7 @@ describe("family sync UI", () => {
     let remote = { state: shared, revision: "v1" };
     await boot(() => Response.json(remote));
     fireEvent.click(screen.getByRole("button", { name: "Open shared data" }));
-    await screen.findByRole("button", { name: "Disconnect" });
+    await screen.findByText("Synced.");
     remote = { state: { ...shared, servings: 7 }, revision: "v2" };
     await waitFor(
       () =>
@@ -84,5 +84,18 @@ describe("family sync UI", () => {
     );
     await screen.findByText(/A different copy was saved/);
     expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
+  });
+  it("connects with Enter and keeps the compact controls accessible after connecting", async () => {
+    const shared = freshState(plan as Plan);
+    await boot(() => Response.json({ state: shared, revision: "v1" }));
+    const toggle = screen.getByRole("button", { name: "Family sync" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.keyDown(screen.getByLabelText("Family access code"), {
+      key: "Enter",
+    });
+    await screen.findByText("Synced.");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Disconnect" })).toBeTruthy();
   });
 });

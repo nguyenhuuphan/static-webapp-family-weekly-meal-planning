@@ -13,9 +13,15 @@ export default function CalendarMeals({
   const { s } = useMealPlanner(),
     { content: ct } = useI18n(),
     text = useText();
+  const foods = calendarFood(s, date, type);
+  if (!foods.length) return null;
   return (
-    <div className="calendar-food" aria-label={`${date} · ${ct(type)}`}>
-      {calendarFood(s, date, type).map((f) => (
+    <div
+      className="calendar-food"
+      role="group"
+      aria-label={`${date} · ${ct(type)}`}
+    >
+      {foods.map((f) => (
         <article key={f.id} className="scheduled-food">
           <span className="pill">
             {f.status === "used"

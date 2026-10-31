@@ -24,7 +24,7 @@ async function boot(initial?: ReturnType<typeof freshState>) {
   if (initial) localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
   render(<App />);
   await screen.findByRole("heading", {
-    name: "A little planning. A lot more ease.",
+    name: "Family meal plan",
   });
 }
 const nav = (name: string) =>
@@ -61,7 +61,7 @@ describe("React feature parity", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Replace pair" }));
     await screen.findByRole("heading", {
-      name: "A little planning. A lot more ease.",
+      name: "Family meal plan",
     });
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
     expect(saved.plan.meals[0].main).toBe("Lemongrass chicken");
@@ -190,7 +190,7 @@ describe("React feature parity", () => {
       screen.getByRole("button", { name: "Restore original menu" }),
     );
     await screen.findByRole("heading", {
-      name: "A little planning. A lot more ease.",
+      name: "Family meal plan",
     });
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).servings).toBe(2);
   });
@@ -218,7 +218,7 @@ describe("React feature parity", () => {
       await screen.findByRole("button", { name: "Restore this backup" }),
     );
     await screen.findByRole("heading", {
-      name: "A little planning. A lot more ease.",
+      name: "Family meal plan",
     });
     await waitFor(() =>
       expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).servings).toBe(3),

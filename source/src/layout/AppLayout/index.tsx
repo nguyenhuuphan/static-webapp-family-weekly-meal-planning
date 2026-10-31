@@ -315,7 +315,14 @@ const AppLayout: React.FC<IProps> = () => {
               <Leaf size={13} />
               {tr("weekdayTableMadeForEverydayLife")}
             </span>
-            <span>{tr("1Tsp5Ml1Tbsp15MlRiceTimeSeparate")}</span>
+            <span>
+              {plan.schemaVersion === 2
+                ? text(
+                    "1 thìa cà phê = 5 ml · 1 thìa canh = 15 ml",
+                    "1 tsp = 5 ml · 1 tbsp = 15 ml",
+                  )
+                : tr("1Tsp5Ml1Tbsp15MlRiceTimeSeparate")}
+            </span>
           </footer>
         </div>
       </main>

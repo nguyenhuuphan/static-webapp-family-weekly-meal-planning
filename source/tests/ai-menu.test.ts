@@ -87,6 +87,74 @@ describe("AI requirements and flexible weeks", () => {
     expect(Object.hasOwn(plan.translations!.vi, "__proto__")).toBe(true);
     expect(plan.translations!.vi["__proto__"]).toBe("A safe translation");
   });
+  it("rejects missing side ingredients, placeholder instructions and amounts that cannot scale", () => {
+    const missingSide = aiBilingualOutput();
+    const meal = missingSide.meals["sat-breakfast"];
+    meal.side = { en: "Toast", vi: "Bánh mì nướng" };
+    meal.ingredients = [
+      {
+        ...meal.ingredients[0],
+        name: { en: "Eggs", vi: "Trứng" },
+        qty: 2,
+        unit: "each",
+      },
+    ];
+    meal.prep = meal.prep.map(({ text, minutes }) => ({ text, minutes }));
+    expect(() => validateGeneratedPlan(missingSide, aiInput)).toThrow(
+      "incomplete_recipe",
+    );
+    const terse = aiBilingualOutput();
+    terse.meals["sat-breakfast"].steps = [
+      { text: { en: "Boil eggs.", vi: "Luộc trứng." }, minutes: 10 },
+    ];
+    expect(() => validateGeneratedPlan(terse, aiInput)).toThrow(
+      "incomplete_recipe",
+    );
+    const unscaled = aiBilingualOutput();
+    unscaled.meals["sat-breakfast"].steps[0].text = {
+      en: "Add 300 g pork to the pan over medium heat.",
+      vi: "Cho 300 g thịt heo vào chảo trên lửa vừa.",
+    };
+    expect(() => validateGeneratedPlan(unscaled, aiInput)).toThrow(
+      "incomplete_recipe",
+    );
+  });
+  it("accepts a simple cold dish without forcing extra ingredients or heating steps", () => {
+    const text = (en: string, vi: string) => ({ en, vi });
+    const output = {
+      name: text("Cold breakfast", "Bữa sáng nguội"),
+      meals: {
+        "sat-breakfast": {
+          equipment: [],
+          main: text("Bananas", "Chuối"),
+          side: text("None", "Không có"),
+          minutes: 1,
+          storage: text("Eat fresh.", "Ăn ngay khi còn tươi."),
+          thaw: text("No thawing needed.", "Không cần rã đông."),
+          ingredients: [
+            {
+              name: text("Bananas", "Chuối"),
+              qty: 3,
+              unit: "each",
+              category: text("Produce", "Rau củ quả"),
+            },
+          ],
+          prep: [
+            { text: text("Peel the bananas.", "Bóc vỏ chuối."), minutes: 0 },
+          ],
+          steps: [
+            { text: text("Serve immediately.", "Dùng ngay."), minutes: 0 },
+          ],
+        },
+      },
+    };
+    expect(
+      validateGeneratedPlan(output, {
+        ...aiInput,
+        equipment: ["No heating appliance"],
+      }).meals,
+    ).toHaveLength(1);
+  });
   it("rejects declared and hidden unavailable appliances and restricted ingredients", () => {
     const output = aiOutput();
     output.meals[0].equipment = ["Oven"];
@@ -181,6 +249,7 @@ describe("Gemini API boundary", () => {
     expect(requirements.requirements.equipment).toEqual(["Gas stove"]);
     expect(requirements.masterPrompt).toBe(DEFAULT_MASTER_PROMPT);
     expect(requirements.referenceServings).toBe(original.servings);
+    expect(requirements.referenceIngredientNames).toContain("Garlic");
     expect(requirements.referenceRecipe.main.en).toBe(original.meals[0].main);
     expect(requirements.referenceRecipe.ingredients[0].qty).toBe(
       original.meals[0].ingredients[0].qty,

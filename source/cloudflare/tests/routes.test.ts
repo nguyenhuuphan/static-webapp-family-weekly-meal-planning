@@ -131,6 +131,75 @@ describe("D1 and Cloudflare routes", () => {
     ]);
     expect(results.filter(Boolean)).toHaveLength(1);
   });
+  it("reports provider configuration and releases failed generations from the family allowance", async () => {
+    env.AI_MAX_DAILY_REQUESTS = "1";
+    const body = {
+      action: "generate",
+      id,
+      input: aiInput,
+      masterPrompt: DEFAULT_MASTER_PROMPT,
+      recentMeals: [],
+    };
+    expect((await aiMenu(request("/api/ai-menu", body), env)).status).toBe(202);
+    const blocked = await aiMenu(
+      request("/api/ai-menu", { ...body, id: crypto.randomUUID() }),
+      env,
+    );
+    expect(blocked.status).toBe(429);
+    expect(await blocked.json()).toMatchObject({
+      error: "daily_limit",
+      quota: { limit: 1, used: 1, remaining: 0 },
+    });
+    const store = new DocumentStore(env.DB, "ai");
+    const job = await store.get<MenuJob>("jobs/" + id);
+    await store.setJSON("jobs/" + id, {
+      ...job,
+      status: "failed",
+      errorCode: "provider_error",
+    });
+    const settings = await (await aiMenu(request("/api/ai-menu"), env)).json();
+    expect(settings).toMatchObject({
+      quota: { used: 0, remaining: 1 },
+      providers: {
+        gemini: { configured: true },
+        cloudflare: { configured: false },
+      },
+    });
+    expect(
+      (
+        await aiMenu(
+          request("/api/ai-menu", { ...body, id: crypto.randomUUID() }),
+          env,
+        )
+      ).status,
+    ).toBe(202);
+  });
+  it("reports the actual live provider without changing the job revision", async () => {
+    const store = new DocumentStore(env.DB, "ai");
+    const saved = await store.setJSON("jobs/" + id, {
+      id,
+      status: "running",
+      createdAt: new Date().toISOString(),
+    });
+    await store.setJSON("progress/" + id, {
+      provider: "cloudflare",
+      model: "qwen",
+      batch: "alternatives",
+      fallbackReason: "quota",
+    });
+    const response = await (
+      await aiMenu(request("/api/ai-menu?job=" + id), env)
+    ).json();
+    expect(response).toMatchObject({
+      revision: saved.etag,
+      providerProgress: {
+        provider: "cloudflare",
+        batch: "alternatives",
+        fallbackReason: "quota",
+      },
+      quota: { used: 1 },
+    });
+  });
   it("dispatches a Workflow exactly once and stores a validated bilingual draft", async () => {
     const body = {
       action: "generate",

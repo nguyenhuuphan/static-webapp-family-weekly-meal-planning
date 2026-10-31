@@ -30,14 +30,22 @@ describe("Cloudflare backup", () => {
       "fetch",
       vi.fn().mockResolvedValue(Response.json({}, { status: 429 })),
     );
+    const starts = vi.fn().mockResolvedValue(undefined);
     const result = await generateWithBackup(
       env,
       aiInput,
       DEFAULT_MASTER_PROMPT,
       [],
       context,
+      undefined,
+      starts,
     );
     expect(result.provider).toBe("cloudflare");
+    expect(starts.mock.calls.map(([event]) => event.provider)).toEqual([
+      "gemini",
+      "cloudflare",
+    ]);
+    expect(starts.mock.calls[1][0].fallbackReason).toBe("quota");
     expect(result.plan.meals).toHaveLength(1);
     expect(env.AI!.run).toHaveBeenCalledWith(
       CLOUDFLARE_MODEL,

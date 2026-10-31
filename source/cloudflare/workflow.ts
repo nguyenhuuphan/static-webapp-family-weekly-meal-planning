@@ -97,6 +97,11 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
                       ).setJSON("gemini/" + id, failure);
                     }
                   : undefined,
+                async (event) => {
+                  await store
+                    .setJSON("progress/" + id, { ...event, batch: type })
+                    .catch(() => undefined);
+                },
               );
               return { status: "ready" as const, ...generated };
             } catch (error) {

@@ -1,3 +1,4 @@
+import AIProviderStatus from "src/components/AIProviderStatus";
 import MealReplacement from "src/components/MealReplacement";
 import { swapPlanMeal } from "src/helpers/mealAlternatives";
 import { signInUrl } from "src/services/signIn";
@@ -15,6 +16,8 @@ import {
   validateMenuInput,
   validateMasterPrompt,
   type MenuInput,
+  type MenuAllowance,
+  type MenuProviders,
   type MenuJob,
 } from "src/ai/contracts";
 import { MenuApiError, menuRequest } from "src/ai/client";
@@ -24,6 +27,8 @@ import { isMonday } from "src/utils";
 import MealEditor from "../MealEditor";
 
 type Settings = {
+  quota?: MenuAllowance;
+  providers?: MenuProviders;
   configured: boolean;
   masterPrompt: string;
   revision: string | null;
@@ -65,6 +70,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
     { language, content: ct } = useI18n();
   const { accessCode, setAccessCode } = useFamilyAccess();
   const [code, setCode] = useState(accessCode);
+  const [quota, setQuota] = useState<MenuAllowance>();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [master, setMaster] = useState(DEFAULT_MASTER_PROMPT);
   const [step, setStep] = useState(0);
@@ -194,6 +200,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
     setError(
       next.status === "failed" ? next.errorCode || "provider_error" : "",
     );
+    if (next.quota) setQuota(next.quota);
     setJob(next);
     setStep(3);
     setInput(next.input);
@@ -221,6 +228,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
       )
         throw new MenuApiError("network");
       setSettings(result);
+      setQuota(result.quota);
       setMaster(result.masterPrompt);
       setAccessCode(code);
       if (result.latestJob) {
@@ -278,6 +286,39 @@ function GeneratorDialog({ close }: { close: () => void }) {
       clearTimeout(timeout);
     };
   }, [job?.id, job?.status, code]);
+  async function refreshAllowance() {
+    if (inflight.current || !settings) return;
+    inflight.current = true;
+    setBusy(true);
+    try {
+      const current = await menuRequest<Settings>(code);
+      if (alive.current) {
+        setQuota(current.quota);
+        setSettings(current);
+        setError("");
+      }
+    } catch (error) {
+      if (alive.current)
+        setError(error instanceof MenuApiError ? error.code : "network");
+    } finally {
+      inflight.current = false;
+      if (alive.current) setBusy(false);
+    }
+  }
+  useEffect(() => {
+    if (!settings || !quota || quota.remaining !== 0) return;
+    const refresh = () => void refreshAllowance();
+    const delay = Math.max(
+      1000,
+      Date.parse(quota.resetsAt) - Date.now() + 1000,
+    );
+    const timer = setTimeout(refresh, Math.min(delay, 2147483647));
+    window.addEventListener("focus", refresh);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [quota?.remaining, quota?.resetsAt, code, !!settings]);
   async function generate() {
     if (inflight.current || !settings?.configured) return;
     let data;
@@ -313,8 +354,12 @@ function GeneratorDialog({ close }: { close: () => void }) {
       const created = await menuRequest<MenuJob>(code, undefined, result.id);
       if (alive.current) receive(created);
     } catch (e) {
-      if (alive.current)
+      if (alive.current) {
+        if (e instanceof MenuApiError && e.quota) setQuota(e.quota);
+        if (e instanceof MenuApiError && e.code === "daily_limit")
+          submissionId.current = null;
         setError(e instanceof MenuApiError ? e.code : "network");
+      }
     } finally {
       inflight.current = false;
       if (alive.current) setBusy(false);
@@ -414,8 +459,8 @@ function GeneratorDialog({ close }: { close: () => void }) {
       "The family code is invalid, or Cloudflare Access requires sign-in.",
     ),
     daily_limit: text(
-      "Đã hết số lượt tạo hôm nay. Menu hiện tại vẫn được giữ.",
-      "Today’s generation limit has been reached. Your current menu is unchanged.",
+      "Đã hết số lượt tạo menu của gia đình hôm nay. Xem thời gian đặt lại ở trên. Lượt lỗi không bị tính.",
+      "Your family’s daily menu allowance is used up. See the reset time above. Failed attempts do not count.",
     ),
     quota: text(
       "Đã hết hạn mức Gemini miễn phí. Hãy thử lại sau.",
@@ -517,12 +562,13 @@ function GeneratorDialog({ close }: { close: () => void }) {
           <X size={18} />
         </Button>
       </div>
-      <p className="caption">
-        {text(
-          "Gemini + Cloudflare dự phòng · Tạo khi bạn yêu cầu",
-          "Gemini + Cloudflare backup · Generates on request",
-        )}
-      </p>
+      <AIProviderStatus
+        job={job}
+        providers={settings?.providers}
+        quota={quota}
+        refreshAllowance={() => void refreshAllowance()}
+        busy={busy}
+      />
       <ol className="ai-steps" aria-label={text("Các bước", "Steps")}>
         {stepLabels.map((label, index) => (
           <li
@@ -1075,7 +1121,9 @@ function GeneratorDialog({ close }: { close: () => void }) {
             ) : (
               <Button
                 primary
-                disabled={busy || !settings?.configured}
+                disabled={
+                  busy || !settings?.configured || quota?.remaining === 0
+                }
                 onClick={() => void generate()}
               >
                 {text("Tạo thực đơn", "Generate menu")}
@@ -1139,14 +1187,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   "Choose Replace meal on any meal to swap it.",
                 )}
               </p>
-              {job?.providersUsed?.includes("cloudflare") && (
-                <p className="notice">
-                  {text(
-                    "Thực đơn này có sử dụng Cloudflare AI dự phòng.",
-                    "Cloudflare AI backup helped generate this menu.",
-                  )}
-                </p>
-              )}
+
               {editMeal ? (
                 <MealEditor
                   key={`ai-${job?.id}-${editMeal.id}`}
@@ -1281,22 +1322,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   </div>
                 </>
               )}
-              <p className="caption">
-                {text("Món thay thế có sẵn", "Ready alternatives")}:{" "}
-                {preview.alternatives?.length || 0} ·{" "}
-                {text(
-                  "Bấm Đổi món ở bữa muốn thay.",
-                  "Choose Replace meal on any meal to swap it.",
-                )}
-              </p>
-              {job?.providersUsed?.includes("cloudflare") && (
-                <p className="notice">
-                  {text(
-                    "Thực đơn này có sử dụng Cloudflare AI dự phòng.",
-                    "Cloudflare AI backup helped generate this menu.",
-                  )}
-                </p>
-              )}
+
               {editMeal ? (
                 <p role="status">
                   {text(

@@ -39,7 +39,27 @@ export type MenuInput = {
   pantry: string;
   customPrompt: string;
 };
+export type AIProvider = "gemini" | "cloudflare";
+export type MenuAllowance = {
+  limit: number;
+  used: number;
+  remaining: number;
+  resetsAt: string;
+};
+export type MenuProviderProgress = {
+  provider: AIProvider;
+  model: string;
+  batch: string;
+  fallbackReason?: string;
+};
+export type MenuProviders = {
+  gemini: { configured: boolean; model: string };
+  cloudflare: { configured: boolean; model: string };
+};
 export type MenuJob = {
+  admissionPending?: boolean;
+  quota?: MenuAllowance;
+  providerProgress?: MenuProviderProgress;
   diagnosticProvider?: "cloudflare"; // Administrative D1 diagnostics only; never accepted from requests.
   providersUsed?: ("gemini" | "cloudflare")[];
   id: string;

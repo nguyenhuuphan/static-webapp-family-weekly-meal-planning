@@ -9,6 +9,8 @@ import {
   type WeekContext,
 } from "../src/server/gemini";
 import type { Plan } from "../src/types";
+import type { MenuProviderProgress } from "../src/ai/contracts";
+import { GEMINI_MODEL } from "../src/server/gemini";
 import type { MenuInput } from "../src/ai/contracts";
 import type { Env } from "./types";
 import { reserveGeneration } from "./store";
@@ -74,6 +76,9 @@ export async function generateWithBackup(
     status?: string;
     message: string;
   }) => Promise<void>,
+  onProviderStart?: (
+    event: Omit<MenuProviderProgress, "batch">,
+  ) => Promise<void>,
 ) {
   const validateBatch = (plan: Plan) => {
     if (context.alternatives) {
@@ -91,8 +96,10 @@ export async function generateWithBackup(
     }
     return plan;
   };
+  let fallbackReason: string | undefined;
   try {
     if (!env.GEMINI_API_KEY) throw new GenerationError("not_configured");
+    await onProviderStart?.({ provider: "gemini", model: GEMINI_MODEL });
     const plan = await generateMenuBatch(
       input,
       masterPrompt,
@@ -107,6 +114,7 @@ export async function generateWithBackup(
       (error instanceof GenerationError && !FALLBACK_CODES.has(error.code))
     )
       throw error;
+    fallbackReason = error instanceof GenerationError ? error.code : "network";
   }
   const payload = JSON.stringify(
     generationPayload(input, masterPrompt, recentMeals, context),
@@ -128,6 +136,11 @@ export async function generateWithBackup(
   )
     throw new GenerationError("backup_quota");
   try {
+    await onProviderStart?.({
+      provider: "cloudflare",
+      model: CLOUDFLARE_MODEL,
+      ...(fallbackReason ? { fallbackReason } : {}),
+    });
     const output = await env.AI!.run(CLOUDFLARE_MODEL, {
       messages: [
         { role: "system", content: SYSTEM },

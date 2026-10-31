@@ -8,7 +8,10 @@ import {
   type MenuJob,
 } from "../../src/ai/contracts";
 import { validatePlan } from "../../src/validations";
-import { DocumentStore, reserveGeneration } from "../store";
+import { DocumentStore } from "../store";
+import { admitMenu, menuAllowance } from "../menu-allowance";
+import { GEMINI_MODEL } from "../../src/server/gemini";
+import { CLOUDFLARE_MODEL } from "../ai";
 
 export async function aiMenu(request: Request, env: Env): Promise<Response> {
   if (!["GET", "POST"].includes(request.method))
@@ -19,17 +22,33 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
       const id = new URL(request.url).searchParams.get("job");
       if (id) {
         if (!isJobId(id)) return json({ error: "invalid_input" }, 400);
-        const entry = await store.getWithMetadata("jobs/" + id, {
+        let entry = await store.getWithMetadata("jobs/" + id, {
           type: "json",
         });
-        const job = entry?.data as MenuJob | undefined;
+        let job = entry?.data as MenuJob | undefined;
         if (!job) return json({ error: "not_found" }, 404);
         if (
           ["queued", "running"].includes(job.status) &&
           Date.now() - Date.parse(job.createdAt) > 20 * 60 * 1000
-        )
-          return json({ ...job, status: "failed", errorCode: "timeout" });
-        return json({ ...job, revision: entry?.etag });
+        ) {
+          await store.setJSON(
+            "jobs/" + id,
+            { ...job, status: "failed", errorCode: "timeout" },
+            { onlyIfMatch: entry!.etag },
+          );
+          entry = await store.getWithMetadata("jobs/" + id);
+          job = entry!.data as MenuJob;
+        }
+        const [quota, providerProgress] = await Promise.all([
+          menuAllowance(env.DB, env.AI_MAX_DAILY_REQUESTS),
+          store.get("progress/" + id),
+        ]);
+        return json({
+          ...job,
+          revision: entry?.etag,
+          quota,
+          ...(providerProgress ? { providerProgress } : {}),
+        });
       }
       const [settings, latest] = await Promise.all([
         store.getWithMetadata("settings", { type: "json" }),
@@ -37,6 +56,11 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
       ]);
       return json({
         configured: !!(env.GEMINI_API_KEY || env.AI),
+        providers: {
+          gemini: { configured: !!env.GEMINI_API_KEY, model: GEMINI_MODEL },
+          cloudflare: { configured: !!env.AI, model: CLOUDFLARE_MODEL },
+        },
+        quota: await menuAllowance(env.DB, env.AI_MAX_DAILY_REQUESTS),
         masterPrompt:
           (settings?.data as { masterPrompt?: string } | undefined)
             ?.masterPrompt || DEFAULT_MASTER_PROMPT,
@@ -112,7 +136,8 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
     }
     if (body?.action !== "generate" || !isJobId(body.id))
       return json({ error: "invalid_input" }, 400);
-    if (!env.GEMINI_API_KEY && !env.AI) return json({ error: "not_configured" }, 503);
+    if (!env.GEMINI_API_KEY && !env.AI)
+      return json({ error: "not_configured" }, 503);
     let input, masterPrompt, recentMeals: string[];
     try {
       input = validateMenuInput(body.input);
@@ -132,6 +157,7 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
     const job: MenuJob = {
       id: body.id,
       status: "queued",
+      admissionPending: true,
       createdAt: new Date().toISOString(),
       input,
       masterPrompt,
@@ -141,13 +167,19 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
       onlyIfNew: true,
     });
     if (!created.modified) return json({ id: job.id }, 202); // same submission is safe to retry
-    if (!(await reserveGeneration(env.DB, env.AI_MAX_DAILY_REQUESTS))) {
+    if (!(await admitMenu(env.DB, job.id, env.AI_MAX_DAILY_REQUESTS))) {
       await store.setJSON("jobs/" + job.id, {
         ...job,
         status: "failed",
         errorCode: "daily_limit",
       });
-      return json({ error: "daily_limit" }, 429);
+      return json(
+        {
+          error: "daily_limit",
+          quota: await menuAllowance(env.DB, env.AI_MAX_DAILY_REQUESTS),
+        },
+        429,
+      );
     }
     await store.setJSON("latest", { id: job.id });
     try {

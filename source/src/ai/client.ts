@@ -1,6 +1,10 @@
+import type { MenuAllowance } from "./contracts";
 import { apiEndpoint } from "src/services/apiEndpoint";
 export class MenuApiError extends Error {
-  constructor(public code: string) {
+  constructor(
+    public code: string,
+    public quota?: MenuAllowance,
+  ) {
     super(code);
   }
 }
@@ -35,6 +39,7 @@ export async function menuRequest<T>(
         : typeof data.error === "string"
           ? data.error
           : "network",
+      data.quota,
     );
   return data;
 }

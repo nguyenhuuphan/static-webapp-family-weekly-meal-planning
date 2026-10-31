@@ -3844,3 +3844,27 @@ select:focus-visible {
 .replacement-option:has(details[open]) {
   grid-column: 1 / -1;
 }
+
+.ai-provider-status {
+  display: grid;
+  gap: 8px;
+  margin-block: 16px 24px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #f4f6ef;
+  overflow-wrap: anywhere;
+}
+.ai-provider-status > strong {
+  font-size: 1rem;
+}
+.ai-provider-status .caption {
+  margin: 0;
+}
+.ai-allowance {
+  display: grid;
+  gap: 5px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 0.85rem;
+}

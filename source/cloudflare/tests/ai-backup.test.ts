@@ -69,7 +69,7 @@ describe("Cloudflare backup", () => {
   it("keeps bounded administrative checks separate from the family's backup allowance", async () => {
     const env = environment();
     delete env.GEMINI_API_KEY;
-    for (let i = 0; i < 6; i++)
+    for (let i = 0; i < 8; i++)
       await generateWithBackup(env, aiInput, DEFAULT_MASTER_PROMPT, [], {
         ...context,
         diagnostic: true,

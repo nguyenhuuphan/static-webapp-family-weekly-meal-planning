@@ -110,6 +110,18 @@ describe("AI requirements and flexible weeks", () => {
     expect(() => validateGeneratedPlan(terse, aiInput)).toThrow(
       "incomplete_recipe",
     );
+    try {
+      validateGeneratedPlan(terse, aiInput);
+    } catch (error) {
+      expect(error).toMatchObject({
+        diagnostic: {
+          reason: "instruction_detail",
+          slot: "sat-breakfast",
+          stepCount: 1,
+          instructionCharacters: "Boil eggs.".length,
+        },
+      });
+    }
     const unscaled = aiBilingualOutput();
     unscaled.meals["sat-breakfast"].steps[0].text = {
       en: "Add 300 g pork to the pan over medium heat.",

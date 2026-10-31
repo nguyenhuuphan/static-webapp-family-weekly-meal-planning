@@ -50,7 +50,14 @@ export type MenuJob = {
   plan?: Plan;
   error?: string;
   errorCode?: string;
-  errorDiagnostic?: { httpStatus?: number; status?: string; reason: string };
+  errorDiagnostic?: {
+    httpStatus?: number;
+    status?: string;
+    reason: string;
+    slot?: string;
+    stepCount?: number;
+    instructionCharacters?: number;
+  };
   /** Administration-only synthetic job flag; never accepted by the generation API. */
   diagnostic?: boolean;
 };

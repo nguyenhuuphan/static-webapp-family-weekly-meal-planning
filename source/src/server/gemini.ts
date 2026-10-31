@@ -173,6 +173,9 @@ export class GenerationError extends Error {
       httpStatus?: number;
       status?: string;
       reason: string;
+      slot?: string;
+      stepCount?: number;
+      instructionCharacters?: number;
     },
   ) {
     super(code);
@@ -437,6 +440,12 @@ export function validateGeneratedPlan(raw: unknown, input: MenuInput): Plan {
     )
       throw new GenerationError("incomplete_recipe", {
         reason: "instruction_detail",
+        slot: menuSlotId(meal.day, meal.type),
+        stepCount: meal.steps.length,
+        instructionCharacters: meal.steps.reduce(
+          (total, step) => total + step.text.length,
+          0,
+        ),
       });
     if (
       [...meal.prep, ...meal.steps].some((step) =>
@@ -553,6 +562,12 @@ export async function generateMenu(
                         meal.ingredients.map((item) => item.name),
                       ),
                     ),
+                  ],
+                  finalChecklist: [
+                    "Return EVERY slot, with complete English and Vietnamese recipes; do not shorten later slots.",
+                    "For EACH heated recipe, steps must have at least 3 separate objects and at least 120 English characters in total. Aim for 4 useful steps of 1–2 sentences each: heat/setup, cook the main with timing and doneness, cook any side, finish/serve. Avoid placeholders.",
+                    "Include every main and side ingredient with quantities; use bracketed ingredient amounts in instructions. Preserve every number and token in Vietnamese.",
+                    "Check every recipe, including breakfasts and simple egg dishes, before returning the JSON. Return only the JSON, not this checklist.",
                   ],
                 }),
               },

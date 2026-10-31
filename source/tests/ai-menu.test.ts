@@ -300,9 +300,11 @@ describe("Gemini API boundary", () => {
       sent.response_format.schema.properties.meals.items.properties.main
         .required,
     ).toEqual(["en", "vi"]);
-    expect(JSON.stringify(sent.response_format.schema)).not.toMatch(
-      /"(?:minItems|maxItems|minimum|maximum|enum)":/,
-    );
+    expect(sent.response_format.schema.properties.meals.minItems).toBe(1);
+    expect(sent.response_format.schema.properties.meals.maxItems).toBe(1);
+    expect(
+      JSON.stringify(sent.response_format.schema.properties.meals.items),
+    ).not.toMatch(/"(?:minItems|maxItems|minimum|maximum|enum)":/);
     const recipeSchema = mealSchema.items;
     expect(plan.meals[0].id).toBe("sat-breakfast");
     expect(recipeSchema.properties.minutes.maximum).toBe(aiInput.maxMinutes);

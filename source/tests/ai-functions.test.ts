@@ -194,18 +194,17 @@ describe("Gemini background execution", () => {
     await api(req(body));
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json({
-            candidates: [
-              {
-                finishReason: "STOP",
-                content: { parts: [{ text: JSON.stringify(aiOutput()) }] },
-              },
-            ],
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        Response.json({
+          status: "completed",
+          steps: [
+            {
+              type: "model_output",
+              content: [{ type: "text", text: JSON.stringify(aiOutput()) }],
+            },
+          ],
+        }),
+      ),
     );
     await background(req({ id }));
     await background(req({ id }));

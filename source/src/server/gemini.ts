@@ -170,6 +170,22 @@ function decoderSchema(schema: unknown): unknown {
     );
   return schema;
 }
+function providerSchema(input: MenuInput) {
+  const count = input.days.length * input.mealTypes.length;
+  return {
+    ...RESPONSE_SCHEMA,
+    properties: {
+      name: bilingual,
+      meals: {
+        type: "array",
+        minItems: count,
+        maxItems: count,
+        // Keep one outer count; avoid multiplying it by nested numeric bounds.
+        items: decoderSchema(RESPONSE_SCHEMA.properties.meals.items),
+      },
+    },
+  };
+}
 export class GenerationError extends Error {
   constructor(
     public code: string,
@@ -587,7 +603,7 @@ export async function generateMenu(
         response_format: {
           type: "text",
           mime_type: "application/json",
-          schema: decoderSchema(responseSchema(input)),
+          schema: providerSchema(input),
         },
         generation_config: {
           max_output_tokens:

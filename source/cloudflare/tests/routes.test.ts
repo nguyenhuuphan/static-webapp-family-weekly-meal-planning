@@ -201,4 +201,51 @@ describe("D1 and Cloudflare routes", () => {
       reason: "quota",
     });
   });
+  it.each([false, true])(
+    "keeps runtime diagnostics private and redacts secrets (enabled: %s)",
+    async (diagnostic) => {
+      const job: MenuJob = {
+        id,
+        status: "queued",
+        input: aiInput,
+        masterPrompt: DEFAULT_MASTER_PROMPT,
+        recentMeals: [],
+        createdAt: new Date().toISOString(),
+        diagnostic,
+      };
+      await new DocumentStore(env.DB, "ai").setJSON("jobs/" + id, job);
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockRejectedValue(new TypeError("fetch failed for test-only-key")),
+      );
+      const step = {
+        do: vi.fn(
+          async (
+            _name: string,
+            _options: unknown,
+            callback: () => Promise<unknown>,
+          ) => callback(),
+        ),
+      } as unknown as WorkflowStep;
+      await new MenuWorkflow({} as ExecutionContext, env).run(
+        { payload: { id } } as WorkflowEvent<{ id: string }>,
+        step,
+      );
+      const failed = await new DocumentStore(env.DB, "ai").get<MenuJob>(
+        "jobs/" + id,
+      );
+      expect(failed?.errorDiagnostic).toEqual({ reason: "network" });
+      expect(JSON.stringify(failed)).not.toContain("test-only-key");
+      const details = await new DocumentStore(env.DB, "diagnostics").get(
+        "gemini/" + id,
+      );
+      expect(details).toEqual(
+        diagnostic
+          ? { stage: "runtime", message: "fetch failed for [redacted]" }
+          : null,
+      );
+    },
+  );
 });

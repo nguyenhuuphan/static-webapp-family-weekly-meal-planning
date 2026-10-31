@@ -11,6 +11,29 @@ const NO_RETRIES = {
   retries: { limit: 0, delay: "1 second" },
   timeout: "10 minutes",
 } as const;
+function runtimeDiagnostic(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const reason = /cpu|exceeded.*time limit/i.test(message)
+    ? "cpu_limit"
+    : /timeout|timed out|deadline|abort/i.test(message)
+      ? "timeout"
+      : /fetch|connect|network|socket/i.test(message)
+        ? "network"
+        : "runtime";
+  return { reason };
+}
+async function recordSyntheticFailure(env: Env, id: string, error: unknown) {
+  let message =
+    error instanceof Error ? error.message : "Unknown runtime failure";
+  for (const key of [env.GEMINI_API_KEY, env.FAMILY_ACCESS_CODE])
+    if (key) message = message.replaceAll(key, "[redacted]");
+  await new DocumentStore(env.DB, "diagnostics")
+    .setJSON("gemini/" + id, {
+      stage: "runtime",
+      message: message.replace(/AIza[\w-]+/g, "[redacted]").slice(0, 1600),
+    })
+    .catch(() => undefined);
+}
 export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
   async run(event: WorkflowEvent<{ id: string }>, step: WorkflowStep) {
     const store = new DocumentStore(this.env.DB, "ai"),
@@ -58,6 +81,8 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
             );
             return { status: "ready" as const, plan };
           } catch (error) {
+            if (!(error instanceof GenerationError) && claimed.job.diagnostic)
+              await recordSyntheticFailure(this.env, id, error);
             return {
               status: "failed" as const,
               errorCode:
@@ -66,7 +91,9 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
                   : "provider_error",
               ...(error instanceof GenerationError && error.diagnostic
                 ? { errorDiagnostic: error.diagnostic }
-                : {}),
+                : !(error instanceof GenerationError)
+                  ? { errorDiagnostic: runtimeDiagnostic(error) }
+                  : {}),
             };
           }
         },
@@ -82,14 +109,21 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
           );
         },
       );
-    } catch {
+    } catch (error) {
       await step.do(
         "save-failure",
         { retries: { limit: 2, delay: "2 seconds" }, timeout: "30 seconds" },
         async () => {
+          if (claimed.job.diagnostic)
+            await recordSyntheticFailure(this.env, id, error);
           await store.setJSON(
             "jobs/" + id,
-            { ...claimed.job, status: "failed", errorCode: "provider_error" },
+            {
+              ...claimed.job,
+              status: "failed",
+              errorCode: "provider_error",
+              errorDiagnostic: runtimeDiagnostic(error),
+            },
             { onlyIfMatch: claimed.revision },
           );
         },

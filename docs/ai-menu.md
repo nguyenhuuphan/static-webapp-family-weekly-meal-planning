@@ -31,6 +31,8 @@ An administrator may seed a synthetic job with the internal diagnostic flag to c
 
 The prompt includes a schema with a required object key for every requested slot and a shared recipe definition. The API uses JSON mode; supplying the full weekly schema to Google's constrained decoder produced HTTP 400 responses. The server assigns canonical IDs, days and meal types from the slot keys. Validation enforces the exact requested meal count and slots, at most 30 ingredients, 10 preparation steps and 15 cooking steps per meal, complete bilingual text and quantity preservation. Invalid output never becomes an active or ready plan.
 
+The translation map uses a protected dictionary during validation, then becomes a plain object through object spread before the Workflow step returns. Cloudflare's durable step serializer rejects null-prototype dictionaries. Object spread keeps keys such as `__proto__` as ordinary own properties without invoking a prototype setter.
+
 Cloudflare Access email OTP replaces Netlify SSO on the new hostname. Only the configured owner email may sign in. The Worker verifies the Access JWT, and private planner/AI routes also require the family code. Workflows start through a server binding without forwarding login cookies. If the session expires, the sign-in link opens a new tab so the original form remains available. Legacy Netlify Functions remain for rollback only.
 
 ## Data compatibility

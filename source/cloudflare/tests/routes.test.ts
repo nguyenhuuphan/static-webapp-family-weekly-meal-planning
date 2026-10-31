@@ -15,6 +15,12 @@ import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 let db: ReturnType<typeof database>, env: Env;
 const code = "test-only-family-access-code";
 const id = "20000000-0000-4000-8000-000000000001";
+function assertPlainStepResult(value: unknown) {
+  if (!value || typeof value !== "object") return;
+  if (!Array.isArray(value))
+    expect(Object.getPrototypeOf(value)).toBe(Object.prototype);
+  for (const item of Object.values(value)) assertPlainStepResult(item);
+}
 function request(path: string, body?: unknown, method?: string) {
   return new Request("https://app.example" + path, {
     method: method || (body ? "POST" : "GET"),
@@ -142,7 +148,11 @@ describe("D1 and Cloudflare routes", () => {
           _name: string,
           _options: unknown,
           callback: () => Promise<unknown>,
-        ) => callback(),
+        ) => {
+          const result = await callback();
+          assertPlainStepResult(result);
+          return result;
+        },
       ),
     } as unknown as WorkflowStep;
     const workflow = new MenuWorkflow({} as ExecutionContext, env);

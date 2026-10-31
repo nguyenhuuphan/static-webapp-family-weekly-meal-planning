@@ -345,7 +345,8 @@ export function validateGeneratedPlan(raw: unknown, input: MenuInput): Plan {
     name: result.name,
     servings: input.servings,
     meals: result.meals,
-    translations: { vi: translations },
+    // Workflows persist plain objects; spreading also preserves safe own keys such as __proto__.
+    translations: { vi: { ...translations } },
   };
   const validationErrors = validatePlan(plan);
   if (validationErrors.length)

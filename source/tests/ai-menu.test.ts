@@ -79,6 +79,14 @@ describe("AI requirements and flexible weeks", () => {
       GenerationError,
     );
   });
+  it("returns a Workflow-serializable translation map without invoking prototype setters", () => {
+    const output = aiOutput();
+    output.translations.push({ source: "__proto__", vi: "A safe translation" });
+    const plan = validateGeneratedPlan(output, aiInput);
+    expect(Object.getPrototypeOf(plan.translations!.vi)).toBe(Object.prototype);
+    expect(Object.hasOwn(plan.translations!.vi, "__proto__")).toBe(true);
+    expect(plan.translations!.vi["__proto__"]).toBe("A safe translation");
+  });
   it("rejects declared and hidden unavailable appliances and restricted ingredients", () => {
     const output = aiOutput();
     output.meals[0].equipment = ["Oven"];

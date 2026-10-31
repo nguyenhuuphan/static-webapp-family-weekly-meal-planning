@@ -86,7 +86,7 @@ export const RESPONSE_SCHEMA = {
               type: "object",
               properties: {
                 name: bilingual,
-                qty: { type: "number", exclusiveMinimum: 0 },
+                qty: { type: "number", minimum: 0 },
                 unit: {
                   type: "string",
                   enum: ["g", "ml", "each", "tsp", "tbsp"],
@@ -518,7 +518,7 @@ export async function generateMenu(
   const apiKey = credentials?.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GenerationError("not_configured");
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
+    "https://generativelanguage.googleapis.com/v1beta/interactions",
     {
       method: "POST",
       headers: {
@@ -529,49 +529,45 @@ export async function generateMenu(
         input.days.length * input.mealTypes.length > 10 ? 360000 : 180000,
       ),
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: JSON.stringify({
-                  masterPrompt,
-                  requirements: input,
-                  slots: input.days.flatMap((day) =>
-                    input.mealTypes.map((type) => ({
-                      id: menuSlotId(day, type),
-                      day,
-                      type,
-                    })),
-                  ),
-                  recentMealsToAvoid: recentMeals,
-                  responseSchema: responseSchema(input),
-                  referenceServings: defaultPlan.servings,
-                  referenceRecipe,
-                  referenceIngredientNames: [
-                    ...new Set(
-                      defaultPlan.meals.flatMap((meal) =>
-                        meal.ingredients.map((item) => item.name),
-                      ),
-                    ),
-                  ],
-                  finalChecklist: [
-                    "Return EVERY slot, with complete English and Vietnamese recipes; do not shorten later slots.",
-                    "This is a NEW week: do not choose main dishes from recentMealsToAvoid or copy the reference dish. Reuse ingredients, not recipes. Use different main dishes unless the user explicitly requested repeats or planned leftovers.",
-                    "For EACH heated recipe, steps must have at least 3 separate objects and at least 120 English characters in total. Aim for 4 useful steps of 1–2 sentences each: heat/setup, cook the main with timing and doneness, cook any side, finish/serve. Avoid placeholders.",
-                    "Include every main and side ingredient with quantities; use bracketed ingredient amounts in instructions. Preserve every number and token in Vietnamese.",
-                    "Check every recipe, including breakfasts and simple egg dishes, before returning the JSON. Return only the JSON, not this checklist.",
-                  ],
-                }),
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseJsonSchema: responseSchema(input),
-          maxOutputTokens:
+        model: GEMINI_MODEL,
+        store: false,
+        system_instruction: SYSTEM,
+        input: JSON.stringify({
+          masterPrompt,
+          requirements: input,
+          slots: input.days.flatMap((day) =>
+            input.mealTypes.map((type) => ({
+              id: menuSlotId(day, type),
+              day,
+              type,
+            })),
+          ),
+          recentMealsToAvoid: recentMeals,
+          responseSchema: responseSchema(input),
+          referenceServings: defaultPlan.servings,
+          referenceRecipe,
+          referenceIngredientNames: [
+            ...new Set(
+              defaultPlan.meals.flatMap((meal) =>
+                meal.ingredients.map((item) => item.name),
+              ),
+            ),
+          ],
+          finalChecklist: [
+            "Return EVERY slot, with complete English and Vietnamese recipes; do not shorten later slots.",
+            "This is a NEW week: do not choose main dishes from recentMealsToAvoid or copy the reference dish. Reuse ingredients, not recipes. Use different main dishes unless the user explicitly requested repeats or planned leftovers.",
+            "For EACH heated recipe, steps must have at least 3 separate objects and at least 120 English characters in total. Aim for 4 useful steps of 1–2 sentences each: heat/setup, cook the main with timing and doneness, cook any side, finish/serve. Avoid placeholders.",
+            "Include every main and side ingredient with quantities; use bracketed ingredient amounts in instructions. Preserve every number and token in Vietnamese.",
+            "Check every recipe, including breakfasts and simple egg dishes, before returning the JSON. Return only the JSON, not this checklist.",
+          ],
+        }),
+        response_format: {
+          type: "text",
+          mime_type: "application/json",
+          schema: responseSchema(input),
+        },
+        generation_config: {
+          max_output_tokens:
             input.days.length * input.mealTypes.length > 10 ? 65536 : 32768,
         },
       }),
@@ -584,21 +580,21 @@ export async function generateMenu(
       credentials?.onProviderFailure,
     );
   const data = (await response.json()) as {
-    candidates?: {
-      finishReason?: string;
-      content?: { parts?: { text?: string; thought?: boolean }[] };
+    status?: string;
+    steps?: {
+      type?: string;
+      content?: { type?: string; text?: string }[];
     }[];
   };
-  const candidate = data.candidates?.[0];
-  if (candidate?.finishReason !== "STOP")
+  if (data.status !== "completed")
     throw invalidOutput(
-      candidate?.finishReason === "MAX_TOKENS"
-        ? "output_limit"
-        : "provider_finish",
+      data.status === "incomplete" ? "output_limit" : "provider_finish",
     );
-  const output = candidate.content?.parts
-    ?.filter((part: { text?: string; thought?: boolean }) => !part.thought)
-    .map((part: { text?: string }) => part.text || "")
+  const output = data.steps
+    ?.filter((step) => step.type === "model_output")
+    .flatMap((step) => step.content || [])
+    .filter((part) => part.type === "text")
+    .map((part) => part.text || "")
     .join("");
   if (typeof output !== "string" || !output.trim())
     throw invalidOutput("empty_output");

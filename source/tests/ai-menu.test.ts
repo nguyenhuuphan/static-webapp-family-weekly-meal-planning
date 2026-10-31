@@ -250,10 +250,17 @@ describe("Gemini API boundary", () => {
     vi.stubEnv("GEMINI_API_KEY", "test-only-key");
     const fetcher = vi.fn().mockResolvedValue(
       Response.json({
-        candidates: [
+        status: "completed",
+        steps: [
           {
-            finishReason: "STOP",
-            content: { parts: [{ text: JSON.stringify(aiBilingualOutput()) }] },
+            type: "model_thought",
+            content: [{ type: "text", text: "Not the recipe JSON" }],
+          },
+          {
+            type: "model_output",
+            content: [
+              { type: "text", text: JSON.stringify(aiBilingualOutput()) },
+            ],
           },
         ],
       }),
@@ -264,10 +271,14 @@ describe("Gemini API boundary", () => {
     ]);
     expect(plan.meals[0].type).toBe("Breakfast");
     const [url, init] = fetcher.mock.calls[0];
-    expect(url).toContain("gemini-3.5-flash-lite:generateContent");
+    expect(url).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/interactions",
+    );
     expect(init.headers["x-goog-api-key"]).toBe("test-only-key");
     const sent = JSON.parse(init.body);
-    const requirements = JSON.parse(sent.contents[0].parts[0].text);
+    expect(sent.model).toBe("gemini-3.5-flash-lite");
+    expect(sent.store).toBe(false);
+    const requirements = JSON.parse(sent.input);
     expect(requirements.requirements.equipment).toEqual(["Gas stove"]);
     expect(requirements.masterPrompt).toBe(DEFAULT_MASTER_PROMPT);
     expect(requirements.recentMealsToAvoid).toEqual(["Previous meal"]);
@@ -280,14 +291,12 @@ describe("Gemini API boundary", () => {
     expect(requirements.referenceRecipe.steps[0].text.en).toBe(
       original.meals[0].steps[0].text,
     );
-    expect(sent.generationConfig.responseMimeType).toBe("application/json");
+    expect(sent.response_format.mime_type).toBe("application/json");
     const mealSchema = requirements.responseSchema.properties.meals;
     expect(mealSchema.type).toBe("array");
     expect(mealSchema.minItems).toBe(1);
     expect(mealSchema.maxItems).toBe(1);
-    expect(sent.generationConfig.responseJsonSchema).toEqual(
-      requirements.responseSchema,
-    );
+    expect(sent.response_format.schema).toEqual(requirements.responseSchema);
     const recipeSchema = mealSchema.items;
     expect(plan.meals[0].id).toBe("sat-breakfast");
     expect(recipeSchema.properties.minutes.maximum).toBe(aiInput.maxMinutes);
@@ -308,9 +317,8 @@ describe("Gemini API boundary", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     fetcher.mockResolvedValue(
       Response.json({
-        candidates: [
-          { finishReason: "MAX_TOKENS", content: { parts: [{ text: "{}" }] } },
-        ],
+        status: "incomplete",
+        steps: [],
       }),
     );
     await expect(

@@ -131,12 +131,13 @@ describe("D1 and Cloudflare routes", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         Response.json({
-          candidates: [
+          status: "completed",
+          steps: [
             {
-              finishReason: "STOP",
-              content: {
-                parts: [{ text: JSON.stringify(aiBilingualOutput()) }],
-              },
+              type: "model_output",
+              content: [
+                { type: "text", text: JSON.stringify(aiBilingualOutput()) },
+              ],
             },
           ],
         }),

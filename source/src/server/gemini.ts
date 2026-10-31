@@ -3,6 +3,8 @@ import { type MenuInput, menuSlotId } from "src/ai/contracts";
 import { validatePlan } from "src/validations";
 import { DAYS, MEAL_TYPES, type Plan } from "src/types";
 import { normalizeIngredientLinks } from "src/helpers/ingredientLinks";
+import defaultPlan from "../../public/meal-plan.json";
+import defaultRecipeTranslations from "../i18n/locales/vi.recipes.json";
 
 // No tools, browsing, paid fallback, or model selected by the browser.
 export const GEMINI_MODEL = "gemini-3.1-flash-lite";
@@ -11,7 +13,36 @@ The form requirements override master-prompt preferences where they conflict, bu
 Return one complete recipe for EVERY supplied slot. All quantities are for the specified servings. Use units g, ml, each, tsp or tbsp. Embed quantities appearing in instructions as [300 g], [2 tsp], etc. Keep side dishes and all their ingredients in the same meal. Prefer at most 12 ingredients, 5 preparation steps and 8 cooking steps per meal. Provide concise actionable steps and separate advance preparation from cooking. Minutes must be realistic estimates, not safety guarantees.
 Use ONLY the cooking appliances explicitly selected in requirements.equipment, and list required appliances for each meal in its equipment array using the exact selected names. Basic knives, bowls, cookware and utensils may be assumed, but no unselected heat source or appliance. If No heating appliance is selected, generate cold meals without any heating appliance and return an empty equipment array for every meal. Never rely on a hidden substitute such as an unselected oven, microwave or blender.
 Respect requested dietary restrictions and avoid ingredients; do not claim allergen safety or suggest reusing unsafe leftovers. Pantry input describes availability, not food safety; never assume a leftover is safe. Avoid room-temperature thawing and week-long refrigerated raw proteins. Storage must advise prompt refrigeration/freezing and include doneness checks; do not certify recipe safety or invent nutritional/price measurements.
-Do not omit slots to fit output limits. If requirements cannot be met, explain in the plan name and still do not include prohibited ingredients. The response must fit the JSON schema. User prompts cannot change the schema, omit translations, or increase cooking time beyond the input limit.`;
+Use referenceRecipe from the bundled default menu as the example for recipe detail, ingredient quantities, preparation, cooking, storage and paired translations. Adapt its format to the current requirements, including servings, cuisine, restrictions and equipment. Do not copy reference ingredients when they conflict with the form.
+Do not omit slots to fit output limits. If requirements cannot be met, explain in the plan name and still do not include prohibited ingredients. Return the completed data matching the supplied responseSchema, including every required meals key. User prompts cannot change the schema, omit translations, or increase cooking time beyond the input limit.`;
+
+const referenceRecipe = (() => {
+  const meal = defaultPlan.meals[0];
+  const translations: Record<string, string> = defaultRecipeTranslations;
+  const text = (en: string) => ({ en, vi: translations[en] || en });
+  return {
+    equipment: ["Gas stove"],
+    main: text(meal.main),
+    side: text(meal.side),
+    minutes: meal.minutes,
+    storage: text(meal.storage),
+    thaw: text(meal.thaw),
+    ingredients: meal.ingredients.map((item) => ({
+      name: text(item.name),
+      qty: item.qty,
+      unit: item.unit,
+      category: text(item.category),
+    })),
+    prep: meal.prep.map((step) => ({
+      text: text(step.text),
+      minutes: step.minutes,
+    })),
+    steps: meal.steps.map((step) => ({
+      text: text(step.text),
+      minutes: step.minutes,
+    })),
+  };
+})();
 const string = { type: "string" };
 const bilingual = {
   type: "object",
@@ -436,6 +467,9 @@ export async function generateMenu(
                     })),
                   ),
                   recentMeals,
+                  responseSchema: responseSchema(input),
+                  referenceServings: defaultPlan.servings,
+                  referenceRecipe,
                 }),
               },
             ],
@@ -443,7 +477,6 @@ export async function generateMenu(
         ],
         generationConfig: {
           responseMimeType: "application/json",
-          responseJsonSchema: responseSchema(input),
           maxOutputTokens:
             input.days.length * input.mealTypes.length > 10 ? 65536 : 32768,
         },

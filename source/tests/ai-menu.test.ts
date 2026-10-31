@@ -172,11 +172,18 @@ describe("Gemini API boundary", () => {
     const requirements = JSON.parse(sent.contents[0].parts[0].text);
     expect(requirements.requirements.equipment).toEqual(["Gas stove"]);
     expect(requirements.masterPrompt).toBe(DEFAULT_MASTER_PROMPT);
+    expect(requirements.referenceServings).toBe(original.servings);
+    expect(requirements.referenceRecipe.main.en).toBe(original.meals[0].main);
+    expect(requirements.referenceRecipe.ingredients[0].qty).toBe(
+      original.meals[0].ingredients[0].qty,
+    );
+    expect(requirements.referenceRecipe.steps[0].text.en).toBe(
+      original.meals[0].steps[0].text,
+    );
     expect(sent.generationConfig.responseMimeType).toBe("application/json");
-    const mealSchema =
-      sent.generationConfig.responseJsonSchema.properties.meals;
+    const mealSchema = requirements.responseSchema.properties.meals;
     expect(mealSchema.required).toEqual(["sat-breakfast"]);
-    const recipeSchema = sent.generationConfig.responseJsonSchema.$defs.recipe;
+    const recipeSchema = requirements.responseSchema.$defs.recipe;
     expect(plan.meals[0].id).toBe("sat-breakfast");
     expect(recipeSchema.properties.minutes.maximum).toBe(aiInput.maxMinutes);
     expect(recipeSchema.properties.equipment.items.enum).toEqual(

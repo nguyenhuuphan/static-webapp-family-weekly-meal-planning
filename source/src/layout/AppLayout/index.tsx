@@ -236,7 +236,7 @@ const AppLayout: React.FC<IProps> = () => {
                 plan={plan}
                 onCancel={() => setEditId(null)}
                 onSave={(m) => {
-                  if (!update((x) => replaceMeal(x, m.id, m))) return;
+                  if (!update((x) => replaceMeal(x, m.id, m))) return false;
                   setEditId(null);
                   setToast(source("mealSavedReviewYourPreparationAndStorage"));
                 }}

@@ -143,10 +143,7 @@ it("collects equipment and custom preferences, previews and edits before applyin
     servings: 3,
   });
   fireEvent.click(ui.getByRole("button", { name: "Edit this meal" }));
-  expect(
-    (ui.getByRole("button", { name: "Apply this menu" }) as HTMLButtonElement)
-      .disabled,
-  ).toBe(true);
+  expect(ui.queryByRole("button", { name: "Apply this menu" })).toBeNull();
   fireEvent.change(ui.getByRole("textbox", { name: "Main dish" }), {
     target: { value: "My edited breakfast" },
   });

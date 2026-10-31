@@ -66,7 +66,7 @@ export default function PreparationLinks({
         const ref = refs.find((r) => r.ingredientId === i.id);
         return (
           <div key={i.id} className="ingredient-link-row">
-            <label>
+            <label className="ingredient-link-choice">
               <input
                 data-optional
                 type="checkbox"
@@ -79,12 +79,13 @@ export default function PreparationLinks({
                   )
                 }
               />
-              {ct(i.name)}
+              <span>{ct(i.name)}</span>
             </label>
             {ref && (
-              <label>
+              <label className="ingredient-link-amount">
                 {text("Lượng phân bổ", "Allocated amount")} ({unit(i.unit)})
                 <input
+                  aria-label={`${text("Lượng phân bổ cho", "Allocated amount for")} ${ct(i.name)} (${unit(i.unit)})`}
                   type="number"
                   min="0.001"
                   max={i.qty}
@@ -105,24 +106,33 @@ export default function PreparationLinks({
           </div>
         );
       })}
-      <button type="button" className="text-button" onClick={save}>
-        {text("Xác nhận phân bổ nguyên liệu", "Confirm ingredient allocations")}
-      </button>
-      {error && <p role="alert">{error}</p>}
-      <button
-        type="button"
-        className="text-button"
-        onClick={() => {
-          setRefs([]);
-          onChange([]);
-          setError("");
-        }}
-      >
-        {text(
-          "Xác nhận bước này không giữ thêm nguyên liệu",
-          "Confirm this step holds no additional ingredients",
-        )}
-      </button>
+      <div className="preparation-link-actions">
+        <button type="button" className="text-button" onClick={save}>
+          {text(
+            "Xác nhận phân bổ nguyên liệu",
+            "Confirm ingredient allocations",
+          )}
+        </button>
+        <button
+          type="button"
+          className="text-button"
+          onClick={() => {
+            setRefs([]);
+            onChange([]);
+            setError("");
+          }}
+        >
+          {text(
+            "Xác nhận bước này không giữ thêm nguyên liệu",
+            "Confirm this step holds no additional ingredients",
+          )}
+        </button>
+      </div>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
     </details>
   );
 }

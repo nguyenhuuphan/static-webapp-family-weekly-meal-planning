@@ -122,6 +122,8 @@ summary:focus-visible {
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #fff;
   border-right: 1px solid var(--border);
   padding: 30px 20px;
@@ -189,6 +191,7 @@ summary:focus-visible {
   background: #f7d878;
   padding: 1px 6px;
   font-size: 12px;
+  color: #58411c;
 }
 .sidebar-bottom {
   margin-top: auto;
@@ -201,7 +204,7 @@ summary:focus-visible {
   background: #fff5d4;
   border-radius: 13px;
   margin-bottom: 18px;
-  color: #7f917b;
+  color: var(--muted);
 }
 .sidebar-bottom p {
   font:
@@ -1069,12 +1072,6 @@ textarea {
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
-.ingredient-row {
-  display: grid;
-  grid-template-columns: 2fr 0.7fr 0.7fr 1fr 32px;
-  align-items: center;
-  gap: 9px;
-}
 .ingredient-row input[type="number"] {
   max-width: none;
 }
@@ -1392,18 +1389,6 @@ footer > span:first-child {
   }
   .meal-picker button {
     font-size: 12px;
-  }
-  .ingredient-row {
-    grid-template-columns: 1.5fr 0.7fr 0.7fr 32px;
-  }
-  .ingredient-row > label:nth-child(4) {
-    grid-column: 1/4;
-    grid-row: 2;
-    margin-top: 0;
-  }
-  .ingredient-row > .icon-button {
-    grid-column: 4;
-    grid-row: 1;
   }
 }
 @media (max-width: 680px) {
@@ -3332,5 +3317,364 @@ select:focus-visible {
   .metric-grid small {
     font-size: 12px;
     line-height: 1.4;
+  }
+}
+
+// Editors adapt to their available panel width, including dialogs on laptops.
+.meal-editor {
+  container: meal-editor / inline-size;
+  min-width: 0;
+  isolation: isolate;
+}
+.meal-editor > .meal-editor-body {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.meal-editor .meal-editor-heading {
+  display: block;
+  margin-bottom: 20px;
+}
+.meal-editor-heading :is(h1, h4) {
+  font:
+    normal clamp(25px, 3vw, 34px)/1.25 Georgia,
+    serif;
+  margin: 8px 0 12px;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: -0.4px;
+}
+.meal-editor-heading [data-editor-heading]:focus {
+  outline: none;
+}
+.meal-editor .meal-editor-body > .panel {
+  padding: clamp(14px, 3cqi, 24px);
+}
+.meal-editor .section-title {
+  align-items: start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.meal-editor .section-title > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.meal-editor .section-title :is(h2, h5),
+.meal-editor .meal-editor-body > .panel > :is(h2, h5) {
+  font-size: 21px;
+  line-height: 1.35;
+  margin: 0 0 12px;
+}
+.meal-editor .section-title :is(h2, h5) {
+  margin-bottom: 0;
+}
+.meal-editor label {
+  display: flex;
+  flex-direction: column;
+  align-self: start;
+  min-width: 0;
+  margin: 0;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.meal-editor :is(input, select, textarea) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 44px;
+  font-size: 16px;
+  padding: 10px 12px;
+}
+.meal-editor textarea {
+  min-height: 112px;
+}
+.meal-editor .field-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+.meal-editor .ingredient-rows {
+  display: grid;
+  gap: 14px;
+}
+.meal-editor .ingredient-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffdf6;
+}
+.meal-editor .ingredient-name {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  padding-inline-end: 56px;
+}
+.meal-editor .ingredient-quantity {
+  grid-column: 1;
+  grid-row: 2;
+}
+.meal-editor .ingredient-unit {
+  grid-column: 2;
+  grid-row: 2;
+}
+.meal-editor .ingredient-category {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+.meal-editor .ingredient-options {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  min-width: 0;
+}
+.meal-editor .ingredient-options[open] > label {
+  margin-top: 12px;
+}
+.meal-editor .ingredient-row > .icon-button {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
+  margin: 27px 0 0;
+}
+.meal-editor .icon-button {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 1px solid #eedbd3;
+  border-radius: 10px;
+  background: #fff9f6;
+}
+.meal-editor .edit-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffdf6;
+  min-width: 0;
+}
+.meal-editor .edit-step-heading {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.meal-editor .edit-step-heading .number {
+  width: 30px;
+  height: 30px;
+  margin: 0;
+  color: var(--green);
+}
+.meal-editor .edit-step-heading > button {
+  margin-inline-start: auto;
+}
+.meal-editor .edit-step-instruction {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+.meal-editor .ingredient-insert-label small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.meal-editor .minutes-field {
+  width: auto;
+  max-width: 160px;
+  margin: 0;
+}
+.meal-editor .edit-step > :is(.preparation-links, .prep-portion-options) {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.meal-editor .prep-portion-options > .field-grid {
+  margin-top: 12px;
+}
+.meal-editor summary {
+  display: list-item;
+  min-height: 44px;
+  padding-block: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.meal-editor .save-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  margin: 20px 0 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fffdf6;
+  box-shadow: 0 -5px 18px #3f35220a;
+}
+.meal-editor .save-bar > .error {
+  flex-basis: 100%;
+  margin: 0;
+  color: #9b3e19;
+  font-weight: 600;
+}
+.meal-editor button {
+  min-height: 44px;
+}
+.meal-editor :is(input, textarea, select, summary, button) {
+  scroll-margin-block: 24px 110px;
+}
+.meal-editor :is(label, p, strong, small) {
+  overflow-wrap: anywhere;
+}
+@container meal-editor (min-width: 600px) {
+  .meal-editor .field-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .meal-editor .meal-main-field {
+    grid-column: 1 / -1;
+  }
+  .meal-editor .ingredient-row {
+    grid-template-columns: minmax(0, 1fr) 90px 120px 44px;
+  }
+  .meal-editor .ingredient-name {
+    grid-column: 1;
+    padding-inline-end: 0;
+  }
+  .meal-editor .ingredient-quantity {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .meal-editor .ingredient-unit {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .meal-editor .ingredient-row > .icon-button {
+    grid-column: 4;
+  }
+  .meal-editor .ingredient-category {
+    grid-row: 2;
+  }
+  .meal-editor .ingredient-options {
+    grid-row: 3;
+  }
+  .meal-editor .edit-step {
+    grid-template-columns: minmax(0, 1fr) 140px;
+  }
+  .meal-editor .edit-step-instruction {
+    grid-column: 1;
+  }
+  .meal-editor .minutes-field {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+@container meal-editor (min-width: 760px) {
+  .meal-editor .ingredient-row {
+    grid-template-columns: minmax(0, 1fr) 90px 120px 165px 44px;
+  }
+  .meal-editor .ingredient-category {
+    grid-column: 4;
+    grid-row: 1;
+  }
+  .meal-editor .ingredient-row > .icon-button {
+    grid-column: 5;
+  }
+  .meal-editor .ingredient-options {
+    grid-row: 2;
+  }
+}
+@media (max-width: 680px) {
+  .meal-editor:not([data-embedded]) .save-bar {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+  .meal-editor:not([data-embedded])
+    :is(input, textarea, select, summary, button) {
+    scroll-margin-block-end: 200px;
+  }
+}
+
+// Allocation controls are shared by the editor, prep day and saved food forms.
+.preparation-links {
+  min-width: 0;
+}
+.preparation-links .ingredient-link-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding-block: 10px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.preparation-links label.ingredient-link-choice {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  min-height: 44px;
+  min-width: 0;
+  cursor: pointer;
+}
+.preparation-links .ingredient-link-choice > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.preparation-links .ingredient-link-choice input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--green);
+}
+.preparation-links .ingredient-link-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+}
+.preparation-links .ingredient-link-amount input {
+  min-height: 44px;
+  max-width: 160px;
+  font-size: 16px;
+}
+.preparation-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.preparation-link-actions > button {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  text-align: start;
+  line-height: 1.5;
+}
+@container meal-editor (min-width: 600px) {
+  .preparation-links .ingredient-link-row {
+    grid-template-columns: minmax(0, 1fr) 180px;
   }
 }

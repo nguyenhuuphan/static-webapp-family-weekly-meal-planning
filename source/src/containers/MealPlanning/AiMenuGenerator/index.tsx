@@ -91,6 +91,26 @@ function GeneratorDialog({ close }: { close: () => void }) {
   const [job, setJob] = useState<MenuJob | null>(null);
   const [preview, setPreview] = useState<Plan | null>(null);
   const [editMeal, setEditMeal] = useState<Meal | null>(null);
+  const lastEditedMeal = useRef<string | null>(null);
+  useEffect(() => {
+    if (editMeal) {
+      lastEditedMeal.current = editMeal.id;
+      return;
+    }
+    const id = lastEditedMeal.current;
+    if (!id) return;
+    lastEditedMeal.current = null;
+    const frame = requestAnimationFrame(() => {
+      const button = Array.from(
+        dialog.current?.querySelectorAll<HTMLButtonElement>(
+          "[data-edit-meal]",
+        ) || [],
+      ).find((item) => item.dataset.editMeal === id);
+      button?.focus({ preventScroll: true });
+      button?.scrollIntoView?.({ block: "center" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [editMeal]);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -1086,6 +1106,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   key={`ai-${job?.id}-${editMeal.id}`}
                   draftNamespace={`ai-draft:${job?.id}`}
                   confirmSave={false}
+                  embedded
                   meal={editMeal}
                   plan={preview}
                   onCancel={() => setEditMeal(null)}
@@ -1155,47 +1176,54 @@ function GeneratorDialog({ close }: { close: () => void }) {
                         <p>{recipes.content(meal.storage)}</p>
                         <p>{recipes.content(meal.thaw)}</p>
                       </details>
-                      <Button onClick={() => setEditMeal(meal)}>
+                      <Button
+                        data-edit-meal={meal.id}
+                        onClick={() => setEditMeal(meal)}
+                      >
                         {text("Chỉnh sửa bữa này", "Edit this meal")}
                       </Button>
                     </article>
                   ))}
                 </div>
               )}
-              <p className="notice">
-                {text(
-                  "Áp dụng sẽ lưu tuần hiện tại vào lịch sử, giữ thông tin thực phẩm đã chuẩn bị và bắt đầu tiến độ cho menu mới. Xuất backup nếu cần giữ bản riêng.",
-                  "Applying archives the current week, retains prepared-food records and starts fresh progress for the new menu. Export a backup if you need a separate copy.",
-                )}
-              </p>
-              <div className="actions">
-                <Button
-                  disabled={busy || !!editMeal}
-                  onClick={() => {
-                    setJob(null);
-                    setPreview(null);
-                    submissionId.current = null;
-                    setStep(0);
-                    setError("");
-                    setNotice("");
-                  }}
-                >
-                  {text(
-                    "Đổi yêu cầu / tạo menu khác",
-                    "Change request / create another menu",
-                  )}
-                </Button>
-                <Button onClick={model.exportJSON}>
-                  {text("Xuất backup hiện tại", "Export current backup")}
-                </Button>
-                <Button
-                  primary
-                  disabled={!canApply || !!editMeal}
-                  onClick={apply}
-                >
-                  {text("Áp dụng menu này", "Apply this menu")}
-                </Button>
-              </div>
+              {!editMeal && (
+                <>
+                  <p className="notice">
+                    {text(
+                      "Áp dụng sẽ lưu tuần hiện tại vào lịch sử, giữ thông tin thực phẩm đã chuẩn bị và bắt đầu tiến độ cho menu mới. Xuất backup nếu cần giữ bản riêng.",
+                      "Applying archives the current week, retains prepared-food records and starts fresh progress for the new menu. Export a backup if you need a separate copy.",
+                    )}
+                  </p>
+                  <div className="actions">
+                    <Button
+                      disabled={busy || !!editMeal}
+                      onClick={() => {
+                        setJob(null);
+                        setPreview(null);
+                        submissionId.current = null;
+                        setStep(0);
+                        setError("");
+                        setNotice("");
+                      }}
+                    >
+                      {text(
+                        "Đổi yêu cầu / tạo menu khác",
+                        "Change request / create another menu",
+                      )}
+                    </Button>
+                    <Button onClick={model.exportJSON}>
+                      {text("Xuất backup hiện tại", "Export current backup")}
+                    </Button>
+                    <Button
+                      primary
+                      disabled={!canApply || !!editMeal}
+                      onClick={apply}
+                    >
+                      {text("Áp dụng menu này", "Apply this menu")}
+                    </Button>
+                  </div>
+                </>
+              )}
               {editMeal ? (
                 <p role="status">
                   {text(

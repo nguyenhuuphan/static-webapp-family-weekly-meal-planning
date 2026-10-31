@@ -188,9 +188,13 @@ describe("D1 and Cloudflare routes", () => {
       { payload: { id } } as WorkflowEvent<{ id: string }>,
       step,
     );
-    expect(
-      (await new DocumentStore(env.DB, "ai").get<MenuJob>("jobs/" + id))
-        ?.errorCode,
-    ).toBe("quota");
+    const failed = await new DocumentStore(env.DB, "ai").get<MenuJob>(
+      "jobs/" + id,
+    );
+    expect(failed?.errorCode).toBe("quota");
+    expect(failed?.errorDiagnostic).toEqual({
+      httpStatus: 429,
+      reason: "quota",
+    });
   });
 });

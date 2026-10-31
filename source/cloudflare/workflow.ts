@@ -48,6 +48,9 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
                 error instanceof GenerationError
                   ? error.code
                   : "provider_error",
+              ...(error instanceof GenerationError && error.diagnostic
+                ? { errorDiagnostic: error.diagnostic }
+                : {}),
             };
           }
         },

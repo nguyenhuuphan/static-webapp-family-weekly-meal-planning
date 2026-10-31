@@ -114,25 +114,23 @@ describe("AI requirements and flexible weeks", () => {
 describe("Gemini API boundary", () => {
   it("sends master prompt, equipment and form data through the fixed server-side model", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-only-key");
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          candidates: [
-            {
-              finishReason: "STOP",
-              content: { parts: [{ text: JSON.stringify(aiOutput()) }] },
-            },
-          ],
-        }),
-      );
+    const fetcher = vi.fn().mockResolvedValue(
+      Response.json({
+        candidates: [
+          {
+            finishReason: "STOP",
+            content: { parts: [{ text: JSON.stringify(aiOutput()) }] },
+          },
+        ],
+      }),
+    );
     vi.stubGlobal("fetch", fetcher);
     const plan = await generateMenu(aiInput, DEFAULT_MASTER_PROMPT, [
       "Previous meal",
     ]);
     expect(plan.meals[0].type).toBe("Breakfast");
     const [url, init] = fetcher.mock.calls[0];
-    expect(url).toContain("gemini-2.5-flash-lite:generateContent");
+    expect(url).toContain("gemini-3.1-flash-lite:generateContent");
     expect(init.headers["x-goog-api-key"]).toBe("test-only-key");
     const sent = JSON.parse(init.body);
     const requirements = JSON.parse(sent.contents[0].parts[0].text);
@@ -161,5 +159,49 @@ describe("Gemini API boundary", () => {
     await expect(
       generateMenu(aiInput, DEFAULT_MASTER_PROMPT, []),
     ).rejects.toMatchObject({ code: "invalid_output" });
+  });
+  it("retains only safe diagnostic categories from provider errors", async () => {
+    const key = "test-only-private-key";
+    const fetcher = vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            status: "INVALID_ARGUMENT",
+            message: `API key not valid: ${key}`,
+          },
+        },
+        { status: 400 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const error = await generateMenu(aiInput, DEFAULT_MASTER_PROMPT, [], {
+      apiKey: key,
+    }).catch((error) => error);
+    expect(error).toMatchObject({
+      code: "provider_access",
+      diagnostic: {
+        httpStatus: 400,
+        status: "INVALID_ARGUMENT",
+        reason: "api_key",
+      },
+    });
+    expect(JSON.stringify(error)).not.toContain(key);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    fetcher.mockResolvedValue(
+      Response.json(
+        {
+          error: {
+            status: "NOT_FOUND",
+            message: "Model is not found for this project.",
+          },
+        },
+        { status: 404 },
+      ),
+    );
+    await expect(
+      generateMenu(aiInput, DEFAULT_MASTER_PROMPT, [], { apiKey: key }),
+    ).rejects.toMatchObject({
+      diagnostic: { httpStatus: 404, status: "NOT_FOUND", reason: "model" },
+    });
   });
 });

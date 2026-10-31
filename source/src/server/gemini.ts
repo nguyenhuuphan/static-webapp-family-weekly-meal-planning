@@ -22,6 +22,7 @@ const step = {
   required: ["text", "minutes"],
   additionalProperties: false,
 };
+// Nested maxItems multiply decoder states; enforce array caps in validation below.
 export const RESPONSE_SCHEMA = {
   type: "object",
   properties: {
@@ -29,7 +30,6 @@ export const RESPONSE_SCHEMA = {
     meals: {
       type: "array",
       minItems: 1,
-      maxItems: 21,
       items: {
         type: "object",
         properties: {
@@ -45,7 +45,6 @@ export const RESPONSE_SCHEMA = {
           ingredients: {
             type: "array",
             minItems: 1,
-            maxItems: 30,
             items: {
               type: "object",
               properties: {
@@ -61,8 +60,8 @@ export const RESPONSE_SCHEMA = {
               additionalProperties: false,
             },
           },
-          prep: { type: "array", minItems: 1, maxItems: 10, items: step },
-          steps: { type: "array", minItems: 1, maxItems: 15, items: step },
+          prep: { type: "array", minItems: 1, items: step },
+          steps: { type: "array", minItems: 1, items: step },
         },
         required: [
           "equipment",
@@ -122,7 +121,9 @@ async function providerFailure(response: Response): Promise<GenerationError> {
   ].find((value) => value === body?.error?.status);
   const reason = /api.?key/i.test(message)
     ? "api_key"
-    : /schema|responseJsonSchema|response_schema/i.test(message)
+    : /schema|responseJsonSchema|response_schema|too many states|too much branching|constraint/i.test(
+          message,
+        )
       ? "schema"
       : response.status === 404
         ? "model"
@@ -170,6 +171,12 @@ export function validateGeneratedPlan(raw: unknown, input: MenuInput): Plan {
         !MEAL_TYPES.includes(m.type) ||
         m.id !== menuSlotId(m.day, m.type) ||
         m.minutes > input.maxMinutes ||
+        !Array.isArray(m.ingredients) ||
+        m.ingredients.length > 30 ||
+        !Array.isArray(m.prep) ||
+        m.prep.length > 10 ||
+        !Array.isArray(m.steps) ||
+        m.steps.length > 15 ||
         !Array.isArray(m.equipment) ||
         m.equipment.some(
           (e) => !input.equipment.includes(e) || e === "No heating appliance",

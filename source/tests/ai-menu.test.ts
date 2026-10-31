@@ -76,6 +76,22 @@ describe("AI requirements and flexible weeks", () => {
       validateGeneratedPlan(aiOutput(), { ...aiInput, avoid: "pork" }),
     ).toThrow(GenerationError);
   });
+  it("bounds generated ingredient and instruction arrays independently of the provider schema", () => {
+    for (const [field, count] of [
+      ["ingredients", 31],
+      ["prep", 11],
+      ["steps", 16],
+    ] as const) {
+      const output = aiOutput();
+      const items = output.meals[0][field];
+      Object.assign(output.meals[0], {
+        [field]: Array.from({ length: count }, () => structuredClone(items[0])),
+      });
+      expect(() => validateGeneratedPlan(output, aiInput)).toThrow(
+        GenerationError,
+      );
+    }
+  });
   it("applies only on acceptance, archives old state, preserves prepared food and supports backup hydration", () => {
     const before = freshState(original as Plan);
     before.weekStart = "2026-10-26";

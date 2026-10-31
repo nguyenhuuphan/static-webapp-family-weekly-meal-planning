@@ -41,7 +41,7 @@ describe("Cloudflare backup", () => {
     expect(result.plan.meals).toHaveLength(1);
     expect(env.AI!.run).toHaveBeenCalledWith(
       CLOUDFLARE_MODEL,
-      expect.objectContaining({ stream: false, max_tokens: 32768 }),
+      expect.objectContaining({ stream: false, max_tokens: 16384 }),
     );
     vi.mocked(env.AI!.run).mockResolvedValue({
       response: '{"meals":[]}',

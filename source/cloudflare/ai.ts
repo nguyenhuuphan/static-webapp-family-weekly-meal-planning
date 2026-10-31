@@ -88,7 +88,7 @@ export async function generateWithBackup(
         type: "json_schema",
         json_schema: providerSchema(input),
       },
-      max_tokens: 32768,
+      max_tokens: 16384,
       stream: false,
     });
     let raw: unknown = output;
@@ -108,6 +108,16 @@ export async function generateWithBackup(
     };
   } catch (error) {
     if (error instanceof GenerationError) throw error;
+    if (onProviderFailure) {
+      let message =
+        error instanceof Error ? error.message : "Unknown backup failure";
+      for (const secret of [env.GEMINI_API_KEY, env.FAMILY_ACCESS_CODE])
+        if (secret) message = message.replaceAll(secret, "[redacted]");
+      await onProviderFailure({
+        httpStatus: 0,
+        message: message.replace(/AIza[\w-]+/g, "[redacted]").slice(0, 1600),
+      }).catch(() => undefined);
+    }
     throw new GenerationError("backup_unavailable");
   }
 }

@@ -63,6 +63,9 @@ export default function CloudSync() {
   const [session, setSession] = useState<Session | null>(() =>
     resume(accessCode, JSON.stringify(model.s)),
   );
+  useEffect(() => {
+    if (!session && accessCode) setCode(accessCode);
+  }, [accessCode, session]);
   const [status, setStatus] = useState<
     "local" | "busy" | "synced" | "error" | "conflict"
   >(session ? "busy" : "local");

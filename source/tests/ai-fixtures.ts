@@ -61,3 +61,28 @@ export function aiPlan(input = aiInput): Plan {
     },
   };
 }
+
+export function aiBilingualOutput(input = aiInput) {
+  const output = aiOutput(input);
+  const translations = Object.fromEntries(
+    output.translations.map((pair) => [pair.source, pair.vi]),
+  );
+  const text = (en: string) => ({ en, vi: translations[en] });
+  return {
+    name: text(output.name),
+    meals: output.meals.map((meal) => ({
+      ...meal,
+      main: text(meal.main),
+      side: text(meal.side),
+      storage: text(meal.storage),
+      thaw: text(meal.thaw),
+      ingredients: meal.ingredients.map((ingredient) => ({
+        ...ingredient,
+        name: text(ingredient.name),
+        category: text(ingredient.category),
+      })),
+      prep: meal.prep.map((step) => ({ ...step, text: text(step.text) })),
+      steps: meal.steps.map((step) => ({ ...step, text: text(step.text) })),
+    })),
+  };
+}

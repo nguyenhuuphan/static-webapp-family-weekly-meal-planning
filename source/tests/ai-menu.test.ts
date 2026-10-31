@@ -13,7 +13,7 @@ import { calendarDate, CALENDAR_DAYS } from "../src/helpers/calendar";
 import { createTranslator } from "../src/i18n/translate";
 import { DAYS, MEAL_TYPES, type Plan } from "../src/types";
 import original from "../public/meal-plan.json";
-import { aiInput, aiOutput, aiPlan } from "./ai-fixtures";
+import { aiInput, aiOutput, aiPlan, aiBilingualOutput } from "./ai-fixtures";
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
@@ -22,7 +22,7 @@ describe("AI requirements and flexible weeks", () => {
   it("accepts 1–21 slots including weekend breakfasts while preserving v1 validation", () => {
     expect(validateMenuInput(aiInput)).toEqual(aiInput);
     const full = { ...aiInput, days: [...DAYS], mealTypes: [...MEAL_TYPES] };
-    const plan = validateGeneratedPlan(aiOutput(full), full);
+    const plan = validateGeneratedPlan(aiBilingualOutput(full), full);
     expect(plan.meals).toHaveLength(21);
     expect(validatePlan(plan)).toEqual([]);
     expect(validatePlan(original)).toEqual([]);
@@ -58,6 +58,21 @@ describe("AI requirements and flexible weeks", () => {
     )!;
     token.vi = token.vi.replace("[300 g]", "[999 g]");
     expect(() => validateGeneratedPlan(changed, aiInput)).toThrow();
+  });
+  it("converts paired bilingual fields into the saved plan and rejects missing or changed translations", () => {
+    expect(validateGeneratedPlan(aiBilingualOutput(), aiInput)).toEqual(
+      validateGeneratedPlan(aiOutput(), aiInput),
+    );
+    const missing = aiBilingualOutput();
+    Object.assign(missing.meals[0].main, { vi: undefined });
+    expect(() => validateGeneratedPlan(missing, aiInput)).toThrow(
+      GenerationError,
+    );
+    const changed = aiBilingualOutput();
+    changed.meals[0].prep[0].text.vi += " 999";
+    expect(() => validateGeneratedPlan(changed, aiInput)).toThrow(
+      GenerationError,
+    );
   });
   it("rejects declared and hidden unavailable appliances and restricted ingredients", () => {
     const output = aiOutput();
@@ -135,7 +150,7 @@ describe("Gemini API boundary", () => {
         candidates: [
           {
             finishReason: "STOP",
-            content: { parts: [{ text: JSON.stringify(aiOutput()) }] },
+            content: { parts: [{ text: JSON.stringify(aiBilingualOutput()) }] },
           },
         ],
       }),

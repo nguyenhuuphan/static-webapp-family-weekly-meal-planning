@@ -9,7 +9,7 @@ import type { Env } from "../types";
 import { freshState } from "../../src/helpers";
 import original from "../../public/meal-plan.json";
 import type { Plan } from "../../src/types";
-import { aiInput, aiOutput } from "../../tests/ai-fixtures";
+import { aiInput, aiBilingualOutput } from "../../tests/ai-fixtures";
 import { DEFAULT_MASTER_PROMPT, type MenuJob } from "../../src/ai/contracts";
 import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
 let db: ReturnType<typeof database>, env: Env;
@@ -127,7 +127,9 @@ describe("D1 and Cloudflare routes", () => {
           candidates: [
             {
               finishReason: "STOP",
-              content: { parts: [{ text: JSON.stringify(aiOutput()) }] },
+              content: {
+                parts: [{ text: JSON.stringify(aiBilingualOutput()) }],
+              },
             },
           ],
         }),

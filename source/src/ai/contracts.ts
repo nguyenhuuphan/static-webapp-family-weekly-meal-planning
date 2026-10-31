@@ -50,7 +50,7 @@ export type MenuJob = {
   plan?: Plan;
   error?: string;
   errorCode?: string;
-  errorDiagnostic?: { httpStatus: number; status?: string; reason: string };
+  errorDiagnostic?: { httpStatus?: number; status?: string; reason: string };
 };
 export function validateMenuInput(raw: unknown): MenuInput {
   if (!raw || typeof raw !== "object") throw Error("Invalid input.");

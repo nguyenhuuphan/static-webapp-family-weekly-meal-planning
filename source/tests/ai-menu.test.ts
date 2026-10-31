@@ -260,6 +260,7 @@ describe("Gemini API boundary", () => {
     const requirements = JSON.parse(sent.contents[0].parts[0].text);
     expect(requirements.requirements.equipment).toEqual(["Gas stove"]);
     expect(requirements.masterPrompt).toBe(DEFAULT_MASTER_PROMPT);
+    expect(requirements.recentMealsToAvoid).toEqual(["Previous meal"]);
     expect(requirements.referenceServings).toBe(original.servings);
     expect(requirements.referenceIngredientNames).toContain("Garlic");
     expect(requirements.referenceRecipe.main.en).toBe(original.meals[0].main);

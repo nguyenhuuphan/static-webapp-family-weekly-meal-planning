@@ -13,7 +13,7 @@ The form requirements override master-prompt preferences where they conflict, bu
 Return one complete recipe for EVERY supplied slot. All quantities are for the specified servings. Use units g, ml, each, tsp or tbsp. Embed ingredient quantities appearing in instructions as [300 g], [2 tsp] or [2 each] eggs. Timing and temperatures stay ordinary text, not ingredient tokens. Keep side dishes and all their ingredients in the same meal. Prefer at most 12 ingredients, 5 preparation steps and 8 cooking steps per meal. Provide concise actionable steps and separate advance preparation from cooking. Minutes must be realistic estimates, not safety guarantees.
 Include quantities for EVERY food ingredient in both the main and side, including rice, bread, oil, sauces and garnishes. Toast requires bread in the ingredient list; rice served alongside a dish requires its own quantity. Water may be specified with a bracketed quantity directly in the steps. If there is no separate side, use exactly None for side.en.
 For recipes requiring heating, write 4–8 useful ordered cooking steps, with at least 3 steps and at least 120 English characters in total. Explain preparation, heat/method, timing and how to check doneness. Placeholder instructions such as Cook rice or Fry chicken are incomplete. Cold ready-to-eat dishes may have fewer steps. Use the default recipe's level of practical detail. List only appliances actually used; cold dishes should have an empty equipment array.
-Unless the request intentionally asks for repeats or planned leftovers, vary main dishes across slots and avoid the recentMeals list. The reference recipe is a format example, not a dish to repeat throughout the week.
+Unless the user explicitly requests repeated dishes or planned leftovers, choose distinct main dishes across the week and exclude the dishes in recentMealsToAvoid. That list contains the previous menu, NOT suggestions for the new menu. Reusing ingredients to reduce waste does not mean repeating recipes. The reference recipe demonstrates structure and detail only: do not copy its dish when generating a new week.
 Use ONLY the cooking appliances explicitly selected in requirements.equipment, and list required appliances for each meal in its equipment array using the exact selected names. Basic knives, bowls, cookware and utensils may be assumed, but no unselected heat source or appliance. If No heating appliance is selected, generate cold meals without any heating appliance and return an empty equipment array for every meal. Never rely on a hidden substitute such as an unselected oven, microwave or blender.
 Respect requested dietary restrictions and avoid ingredients; do not claim allergen safety or suggest reusing unsafe leftovers. Pantry input describes availability, not food safety; never assume a leftover is safe. Avoid room-temperature thawing and week-long refrigerated raw proteins. Storage must advise prompt refrigeration/freezing and include doneness checks; do not certify recipe safety or invent nutritional/price measurements.
 Use referenceRecipe from the bundled default menu as the example for recipe detail, ingredient quantities, preparation, cooking, storage and paired translations. Adapt its format to the current requirements, including servings, cuisine, restrictions and equipment. Any container labels must match the current slot's day and meal. Reuse referenceIngredientNames when they describe the same ingredient; keep raw/cooked and bone-in/boneless distinctions. Other ingredients are allowed. Do not copy reference ingredients when they conflict with the form.
@@ -554,7 +554,7 @@ export async function generateMenu(
                       type,
                     })),
                   ),
-                  recentMeals,
+                  recentMealsToAvoid: recentMeals,
                   responseSchema: responseSchema(input),
                   referenceServings: defaultPlan.servings,
                   referenceRecipe,
@@ -567,6 +567,7 @@ export async function generateMenu(
                   ],
                   finalChecklist: [
                     "Return EVERY slot, with complete English and Vietnamese recipes; do not shorten later slots.",
+                    "This is a NEW week: do not choose main dishes from recentMealsToAvoid or copy the reference dish. Reuse ingredients, not recipes. Use different main dishes unless the user explicitly requested repeats or planned leftovers.",
                     "For EACH heated recipe, steps must have at least 3 separate objects and at least 120 English characters in total. Aim for 4 useful steps of 1–2 sentences each: heat/setup, cook the main with timing and doneness, cook any side, finish/serve. Avoid placeholders.",
                     "Include every main and side ingredient with quantities; use bracketed ingredient amounts in instructions. Preserve every number and token in Vietnamese.",
                     "Check every recipe, including breakfasts and simple egg dishes, before returning the JSON. Return only the JSON, not this checklist.",

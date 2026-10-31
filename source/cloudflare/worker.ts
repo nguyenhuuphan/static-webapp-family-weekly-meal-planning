@@ -54,7 +54,7 @@ export default {
             json({
               status: "ok",
               database: "ok",
-              aiConfigured: !!env.GEMINI_API_KEY,
+              aiConfigured: !!(env.GEMINI_API_KEY || env.AI),
             }),
           );
         }

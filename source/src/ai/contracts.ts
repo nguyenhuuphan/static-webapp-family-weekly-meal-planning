@@ -40,6 +40,8 @@ export type MenuInput = {
   customPrompt: string;
 };
 export type MenuJob = {
+  diagnosticProvider?: "cloudflare"; // Administrative D1 diagnostics only; never accepted from requests.
+  providersUsed?: ("gemini" | "cloudflare")[];
   id: string;
   revision?: string;
   status: "queued" | "running" | "ready" | "failed";

@@ -99,3 +99,67 @@ describe("family sync UI", () => {
     expect(screen.getByRole("button", { name: "Disconnect" })).toBeTruthy();
   });
 });
+
+describe("remembered family connection", () => {
+  it("reconnects after reload without asking for a code and can forget this browser", async () => {
+    const { FAMILY_CODE_KEY } = await import("../src/hooks/useFamilyAccess");
+    const { cleanup } = await import("@testing-library/react");
+    const shared = freshState(plan as Plan);
+    const fetcher = await boot(() =>
+      Response.json({ state: shared, revision: "v1" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open shared data" }));
+    await screen.findByText("Synced.");
+    expect(localStorage.getItem(FAMILY_CODE_KEY)).toBe(code);
+    cleanup();
+    fetcher.mockClear();
+    render(<App />);
+    await screen.findByRole("navigation");
+    await screen.findByText("Synced.", {}, { timeout: 4000 });
+    expect(
+      fetcher.mock.calls.some(
+        ([url, init]) =>
+          url.includes("family-plan") &&
+          (init?.headers as Record<string, string>)?.Authorization ===
+            `Bearer ${code}`,
+      ),
+    ).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Family sync" }));
+    fireEvent.click(screen.getByRole("button", { name: "Disconnect" }));
+    expect(localStorage.getItem(FAMILY_CODE_KEY)).toBeNull();
+    expect(localStorage.getItem("family-sync-checkpoint-v1")).toBeNull();
+  });
+  it("retains offline edits and rejects a stale revision after reconnecting", async () => {
+    const { cleanup } = await import("@testing-library/react");
+    const shared = freshState(plan as Plan);
+    let conflict = false;
+    const fetcher = await boot((init) =>
+      init?.method === "PUT" && conflict
+        ? Response.json({ error: "Conflict" }, { status: 409 })
+        : Response.json({ state: shared, revision: "v1" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open shared data" }));
+    await screen.findByText("Synced.");
+    cleanup();
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    local.servings = 8;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
+    conflict = true;
+    fetcher.mockClear();
+    render(<App />);
+    await screen.findByRole("navigation");
+    await screen.findByText(
+      /A different copy was saved/,
+      {},
+      { timeout: 4000 },
+    );
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).servings).toBe(8);
+    const put = fetcher.mock.calls.find(
+      ([, init]) => init?.method === "PUT",
+    )![1]!;
+    expect(JSON.parse(put.body as string)).toMatchObject({
+      revision: "v1",
+      state: { servings: 8 },
+    });
+  });
+});

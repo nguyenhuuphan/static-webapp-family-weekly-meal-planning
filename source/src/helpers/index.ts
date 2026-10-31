@@ -32,7 +32,25 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
   let v = raw as State;
   if (!v) return freshState(defaults);
   parseBackup(v);
-  v = { ...v, plan: normalizeIngredientLinks(v.plan) };
+  const bundled =
+    !v.plan.alternatives &&
+    v.plan.name === defaults.name &&
+    v.plan.servings === defaults.servings &&
+    JSON.stringify(v.plan.meals) === JSON.stringify(defaults.meals);
+  v = {
+    ...v,
+    plan: normalizeIngredientLinks(
+      bundled
+        ? {
+            ...v.plan,
+            alternatives: structuredClone(defaults.alternatives),
+            translations: {
+              vi: { ...defaults.translations?.vi, ...v.plan.translations?.vi },
+            },
+          }
+        : v.plan,
+    ),
+  };
   const progress = freshProgress();
   for (const k of Object.keys(progress) as (keyof Progress)[]) {
     const map = v.progress?.[k];

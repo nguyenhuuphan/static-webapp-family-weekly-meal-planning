@@ -1,5 +1,6 @@
 export interface Env {
   DB: D1Database;
+  AI?: Ai;
   ASSETS: Fetcher;
   MENU_WORKFLOW: Workflow<{ id: string }>;
   FAMILY_ACCESS_CODE?: string;

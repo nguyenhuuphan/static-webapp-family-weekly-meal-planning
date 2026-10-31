@@ -145,19 +145,26 @@ describe("D1 and Cloudflare routes", () => {
     expect(env.MENU_WORKFLOW.create).toHaveBeenCalledTimes(1);
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        Response.json({
+      vi.fn().mockImplementation(async (_url, init) => {
+        const context = JSON.parse(JSON.parse(init.body).input);
+        const output = aiBilingualOutput(context.requirements);
+        if (context.purpose.startsWith("Generate exactly"))
+          Object.values(output.meals).forEach((meal, index) => {
+            meal.main = {
+              en: `Alternative recipe ${index + 1}`,
+              vi: `Món thay thế ${index + 1}`,
+            };
+          });
+        return Response.json({
           status: "completed",
           steps: [
             {
               type: "model_output",
-              content: [
-                { type: "text", text: JSON.stringify(aiBilingualOutput()) },
-              ],
+              content: [{ type: "text", text: JSON.stringify(output) }],
             },
           ],
-        }),
-      ),
+        });
+      }),
     );
     const step = {
       do: vi.fn(
@@ -183,6 +190,7 @@ describe("D1 and Cloudflare routes", () => {
     expect(job?.status).toBe("ready");
     expect(job?.diagnostic).toBeUndefined();
     expect(job?.plan?.translations?.vi).toBeTruthy();
+    expect(job?.plan?.alternatives).toHaveLength(5);
     expect(
       await new DocumentStore(env.DB, "planner").get("state.json"),
     ).toBeNull();
@@ -190,7 +198,7 @@ describe("D1 and Cloudflare routes", () => {
       { payload: { id } } as WorkflowEvent<{ id: string }>,
       step,
     );
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
   it.each([false, true])(
     "persists a whole week only after all durable meal-time batches succeed (failure: %s)",
@@ -220,6 +228,14 @@ describe("D1 and Cloudflare routes", () => {
           expect(
             context.plannedMealsThisWeek[0].ingredients[0].name,
           ).toBeTruthy();
+        const output = aiBilingualOutput(batch);
+        if (context.purpose.startsWith("Generate exactly"))
+          Object.values(output.meals).forEach((meal, index) => {
+            meal.main = {
+              en: `Alternative recipe ${index + 1}`,
+              vi: `Món thay thế ${index + 1}`,
+            };
+          });
         return Response.json({
           status: "completed",
           steps: [
@@ -228,7 +244,7 @@ describe("D1 and Cloudflare routes", () => {
               content: [
                 {
                   type: "text",
-                  text: JSON.stringify(aiBilingualOutput(batch)),
+                  text: JSON.stringify(output),
                 },
               ],
             },
@@ -260,7 +276,7 @@ describe("D1 and Cloudflare routes", () => {
       );
       expect(result?.status).toBe(failSecond ? "failed" : "ready");
       expect(result?.plan?.meals.length).toBe(failSecond ? undefined : 21);
-      expect(fetcher).toHaveBeenCalledTimes(failSecond ? 2 : 3);
+      expect(fetcher).toHaveBeenCalledTimes(failSecond ? 2 : 4);
       expect(names).toContain("generate-validated-breakfast");
       expect(names.includes("assemble-complete-menu")).toBe(!failSecond);
       expect(

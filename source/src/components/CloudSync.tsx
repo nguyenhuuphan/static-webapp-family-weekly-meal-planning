@@ -8,18 +8,64 @@ import { hydrateState } from "src/domain";
 import { cloudRequest, CloudError } from "src/services/cloudPlanService";
 import { Button } from "src/modules/shared-main/components";
 
+const CHECKPOINT_KEY = "family-sync-checkpoint-v1";
+function fingerprint(raw: string) {
+  let hash = 2166136261;
+  for (let n = 0; n < raw.length; n++)
+    hash = Math.imul(hash ^ raw.charCodeAt(n), 16777619);
+  return `${raw.length}:${hash >>> 0}`;
+}
+function remember(session: Session) {
+  try {
+    localStorage.setItem(
+      CHECKPOINT_KEY,
+      JSON.stringify({
+        revision: session.revision,
+        fingerprint: fingerprint(session.baseline),
+      }),
+    );
+  } catch {
+    /* Sync remains usable in this tab. */
+  }
+}
+function resume(code: string, raw: string): Session | null {
+  if (!code) return null;
+  try {
+    const checkpoint = JSON.parse(
+      localStorage.getItem(CHECKPOINT_KEY) || "null",
+    );
+    if (
+      !checkpoint ||
+      typeof checkpoint.revision !== "string" ||
+      typeof checkpoint.fingerprint !== "string"
+    )
+      return null;
+    return {
+      code,
+      revision: checkpoint.revision,
+      baseline:
+        checkpoint.fingerprint === fingerprint(raw)
+          ? raw
+          : "pending-local-changes",
+    };
+  } catch {
+    return null;
+  }
+}
 type Session = { code: string; revision: string | null; baseline: string };
 export default function CloudSync() {
   const model = useMealPlanner();
-  const { setAccessCode } = useFamilyAccess();
+  const { accessCode, setAccessCode } = useFamilyAccess();
   const text = useText();
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(accessCode);
   const [expanded, setExpanded] = useState(false);
   const detailsId = useId();
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(() =>
+    resume(accessCode, JSON.stringify(model.s)),
+  );
   const [status, setStatus] = useState<
     "local" | "busy" | "synced" | "error" | "conflict"
-  >("local");
+  >(session ? "busy" : "local");
   const [busy, setBusy] = useState(false);
   const latest = useRef(model);
   latest.current = model;
@@ -52,7 +98,9 @@ export default function CloudSync() {
         throw new CloudError(409);
       if (!create && !result.state) throw Error("No shared plan");
       const baseline = create ? local : apply(result.state);
-      setSession({ code, revision: result.revision, baseline });
+      const connected = { code, revision: result.revision, baseline };
+      remember(connected);
+      setSession(connected);
       setAccessCode(code);
       setCode("");
       setStatus("synced");
@@ -101,6 +149,7 @@ export default function CloudSync() {
           if (disposed) return;
           session.revision = saved.revision;
           session.baseline = raw;
+          remember(session);
           setStatus("synced");
         } else if (!m.editId && !m.advanced) {
           const result = await cloudRequest(session.code);
@@ -116,6 +165,7 @@ export default function CloudSync() {
               throw new CloudError(409);
             session.baseline = apply(result.state);
             session.revision = result.revision;
+            remember(session);
           }
           setStatus("synced");
         }
@@ -162,6 +212,11 @@ export default function CloudSync() {
   function disconnect() {
     generation.current++;
     setSession(null);
+    try {
+      localStorage.removeItem(CHECKPOINT_KEY);
+    } catch {
+      /* Unavailable storage. */
+    }
     setAccessCode("");
     setCode("");
     setBusy(false);
@@ -299,6 +354,20 @@ export default function CloudSync() {
             </Button>
           </div>
         )}
+        {!session && accessCode && (
+          <Button className="small" onClick={disconnect}>
+            {text(
+              "Quên mã trên trình duyệt này",
+              "Forget code in this browser",
+            )}
+          </Button>
+        )}
+        <p className="caption">
+          {text(
+            "Mã được ghi nhớ trên trình duyệt này. Ngắt kết nối để xóa mã trên thiết bị dùng chung.",
+            "This browser remembers your code. Disconnect to forget it on a shared device.",
+          )}
+        </p>
         <Button className="small sync-backup" onClick={model.exportJSON}>
           {text("Xuất backup", "Export backup")}
         </Button>

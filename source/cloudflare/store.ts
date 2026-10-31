@@ -57,12 +57,13 @@ export class DocumentStore {
 export async function reserveGeneration(
   db: D1Database,
   limitText?: string,
+  scope = "ai",
 ): Promise<boolean> {
   const limit = Math.min(
     10,
     Math.max(0, Number.parseInt(limitText || "3", 10) || 0),
   );
-  const store = new DocumentStore(db, "ai");
+  const store = new DocumentStore(db, scope);
   const key = "quota/" + new Date().toISOString().slice(0, 10);
   for (let attempt = 0; attempt < 4; attempt++) {
     const old = await store.getWithMetadata<{ count: number }>(key);

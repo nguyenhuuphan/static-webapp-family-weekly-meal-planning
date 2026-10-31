@@ -36,7 +36,7 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
         store.get("latest", { type: "json" }),
       ]);
       return json({
-        configured: !!env.GEMINI_API_KEY,
+        configured: !!(env.GEMINI_API_KEY || env.AI),
         masterPrompt:
           (settings?.data as { masterPrompt?: string } | undefined)
             ?.masterPrompt || DEFAULT_MASTER_PROMPT,
@@ -46,7 +46,7 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
     }
     let body;
     try {
-      body = (await readJSON(request, 40000)) as Record<string, any>;
+      body = (await readJSON(request, 512000)) as Record<string, any>;
     } catch (error) {
       return json(
         { error: "invalid_input" },
@@ -112,7 +112,7 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
     }
     if (body?.action !== "generate" || !isJobId(body.id))
       return json({ error: "invalid_input" }, 400);
-    if (!env.GEMINI_API_KEY) return json({ error: "not_configured" }, 503);
+    if (!env.GEMINI_API_KEY && !env.AI) return json({ error: "not_configured" }, 503);
     let input, masterPrompt, recentMeals: string[];
     try {
       input = validateMenuInput(body.input);

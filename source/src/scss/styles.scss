@@ -3678,3 +3678,169 @@ select:focus-visible {
     grid-template-columns: minmax(0, 1fr) 180px;
   }
 }
+
+// Recipe choices remain aligned inside the weekly cards and nested AI preview.
+.meal-replace-trigger {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.meal-replacement-dialog {
+  --replacement-padding: clamp(16px, 3vw, 28px);
+  box-sizing: border-box;
+  width: min(860px, calc(100vw - 24px));
+  max-height: 92dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 20px 150px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: var(--replacement-padding);
+  color: var(--ink);
+  background: #fffdf6;
+  box-shadow: 0 24px 80px #241b1338;
+}
+.meal-replacement-dialog::backdrop {
+  background: rgb(20 35 28 / 65%);
+}
+.replacement-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.replacement-header h2 {
+  margin: 6px 0 18px;
+  font-size: clamp(22px, 4vw, 28px);
+}
+.replacement-header > button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.replacement-current {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  background: #efeee5;
+  border-radius: 12px;
+}
+.replacement-options {
+  border: 0;
+  margin: 20px 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.replacement-option {
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: white;
+}
+.replacement-option.selected {
+  border-color: #326349;
+  background: #f4faf4;
+}
+.replacement-choice {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  cursor: pointer;
+  min-height: 44px;
+}
+.replacement-choice > span {
+  display: grid;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+.replacement-choice input {
+  width: 20px;
+  height: 20px;
+  margin: 3px 0 0;
+  flex: 0 0 20px;
+  accent-color: #326349;
+}
+.replacement-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 12px 0;
+  font-size: 0.85rem;
+}
+.replacement-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.replacement-option summary {
+  padding-block: 10px;
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.replacement-option li {
+  margin-block: 8px;
+}
+.replacement-footer {
+  position: sticky;
+  bottom: calc(-1 * var(--replacement-padding));
+  margin: 24px calc(-1 * var(--replacement-padding))
+    calc(-1 * var(--replacement-padding));
+  padding: 14px var(--replacement-padding);
+  border-top: 1px solid var(--border);
+  background: #fffdf6;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 1;
+}
+.replacement-footer > p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.replacement-footer .actions {
+  flex-shrink: 0;
+}
+.meal-replacement-dialog :is(input, summary, button) {
+  scroll-margin-block: 20px 150px;
+}
+@media (min-width: 700px) {
+  .replacement-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+@media (max-width: 550px) {
+  .replacement-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .replacement-footer .actions {
+    display: flex;
+  }
+  .replacement-footer .actions > button {
+    flex: 1;
+  }
+}
+.replacement-legend {
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.meal-card .card-bottom {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.meal-card .card-bottom > .actions {
+  flex-wrap: wrap;
+}
+.meal-replacement-dialog .replacement-footer > p {
+  color: #24352b;
+}
+.replacement-option:has(details[open]) {
+  grid-column: 1 / -1;
+}

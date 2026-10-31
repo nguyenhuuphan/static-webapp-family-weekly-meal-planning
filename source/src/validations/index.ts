@@ -169,6 +169,34 @@ export function validatePlan(p: unknown): string[] {
           `${m?.id}: ${k} needs 1–100 steps with text and valid minutes.`,
         );
   }
+  if (v.alternatives !== undefined) {
+    if (!Array.isArray(v.alternatives) || v.alternatives.length > 5)
+      errors.push("Provide at most five alternative recipes.");
+    else {
+      for (const option of v.alternatives) {
+        if (
+          !option ||
+          ids.has(option.id) ||
+          "day" in option ||
+          "type" in option
+        ) {
+          errors.push(
+            "Alternatives must have unique IDs and no scheduled slot.",
+          );
+          continue;
+        }
+        ids.add(option.id);
+        errors.push(
+          ...validatePlan({
+            schemaVersion: 2,
+            name: "Alternative",
+            servings: v.servings,
+            meals: [{ ...option, day: "Monday", type: "Lunch" }],
+          }),
+        );
+      }
+    }
+  }
   return [...new Set(errors)];
 }
 export function parseBackup(raw: unknown): { plan: Plan; servings: number } {

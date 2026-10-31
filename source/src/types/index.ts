@@ -41,7 +41,9 @@ export type Meal = {
   storage: string;
   thaw: string;
 };
+export type MealAlternative = Omit<Meal, "day" | "type">;
 export type Plan = {
+  alternatives?: MealAlternative[];
   schemaVersion: 1 | 2;
   translations?: { vi: Record<string, string> };
   name: string;

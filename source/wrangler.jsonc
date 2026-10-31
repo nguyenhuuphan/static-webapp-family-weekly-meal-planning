@@ -39,5 +39,8 @@
     "enabled": true,
     "head_sampling_rate": 0.1
   },
-  "account_id": "3adfa3459c6ccefd7ac13915503ecbdb"
+  "account_id": "3adfa3459c6ccefd7ac13915503ecbdb",
+  "ai": {
+    "binding": "AI"
+  }
 }

@@ -3,11 +3,9 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import {
-  generateMenuBatch,
-  combineMenuPlans,
-  GenerationError,
-} from "../src/server/gemini";
+import { combineMenuPlans, GenerationError } from "../src/server/gemini";
+import { generateWithBackup } from "./ai";
+import { alternativeInput, attachAlternatives } from "../src/ai/alternatives";
 import type { MenuJob } from "../src/ai/contracts";
 import type { Plan } from "../src/types";
 import { DocumentStore } from "./store";
@@ -56,6 +54,8 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
     try {
       // Return expected provider failures as durable data so their codes survive step replay.
       const plans: Plan[] = [];
+      const providers = new Set<"gemini" | "cloudflare">();
+      let alternatives: Plan | undefined;
       let failure:
         | {
             status: "failed";
@@ -63,41 +63,41 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
             errorDiagnostic?: MenuJob["errorDiagnostic"];
           }
         | undefined;
-      for (const type of claimed.job.input.mealTypes) {
+      for (const type of [
+        ...claimed.job.input.mealTypes,
+        "alternatives",
+      ] as const) {
+        const isAlternative = type === "alternatives";
         const batch = await step.do(
           "generate-validated-" + type.toLowerCase(),
           NO_RETRIES,
           async () => {
             try {
-              if (!this.env.GEMINI_API_KEY)
-                throw new GenerationError("not_configured");
-              const plan = await generateMenuBatch(
-                { ...claimed.job.input, mealTypes: [type] },
+              const generated = await generateWithBackup(
+                claimed.job.diagnostic === true &&
+                  claimed.job.diagnosticProvider === "cloudflare"
+                  ? { ...this.env, GEMINI_API_KEY: undefined }
+                  : this.env,
+                isAlternative
+                  ? alternativeInput(claimed.job.input)
+                  : { ...claimed.job.input, mealTypes: [type] },
                 claimed.job.masterPrompt,
                 claimed.job.recentMeals,
                 {
-                  apiKey: this.env.GEMINI_API_KEY,
-                  ...(claimed.job.diagnostic === true
-                    ? {
-                        onProviderFailure: async (failure: {
-                          httpStatus: number;
-                          status?: string;
-                          message: string;
-                        }) => {
-                          await new DocumentStore(
-                            this.env.DB,
-                            "diagnostics",
-                          ).setJSON("gemini/" + id, failure);
-                        },
-                      }
-                    : {}),
-                },
-                {
                   requirements: claimed.job.input,
                   meals: plans.flatMap((plan) => plan.meals),
+                  alternatives: isAlternative,
                 },
+                claimed.job.diagnostic === true
+                  ? async (failure) => {
+                      await new DocumentStore(
+                        this.env.DB,
+                        "diagnostics",
+                      ).setJSON("gemini/" + id, failure);
+                    }
+                  : undefined,
               );
-              return { status: "ready" as const, plan };
+              return { status: "ready" as const, ...generated };
             } catch (error) {
               if (!(error instanceof GenerationError) && claimed.job.diagnostic)
                 await recordSyntheticFailure(this.env, id, error);
@@ -120,13 +120,19 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
           failure = batch;
           break;
         }
-        plans.push(batch.plan);
+        providers.add(batch.provider);
+        if (isAlternative) alternatives = batch.plan;
+        else plans.push(batch.plan);
       }
       const result =
         failure ??
         (await step.do("assemble-complete-menu", NO_RETRIES, async () => ({
           status: "ready" as const,
-          plan: combineMenuPlans(plans, claimed.job.input),
+          plan: attachAlternatives(
+            combineMenuPlans(plans, claimed.job.input),
+            alternatives!,
+          ),
+          providersUsed: [...providers],
         })));
       await step.do(
         "save-result",

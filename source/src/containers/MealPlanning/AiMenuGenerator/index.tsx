@@ -1,3 +1,5 @@
+import MealReplacement from "src/components/MealReplacement";
+import { swapPlanMeal } from "src/helpers/mealAlternatives";
 import { signInUrl } from "src/services/signIn";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, X, Check } from "lucide-react";
@@ -419,6 +421,18 @@ function GeneratorDialog({ close }: { close: () => void }) {
       "Đã hết hạn mức Gemini miễn phí. Hãy thử lại sau.",
       "Gemini’s free quota is exhausted. Try again later.",
     ),
+    backup_quota: text(
+      "Đã hết hạn mức AI dự phòng hôm nay. Hãy thử lại ngày mai.",
+      "Today's backup AI allowance is exhausted. Try again tomorrow.",
+    ),
+    backup_input_limit: text(
+      "Yêu cầu quá dài cho AI dự phòng. Hãy rút ngắn các ghi chú.",
+      "The request is too large for backup AI. Shorten the notes.",
+    ),
+    backup_unavailable: text(
+      "Cả AI chính và dự phòng đều chưa phản hồi. Hãy thử lại sau.",
+      "Both AI providers are currently unavailable. Try again later.",
+    ),
     invalid_output: text(
       "AI trả về thực đơn chưa hợp lệ hoặc thiếu bản dịch. Chưa có dữ liệu nào được thay thế.",
       "The AI returned an invalid or incomplete menu. No existing data was replaced.",
@@ -504,7 +518,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
         </Button>
       </div>
       <p className="caption">
-        {text("Gemini · Tạo khi bạn yêu cầu", "Gemini · Generates on request")}
+        {text(
+          "Gemini + Cloudflare dự phòng · Tạo khi bạn yêu cầu",
+          "Gemini + Cloudflare backup · Generates on request",
+        )}
       </p>
       <ol className="ai-steps" aria-label={text("Các bước", "Steps")}>
         {stepLabels.map((label, index) => (
@@ -1014,14 +1031,14 @@ function GeneratorDialog({ close }: { close: () => void }) {
               </dl>
               <p className="caption">
                 {text(
-                  `Lần tạo này dùng ${input.mealTypes.length} yêu cầu Gemini, chia theo nhóm bữa ăn. Đổi ngôn ngữ không gọi lại AI.`,
-                  `This generation uses ${input.mealTypes.length} Gemini requests, grouped by meal time. Switching language makes no new AI calls.`,
+                  `Tạo ${input.days.length * input.mealTypes.length} bữa và 5 món thay thế, chia thành ${input.mealTypes.length + 1} nhóm. Cloudflare AI dự phòng khi Gemini không dùng được. Đổi món và ngôn ngữ không gọi lại AI.`,
+                  `Generates ${input.days.length * input.mealTypes.length} meals plus 5 alternatives in ${input.mealTypes.length + 1} batches. Cloudflare AI backs up Gemini when unavailable. Swapping recipes and switching language make no new AI calls.`,
                 )}
               </p>
               <p className="caption">
                 {text(
-                  "AI có thể sai. Kiểm tra dị ứng, lượng nguyên liệu và hướng dẫn an toàn trước khi áp dụng. Dữ liệu trong biểu mẫu được gửi tới Gemini; không gửi thông tin cá nhân không cần thiết.",
-                  "AI can make mistakes. Review allergens, quantities and safety instructions before applying. Form contents are sent to Gemini; omit unnecessary personal information.",
+                  "AI có thể sai. Kiểm tra dị ứng, lượng nguyên liệu và hướng dẫn an toàn trước khi áp dụng. Dữ liệu trong biểu mẫu được gửi tới Gemini hoặc Cloudflare AI; không gửi thông tin cá nhân không cần thiết.",
+                  "AI can make mistakes. Review allergens, quantities and safety instructions before applying. Form contents are sent to Gemini or Cloudflare AI; omit unnecessary personal information.",
                 )}
               </p>
               {!settings?.configured && <p>{errors.not_configured}</p>}
@@ -1114,6 +1131,22 @@ function GeneratorDialog({ close }: { close: () => void }) {
                 {text("bữa", "meals")} · {preview.servings}{" "}
                 {text("người", "people")}
               </p>
+              <p className="caption">
+                {text("Món thay thế có sẵn", "Ready alternatives")}:{" "}
+                {preview.alternatives?.length || 0} ·{" "}
+                {text(
+                  "Bấm Đổi món ở bữa muốn thay.",
+                  "Choose Replace meal on any meal to swap it.",
+                )}
+              </p>
+              {job?.providersUsed?.includes("cloudflare") && (
+                <p className="notice">
+                  {text(
+                    "Thực đơn này có sử dụng Cloudflare AI dự phòng.",
+                    "Cloudflare AI backup helped generate this menu.",
+                  )}
+                </p>
+              )}
               {editMeal ? (
                 <MealEditor
                   key={`ai-${job?.id}-${editMeal.id}`}
@@ -1189,6 +1222,14 @@ function GeneratorDialog({ close }: { close: () => void }) {
                         <p>{recipes.content(meal.storage)}</p>
                         <p>{recipes.content(meal.thaw)}</p>
                       </details>
+                      <MealReplacement
+                        plan={preview}
+                        meal={meal}
+                        disabled={busy}
+                        onReplace={(id) =>
+                          savePreview(swapPlanMeal(preview, meal.id, id))
+                        }
+                      />
                       <Button
                         data-edit-meal={meal.id}
                         onClick={() => setEditMeal(meal)}
@@ -1239,6 +1280,22 @@ function GeneratorDialog({ close }: { close: () => void }) {
                     </Button>
                   </div>
                 </>
+              )}
+              <p className="caption">
+                {text("Món thay thế có sẵn", "Ready alternatives")}:{" "}
+                {preview.alternatives?.length || 0} ·{" "}
+                {text(
+                  "Bấm Đổi món ở bữa muốn thay.",
+                  "Choose Replace meal on any meal to swap it.",
+                )}
+              </p>
+              {job?.providersUsed?.includes("cloudflare") && (
+                <p className="notice">
+                  {text(
+                    "Thực đơn này có sử dụng Cloudflare AI dự phòng.",
+                    "Cloudflare AI backup helped generate this menu.",
+                  )}
+                </p>
               )}
               {editMeal ? (
                 <p role="status">

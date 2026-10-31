@@ -1,3 +1,5 @@
+import MealReplacement from "src/components/MealReplacement";
+import { canSwapMeal, swapStateMeal } from "src/helpers/mealAlternatives";
 import AiMenuGenerator from "../AiMenuGenerator";
 import QuickCompletion from "./QuickCompletion";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
@@ -339,6 +341,18 @@ const WeeklyMenu: React.FC<IProps> = () => {
                             )}
                           </span>
                           <div className="actions">
+                            {!readOnly && (
+                              <MealReplacement
+                                plan={plan}
+                                meal={m}
+                                disabled={!canSwapMeal(s, m.id)}
+                                onReplace={(id) =>
+                                  update((current) =>
+                                    swapStateMeal(current, m.id, id),
+                                  )
+                                }
+                              />
+                            )}
                             <button
                               className="icon-button"
                               aria-label={tr("editMealLabel", {

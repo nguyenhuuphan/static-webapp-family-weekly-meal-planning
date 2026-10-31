@@ -66,8 +66,12 @@ describe("Cloudflare backup", () => {
     ).rejects.toMatchObject({ code: "backup_quota" });
     expect(env.AI!.run).toHaveBeenCalledTimes(6);
   });
-  it("uses successful Gemini output without calling the backup", async () => {
-    const env = environment();
+  it("tries the backup when Gemini mentions an unselected appliance", async () => {
+    const env = environment(),
+      invalid = aiBilingualOutput();
+    const recipe = Object.values(invalid.meals)[0];
+    recipe.steps[0].text.en += " Use an oven.";
+    recipe.steps[0].text.vi += " Dùng lò nướng.";
     vi.stubGlobal(
       "fetch",
       vi
@@ -78,13 +82,39 @@ describe("Cloudflare backup", () => {
             steps: [
               {
                 type: "model_output",
-                content: [
-                  { type: "text", text: JSON.stringify(aiBilingualOutput()) },
-                ],
+                content: [{ type: "text", text: JSON.stringify(invalid) }],
               },
             ],
           }),
         ),
+    );
+    const result = await generateWithBackup(
+      env,
+      aiInput,
+      DEFAULT_MASTER_PROMPT,
+      [],
+      context,
+    );
+    expect(result.provider).toBe("cloudflare");
+    expect(env.AI!.run).toHaveBeenCalledTimes(1);
+  });
+  it("uses successful Gemini output without calling the backup", async () => {
+    const env = environment();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json({
+          status: "completed",
+          steps: [
+            {
+              type: "model_output",
+              content: [
+                { type: "text", text: JSON.stringify(aiBilingualOutput()) },
+              ],
+            },
+          ],
+        }),
+      ),
     );
     expect(
       (

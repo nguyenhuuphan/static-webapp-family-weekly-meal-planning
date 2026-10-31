@@ -3,6 +3,7 @@ import {
   generationPayload,
   providerSchema,
   SYSTEM,
+  RESPONSE_SCHEMA,
   validateGeneratedPlan,
   GenerationError,
   type WeekContext,
@@ -12,12 +13,54 @@ import type { MenuInput } from "../src/ai/contracts";
 import type { Env } from "./types";
 import { reserveGeneration } from "./store";
 export const CLOUDFLARE_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
+export function cloudflareSchema(input: MenuInput) {
+  const schema = providerSchema(input);
+  const recipe = schema.properties.meals
+    .items as typeof RESPONSE_SCHEMA.properties.meals.items;
+  // Cloudflare supports nested array constraints. Enforce enough real steps at decoding time.
+  return {
+    ...schema,
+    properties: {
+      ...schema.properties,
+      meals: {
+        ...schema.properties.meals,
+        items: {
+          ...recipe,
+          properties: {
+            ...recipe.properties,
+            steps: {
+              ...recipe.properties.steps,
+              minItems: 4,
+              maxItems: 8,
+              items: {
+                ...recipe.properties.steps.items,
+                properties: {
+                  ...recipe.properties.steps.items.properties,
+                  text: {
+                    ...recipe.properties.steps.items.properties.text,
+                    properties: {
+                      en: { type: "string", minLength: 40 },
+                      vi: { type: "string", minLength: 1 },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+}
 const FALLBACK_CODES = new Set([
   "quota",
   "provider_busy",
   "provider_error",
   "provider_access",
   "invalid_output",
+  "incomplete_recipe",
+  "unavailable_equipment",
+  "restricted_ingredient",
   "not_configured",
 ]);
 export async function generateWithBackup(
@@ -72,7 +115,7 @@ export async function generateWithBackup(
   // A shared account's other Workers AI usage still counts toward the account limit.
   if (
     new TextEncoder().encode(
-      SYSTEM + payload + JSON.stringify(providerSchema(input)),
+      SYSTEM + payload + JSON.stringify(cloudflareSchema(input)),
     ).length > 64000
   )
     throw new GenerationError("backup_input_limit");
@@ -86,7 +129,7 @@ export async function generateWithBackup(
       ],
       response_format: {
         type: "json_schema",
-        json_schema: providerSchema(input),
+        json_schema: cloudflareSchema(input),
       },
       max_tokens: 16384,
       stream: false,

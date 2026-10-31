@@ -304,7 +304,9 @@ async function providerFailure(
       ? "quota"
       : [401, 403].includes(response.status) || reason === "api_key"
         ? "provider_access"
-        : "provider_error",
+        : [502, 503, 504].includes(response.status)
+          ? "provider_busy"
+          : "provider_error",
     { httpStatus: response.status, ...(status ? { status } : {}), reason },
   );
 }

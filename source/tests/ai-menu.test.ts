@@ -301,6 +301,28 @@ describe("Gemini API boundary", () => {
       generateMenu(aiInput, DEFAULT_MASTER_PROMPT, []),
     ).rejects.toMatchObject({ code: "invalid_output" });
   });
+  it("reports temporary provider overload without retrying or exposing its message", async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      Response.json(
+        { error: { status: "UNAVAILABLE", message: "Provider details" } },
+        { status: 503 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    const error = await generateMenu(aiInput, DEFAULT_MASTER_PROMPT, [], {
+      apiKey: "test-key",
+    }).catch((error) => error);
+    expect(error).toMatchObject({
+      code: "provider_busy",
+      diagnostic: {
+        httpStatus: 503,
+        status: "UNAVAILABLE",
+        reason: "availability",
+      },
+    });
+    expect(JSON.stringify(error)).not.toContain("Provider details");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it("retains only safe diagnostic categories from provider errors", async () => {
     const key = "test-only-private-key";
     const fetcher = vi.fn().mockResolvedValue(

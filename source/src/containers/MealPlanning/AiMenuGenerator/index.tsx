@@ -363,6 +363,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
     return false;
   }
   const errors: Record<string, string> = {
+    provider_busy: text(
+      "Gemini đang quá tải hoặc tạm thời không phản hồi. Hãy thử lại sau; menu và dữ liệu hiện tại vẫn được giữ.",
+      "Gemini is busy or temporarily unavailable. Try again later; your current menu and data are retained.",
+    ),
     incomplete_recipe: text(
       "Bản nháp thiếu nguyên liệu hoặc hướng dẫn nấu còn quá sơ sài. Menu hiện tại vẫn được giữ; hãy chỉnh yêu cầu trước khi tạo lại.",
       "The draft is missing ingredients or useful cooking detail. Your current menu is retained; revise the request before generating again.",

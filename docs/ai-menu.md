@@ -26,6 +26,8 @@ Cloudflare Workers, D1 and Workflows have their own free-tier limits, separately
 
 The server-only D1 `ai` namespace contains settings, jobs and per-day allowance records. All application routes to it require the family code. Data is not saved into the Git repository. Provider error messages and API keys are not returned to the browser. Failed jobs may retain a numeric HTTP status, an allowlisted provider status and a fixed provider/validation diagnostic category; these never include raw provider text or request data.
 
+An administrator may seed a synthetic job with the internal diagnostic flag to capture a key-redacted provider message in the separate D1 `diagnostics` namespace. The generation API ignores that flag in browser requests. Remove the diagnostic record after troubleshooting; ordinary family jobs do not capture provider text.
+
 The provider schema omits nested recipe-array maxima to avoid Google's constrained-decoder state explosion. It sets the requested meal count, slot IDs, days, meal types, cooking-time limit and selected equipment for each request. Server validation independently enforces those requirements, at most 30 ingredients, 10 preparation steps and 15 cooking steps per meal, complete bilingual text and quantity preservation.
 
 Cloudflare Access email OTP replaces Netlify SSO on the new hostname. Only the configured owner email may sign in. The Worker verifies the Access JWT, and private planner/AI routes also require the family code. Workflows start through a server binding without forwarding login cookies. If the session expires, the sign-in link opens a new tab so the original form remains available. Legacy Netlify Functions remain for rollback only.

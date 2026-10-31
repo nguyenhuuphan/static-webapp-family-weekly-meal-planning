@@ -38,7 +38,23 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
               claimed.job.input,
               claimed.job.masterPrompt,
               claimed.job.recentMeals,
-              { apiKey: this.env.GEMINI_API_KEY },
+              {
+                apiKey: this.env.GEMINI_API_KEY,
+                ...(claimed.job.diagnostic === true
+                  ? {
+                      onProviderFailure: async (failure: {
+                        httpStatus: number;
+                        status?: string;
+                        message: string;
+                      }) => {
+                        await new DocumentStore(
+                          this.env.DB,
+                          "diagnostics",
+                        ).setJSON("gemini/" + id, failure);
+                      },
+                    }
+                  : {}),
+              },
             );
             return { status: "ready" as const, plan };
           } catch (error) {

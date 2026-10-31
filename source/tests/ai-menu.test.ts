@@ -246,4 +246,31 @@ describe("Gemini API boundary", () => {
       diagnostic: { httpStatus: 404, status: "NOT_FOUND", reason: "model" },
     });
   });
+  it("redacts keys from explicitly enabled administration diagnostics", async () => {
+    const key = "test-only-private-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            error: {
+              status: "INVALID_ARGUMENT",
+              message: `API key not valid: ${key}`,
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    );
+    const onProviderFailure = vi.fn().mockResolvedValue(undefined);
+    await generateMenu(aiInput, DEFAULT_MASTER_PROMPT, [], {
+      apiKey: key,
+      onProviderFailure,
+    }).catch(() => undefined);
+    expect(onProviderFailure).toHaveBeenCalledWith({
+      httpStatus: 400,
+      status: "INVALID_ARGUMENT",
+      message: "API key not valid: [redacted]",
+    });
+  });
 });

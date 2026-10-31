@@ -116,6 +116,7 @@ describe("D1 and Cloudflare routes", () => {
       input: aiInput,
       masterPrompt: DEFAULT_MASTER_PROMPT,
       recentMeals: [],
+      diagnostic: true,
     };
     expect((await aiMenu(request("/api/ai-menu", body), env)).status).toBe(202);
     expect((await aiMenu(request("/api/ai-menu", body), env)).status).toBe(202);
@@ -153,6 +154,7 @@ describe("D1 and Cloudflare routes", () => {
       "jobs/" + id,
     );
     expect(job?.status).toBe("ready");
+    expect(job?.diagnostic).toBeUndefined();
     expect(job?.plan?.translations?.vi).toBeTruthy();
     expect(
       await new DocumentStore(env.DB, "planner").get("state.json"),

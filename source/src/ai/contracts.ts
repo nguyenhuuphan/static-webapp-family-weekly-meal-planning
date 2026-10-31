@@ -51,6 +51,8 @@ export type MenuJob = {
   error?: string;
   errorCode?: string;
   errorDiagnostic?: { httpStatus?: number; status?: string; reason: string };
+  /** Administration-only synthetic job flag; never accepted by the generation API. */
+  diagnostic?: boolean;
 };
 export function validateMenuInput(raw: unknown): MenuInput {
   if (!raw || typeof raw !== "object") throw Error("Invalid input.");

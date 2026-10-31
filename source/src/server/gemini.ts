@@ -193,7 +193,12 @@ function flattenBilingualOutput(raw: unknown): unknown {
   };
 }
 
-async function providerFailure(response: Response): Promise<GenerationError> {
+type ProviderFailure = { httpStatus: number; status?: string; message: string };
+async function providerFailure(
+  response: Response,
+  apiKey: string,
+  onFailure?: (failure: ProviderFailure) => Promise<void>,
+): Promise<GenerationError> {
   // Classify failures without persisting raw provider text, request data or keys.
   const body = (await response.json().catch(() => null)) as {
     error?: { message?: unknown; status?: unknown };
@@ -210,6 +215,16 @@ async function providerFailure(response: Response): Promise<GenerationError> {
     "INTERNAL",
     "FAILED_PRECONDITION",
   ].find((value) => value === body?.error?.status);
+  if (onFailure) {
+    await onFailure({
+      httpStatus: response.status,
+      ...(status ? { status } : {}),
+      message: message
+        .replaceAll(apiKey, "[redacted]")
+        .replace(/AIza[\w-]+/g, "[redacted]")
+        .slice(0, 1600),
+    }).catch(() => undefined);
+  }
   const reason = /api.?key/i.test(message)
     ? "api_key"
     : /schema|responseJsonSchema|response_schema|too many states|too much branching|constraint/i.test(
@@ -377,7 +392,10 @@ export async function generateMenu(
   input: MenuInput,
   masterPrompt: string,
   recentMeals: string[],
-  credentials?: { apiKey: string },
+  credentials?: {
+    apiKey: string;
+    onProviderFailure?: (failure: ProviderFailure) => Promise<void>;
+  },
 ): Promise<Plan> {
   const apiKey = credentials?.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GenerationError("not_configured");
@@ -424,7 +442,12 @@ export async function generateMenu(
       }),
     },
   );
-  if (!response.ok) throw await providerFailure(response);
+  if (!response.ok)
+    throw await providerFailure(
+      response,
+      apiKey,
+      credentials?.onProviderFailure,
+    );
   const data = (await response.json()) as {
     candidates?: {
       finishReason?: string;

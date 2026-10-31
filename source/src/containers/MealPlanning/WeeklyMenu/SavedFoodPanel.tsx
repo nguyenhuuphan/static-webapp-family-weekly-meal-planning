@@ -1,3 +1,4 @@
+import type { MealType } from "src/types";
 import FutureMealOptions from "./FutureMealOptions";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { finishSavedFood } from "src/helpers/cooking";
@@ -20,7 +21,7 @@ function FoodCard({ food }: { food: SavedFood }) {
   const text = useText();
   const [target, setTarget] = useState("");
   const [date, setDate] = useState(food.date || "");
-  const [type, setType] = useState<"Lunch" | "Dinner">(food.type || "Dinner");
+  const [type, setType] = useState<MealType>(food.type || "Dinner");
   const [storage, setStorage] = useState(food.storageNote);
   const [reviewed, setReviewed] = useState(false);
   const change = (patch: Partial<SavedFood>) =>
@@ -127,7 +128,7 @@ function FoodCard({ food }: { food: SavedFood }) {
             if (value.startsWith("date:")) {
               const [, date, type] = value.split(":");
               setDate(date);
-              setType(type as "Lunch" | "Dinner");
+              setType(type as MealType);
             } else setDate("");
           }}
         >

@@ -23,6 +23,7 @@ export { languages, supportedLanguages, LANGUAGE_STORAGE_KEY } from "./catalog";
 export type { Language } from "./catalog";
 
 type I18n = ReturnType<typeof createTranslator> & {
+  setContentTranslations: (translations: Record<string, string>) => void;
   language: Language;
   setLanguage: (language: Language) => void;
 };
@@ -44,6 +45,9 @@ function initialLanguage(): Language {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
+  const [contentTranslations, setContentTranslations] = useState<
+    Record<string, string>
+  >({});
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const translationRevision = useSyncExternalStore(
     subscribeTranslations,
@@ -51,8 +55,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     () => 0,
   );
   const value = useMemo(
-    () => ({ ...createTranslator(language, true), language, setLanguage }),
-    [language, translationRevision],
+    () => ({
+      ...createTranslator(language, true, contentTranslations),
+      language,
+      setLanguage,
+      setContentTranslations,
+    }),
+    [language, translationRevision, contentTranslations],
   );
 
   useEffect(() => {

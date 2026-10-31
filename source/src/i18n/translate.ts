@@ -1,3 +1,4 @@
+import { DAYS } from "src/types";
 import { automaticContent } from "./automatic";
 import { languages, type Language } from "./catalog";
 import { en, type MessageKey } from "./locales/en";
@@ -9,7 +10,11 @@ const sourceKeys = new Map<string, MessageKey>(
   Object.entries(en).map(([key, value]) => [value, key as MessageKey]),
 );
 
-export function createTranslator(language: Language, automatic = false) {
+export function createTranslator(
+  language: Language,
+  automatic = false,
+  translatedContent: Record<string, string> = {},
+) {
   const config = languages[language];
   const engine = translationEngine(language);
   const recipes: Record<string, string> = config.recipes;
@@ -24,9 +29,12 @@ export function createTranslator(language: Language, automatic = false) {
   // Exact-source matching prevents an edited/imported instruction from receiving
   // an out-of-date translation. Unknown user content is displayed verbatim.
   const content = (value: string): string => {
-    if (Object.hasOwn(recipes, value)) return recipes[value];
     const key = sourceKeys.get(value);
-    return key ? t(key) : automatic ? automaticContent(value, language) : value;
+    if (key) return t(key);
+    if (language === "vi" && Object.hasOwn(translatedContent, value))
+      return translatedContent[value];
+    if (Object.hasOwn(recipes, value)) return recipes[value];
+    return automatic ? automaticContent(value, language) : value;
   };
 
   const unit = (value: string) => {
@@ -50,7 +58,7 @@ export function createTranslator(language: Language, automatic = false) {
     day = "Monday",
     options?: Intl.DateTimeFormatOptions,
   ) => {
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const days: readonly string[] = DAYS;
     const value = new Date(`${start}T12:00:00Z`);
     value.setUTCDate(value.getUTCDate() + Math.max(0, days.indexOf(day)));
     return new Intl.DateTimeFormat(config.locale, {

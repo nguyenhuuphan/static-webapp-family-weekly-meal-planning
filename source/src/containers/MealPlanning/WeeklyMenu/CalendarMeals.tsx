@@ -1,3 +1,4 @@
+import type { MealType } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useI18n, useText } from "src/i18n";
 import { calendarFood } from "src/helpers/calendar";
@@ -7,7 +8,7 @@ export default function CalendarMeals({
   type,
 }: {
   date: string;
-  type: "Lunch" | "Dinner";
+  type: MealType;
 }) {
   const { s } = useMealPlanner(),
     { content: ct } = useI18n(),

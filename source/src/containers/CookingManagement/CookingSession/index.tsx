@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   Info,
 } from "lucide-react";
-import { DAYS } from "src/types";
+import { DAYS, MEAL_TYPES } from "src/types";
 import { isPrepared, round, mealPortions } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -86,7 +86,7 @@ const CookingSession: React.FC<IProps> = () => {
         </label>
         <Button
           onClick={() => {
-            const day = DAYS[new Date().getDay() - 1];
+            const day = DAYS[(new Date().getDay() + 6) % 7];
             const today =
               plan.meals.find(
                 (item) =>
@@ -118,7 +118,10 @@ const CookingSession: React.FC<IProps> = () => {
               <h4>{ct(d)}</h4>
               {plan.meals
                 .filter((m) => m.day === d && mealPortions(s, m) > 0)
-                .sort((a, b) => (a.type === "Lunch" ? -1 : 1))
+                .sort(
+                  (a, b) =>
+                    MEAL_TYPES.indexOf(a.type) - MEAL_TYPES.indexOf(b.type),
+                )
                 .map((m) => (
                   <button
                     key={m.id}

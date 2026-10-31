@@ -1,5 +1,8 @@
 import type { Messages } from "./en";
 export const vi = {
+  breakfast: "Bữa sáng",
+  saturday: "Thứ Bảy",
+  sunday: "Chủ nhật",
   replaceExternalCopyConfirm:
     "Dùng bản của tab này? Bản từ tab khác sẽ được lưu riêng trên thiết bị trước khi thay.",
   resolveTabConflictFirst:
@@ -191,7 +194,7 @@ export const vi = {
   advancedEditor: "TRÌNH CHỈNH SỬA NÂNG CAO",
   oneSimpleJsonFile: "Một tệp JSON đơn giản.",
   tenUniqueWeekdayLunchDinnerSlotsSavingReplacesThePlanAndResets:
-    "Mười bữa trưa/tối riêng biệt từ thứ Hai đến thứ Sáu. Lưu sẽ thay thực đơn và đặt lại tiến độ.",
+    "Dùng các khung ngày/bữa riêng biệt: v1 gồm 10 bữa ngày thường; v2 hỗ trợ 1–21 bữa. Lưu sẽ thay thực đơn và đặt lại tiến độ.",
   mealPlanJson: "JSON thực đơn",
   replaceTheMenuAndResetProgress: "Thay thực đơn và đặt lại tiến độ?",
   validateSave: "Kiểm tra và lưu",
@@ -341,7 +344,7 @@ export const vi = {
     "Bộ nhớ trình duyệt không khả dụng hoặc đã đầy. Hãy xuất bản sao; thay đổi hiện chỉ được giữ tạm thời.",
   mealLoadError: "Không tải được dữ liệu thực đơn.",
   invalidJson: "JSON không hợp lệ. Kiểm tra định dạng tệp và thử lại.",
-  schemaVersionError: "Cần schemaVersion: 1.",
+  schemaVersionError: "Cần schemaVersion: 1 hoặc 2.",
   baseServingsError: "Số khẩu phần gốc phải là số nguyên từ 1 đến 12.",
   servingsError: "Số khẩu phần phải là số nguyên từ 1 đến 12.",
   tenMealsError: "Cần đúng mười bữa ăn.",

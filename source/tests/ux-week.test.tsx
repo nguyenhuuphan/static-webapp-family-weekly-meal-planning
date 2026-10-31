@@ -1,7 +1,17 @@
 import { it, expect } from "vitest";
-import { boot, nav, fireEvent, screen, readState } from "./uxSupport";
+import {
+  boot,
+  nav,
+  fireEvent,
+  screen,
+  readState,
+  freshState,
+  plan,
+} from "./uxSupport";
 it("accepts a Wednesday and starts its Monday week", async () => {
-  await boot();
+  const initial = freshState(plan);
+  initial.weekStart = "2026-10-26";
+  await boot(initial);
   nav("Settings");
   fireEvent.change(screen.getByLabelText("Week beginning"), {
     target: { value: "2026-11-04" },

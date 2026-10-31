@@ -1,3 +1,4 @@
+import AiMenuGenerator from "../AiMenuGenerator";
 import QuickCompletion from "./QuickCompletion";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useEffect, useState } from "react";
@@ -20,7 +21,7 @@ import {
   ChefHat,
   Leaf,
 } from "lucide-react";
-import { DAYS } from "src/types";
+import { DAYS, MEAL_TYPES } from "src/types";
 import { changePortions } from "src/helpers/scheduling";
 import { isPrepared, mealPortions } from "src/domain";
 import { Button, Heading } from "src/modules/shared-main/components";
@@ -55,7 +56,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
   const readOnly = calendarWeek !== s.weekStart;
   const activeMeals = plan.meals.filter((m) => mealPortions(s, m) > 0);
   const today = new Date();
-  const todayDay = DAYS[today.getDay() - 1];
+  const todayDay = DAYS[(today.getDay() + 6) % 7];
   const nextMeal =
     activeMeals.find((m) => m.day === todayDay && !s.progress.done[m.id]) ||
     activeMeals.find((m) => !s.progress.done[m.id]);
@@ -87,6 +88,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
               ? tr("prepGuide")
               : tr("startCooking")}
         </Button>
+        <AiMenuGenerator />
       </Heading>
       {nextMeal && (
         <section className="panel">
@@ -110,7 +112,11 @@ const WeeklyMenu: React.FC<IProps> = () => {
           </span>
           <div>
             <strong>{tr("mealCount", { count: activeMeals.length })}</strong>
-            <small>{tr("mondayThroughFriday")}</small>
+            <small>
+              {plan.schemaVersion === 2
+                ? text("Theo lịch đã chọn", "Your selected schedule")
+                : tr("mondayThroughFriday")}
+            </small>
           </div>
         </div>
         <div>
@@ -247,7 +253,10 @@ const WeeklyMenu: React.FC<IProps> = () => {
                   </div>
                 )}
                 <div className="day-meals">
-                  {(["Lunch", "Dinner"] as const).map((type) => {
+                  {(shownPlan?.schemaVersion === 2
+                    ? MEAL_TYPES
+                    : (["Lunch", "Dinner"] as const)
+                  ).map((type) => {
                     const date = calendarDate(calendarWeek, index);
                     const m = shownPlan?.meals.find(
                       (x) => x.day === day && x.type === type,

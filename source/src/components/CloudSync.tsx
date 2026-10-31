@@ -1,3 +1,4 @@
+import { useFamilyAccess } from "src/hooks/useFamilyAccess";
 import { useEffect, useRef, useState } from "react";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useText } from "src/i18n";
@@ -8,6 +9,7 @@ import { Button } from "src/modules/shared-main/components";
 type Session = { code: string; revision: string | null; baseline: string };
 export default function CloudSync() {
   const model = useMealPlanner();
+  const { setAccessCode } = useFamilyAccess();
   const text = useText();
   const [code, setCode] = useState("");
   const [session, setSession] = useState<Session | null>(null);
@@ -46,6 +48,7 @@ export default function CloudSync() {
       if (!create && !result.state) throw Error("No shared plan");
       const baseline = create ? local : apply(result.state);
       setSession({ code, revision: result.revision, baseline });
+      setAccessCode(code);
       setCode("");
       setStatus("synced");
     } catch (error) {
@@ -118,6 +121,7 @@ export default function CloudSync() {
   function disconnect() {
     generation.current++;
     setSession(null);
+    setAccessCode("");
     setCode("");
     setBusy(false);
     setStatus("local");

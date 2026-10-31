@@ -1,4 +1,4 @@
-import { DAYS, type Plan, type Meal } from "src/types";
+import { DAYS, MEAL_TYPES, type Plan, type Meal } from "src/types";
 export function validatePreparationLinks(meal: Meal): string[] {
   const errors: string[] = [],
     allocated = new Map<string, number>(),
@@ -53,15 +53,54 @@ export function validatePreparationLinks(meal: Meal): string[] {
 export function validatePlan(p: unknown): string[] {
   const errors: string[] = [];
   const v = p as Plan;
-  if (!v || v.schemaVersion !== 1) return ["Expected schemaVersion: 1."];
+  if (!v || ![1, 2].includes(v.schemaVersion))
+    return ["Expected schemaVersion: 1 or 2."];
   if (!Number.isInteger(v.servings) || v.servings < 1 || v.servings > 12)
     errors.push("Base servings must be a whole number from 1 to 12.");
-  if (!Array.isArray(v.meals) || v.meals.length !== 10)
+  if (!Array.isArray(v.meals)) return [...errors, "A meal list is required."];
+  if (v.schemaVersion === 1 && v.meals.length !== 10)
     return [...errors, "Exactly ten meals are required."];
+  if (v.schemaVersion === 2 && (v.meals.length < 1 || v.meals.length > 21))
+    return [...errors, "Choose 1–21 unique meals."];
+  if (typeof v.name !== "string" || !v.name.trim() || v.name.length > 200)
+    errors.push("A plan name of 1–200 characters is required.");
+  if (v.translations !== undefined) {
+    const vi = v.translations?.vi;
+    if (
+      !vi ||
+      typeof vi !== "object" ||
+      Array.isArray(vi) ||
+      Object.keys(vi).length > 3000 ||
+      Object.entries(vi).some(
+        ([source, translated]) =>
+          !source.trim() ||
+          source.length > 6000 ||
+          typeof translated !== "string" ||
+          !translated.trim() ||
+          translated.length > 6000 ||
+          JSON.stringify(
+            source.match(/\[[\d.]+ (?:g|ml|each|tsp|tbsp)\]/g) || [],
+          ) !==
+            JSON.stringify(
+              translated.match(/\[[\d.]+ (?:g|ml|each|tsp|tbsp)\]/g) || [],
+            ),
+      )
+    )
+      errors.push("Invalid recipe translations.");
+  }
   const ids = new Set(),
     slots = new Set();
   for (const m of v.meals) {
     if (m) errors.push(...validatePreparationLinks(m));
+    if (
+      m?.equipment !== undefined &&
+      (!Array.isArray(m.equipment) ||
+        m.equipment.length > 12 ||
+        m.equipment.some(
+          (e) => typeof e !== "string" || !e.trim() || e.length > 80,
+        ))
+    )
+      errors.push("Invalid cooking equipment.");
     if (
       !m ||
       typeof m.id !== "string" ||
@@ -73,10 +112,17 @@ export function validatePlan(p: unknown): string[] {
     const slot = m?.day + "|" + m?.type;
     if (
       !DAYS.includes(m?.day) ||
-      !["Lunch", "Dinner"].includes(m?.type) ||
+      !(v.schemaVersion === 1 ? ["Lunch", "Dinner"] : MEAL_TYPES).includes(
+        m?.type,
+      ) ||
+      (v.schemaVersion === 1 && !DAYS.slice(0, 5).includes(m?.day)) ||
       slots.has(slot)
     )
-      errors.push("Use each Monday–Friday lunch/dinner slot exactly once.");
+      errors.push(
+        v.schemaVersion === 1
+          ? "Use each Monday–Friday lunch/dinner slot exactly once."
+          : "Meal days and types must be valid and slots unique.",
+      );
     slots.add(slot);
     for (const k of ["main", "side", "storage", "thaw"] as const)
       if (typeof m?.[k] !== "string" || !m[k].trim())

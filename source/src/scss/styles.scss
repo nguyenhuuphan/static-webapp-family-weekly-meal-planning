@@ -3005,3 +3005,85 @@ select:focus-visible {
   cursor: pointer;
   min-height: 44px;
 }
+
+.ai-menu-dialog {
+  width: min(960px, calc(100vw - 24px));
+  max-height: 90dvh;
+  overflow-y: auto;
+  border: 1px solid #d9dfd5;
+  border-radius: 20px;
+  padding: clamp(16px, 4vw, 32px);
+  color: #223a30;
+  background: #fafbf7;
+  box-sizing: border-box;
+}
+.ai-menu-dialog::backdrop {
+  background: rgb(20 35 28 / 60%);
+}
+.ai-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+.ai-dialog-header h2 {
+  margin-top: 0;
+}
+.ai-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding-left: 20px;
+  font-size: 0.85rem;
+}
+.ai-steps [aria-current] {
+  font-weight: 700;
+  color: #336b44;
+}
+.ai-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ai-options label {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+}
+.ai-options input {
+  width: auto;
+}
+.ai-menu-dialog fieldset {
+  min-width: 0;
+  margin: 16px 0;
+  border: 1px solid #d9dfd5;
+  border-radius: 12px;
+  padding: 16px;
+}
+.ai-menu-dialog label {
+  margin: 12px 0;
+}
+.ai-menu-dialog input,
+.ai-menu-dialog textarea {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.ai-form-grid,
+.ai-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px;
+}
+.ai-menu-dialog dd {
+  margin-left: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ai-menu-dialog dt {
+  font-weight: 700;
+  margin-top: 12px;
+}
+.ai-dialog-actions {
+  margin-top: 24px;
+}

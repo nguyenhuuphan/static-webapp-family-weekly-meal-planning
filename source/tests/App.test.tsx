@@ -199,7 +199,7 @@ describe("React feature parity", () => {
     nav("Settings");
     fireEvent.click(screen.getByRole("button", { name: "Advanced JSON" }));
     fireEvent.change(screen.getByLabelText("Meal-plan JSON"), {
-      target: { value: '{"schemaVersion":2}' },
+      target: { value: '{"schemaVersion":999}' },
     });
     fireEvent.click(screen.getByRole("button", { name: "Validate & save" }));
     expect(screen.getByRole("alert").textContent).toContain("schemaVersion");

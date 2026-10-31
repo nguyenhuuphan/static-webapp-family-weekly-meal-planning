@@ -1,4 +1,10 @@
-import { type Plan, type Meal, type State, type Progress } from "src/types";
+import {
+  MEAL_TYPES,
+  type Plan,
+  type Meal,
+  type State,
+  type Progress,
+} from "src/types";
 import { defaultMonday, isMonday, aggregate, ingredientKey } from "src/utils";
 import { normalizeIngredientLinks } from "./ingredientLinks";
 import { validateFoodStorage } from "./foodStorage";
@@ -246,7 +252,7 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       throw Error("Invalid saved food date.");
     if (
       food.status === "scheduled" &&
-      (!food.date || !["Lunch", "Dinner"].includes(food.type || ""))
+      (!food.date || !MEAL_TYPES.includes(food.type!))
     )
       throw Error("Invalid saved food schedule.");
     for (const [index, task] of Object.entries(food.preparedTasks)) {

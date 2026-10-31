@@ -1,4 +1,7 @@
 export const en = {
+  breakfast: "Breakfast",
+  saturday: "Saturday",
+  sunday: "Sunday",
   replaceExternalCopyConfirm:
     "Keep this tab’s copy? The other copy will be archived on this device before replacement.",
   resolveTabConflictFirst: "Resolve the other-tab change before editing.",
@@ -187,7 +190,7 @@ export const en = {
   advancedEditor: "ADVANCED EDITOR",
   oneSimpleJsonFile: "One simple JSON file.",
   tenUniqueWeekdayLunchDinnerSlotsSavingReplacesThePlanAndResets:
-    "Ten unique weekday lunch/dinner slots. Saving replaces the plan and resets progress.",
+    "Use unique day/time slots: v1 keeps ten weekday meals; v2 supports 1–21 meals. Saving replaces the plan and resets progress.",
   mealPlanJson: "Meal-plan JSON",
   replaceTheMenuAndResetProgress: "Replace the menu and reset progress?",
   validateSave: "Validate & save",
@@ -337,7 +340,7 @@ export const en = {
     "Browser storage is unavailable or full. Export a backup; changes are temporary.",
   mealLoadError: "Meal data could not be loaded.",
   invalidJson: "Invalid JSON. Check the file format and try again.",
-  schemaVersionError: "Expected schemaVersion: 1.",
+  schemaVersionError: "Expected schemaVersion: 1 or 2.",
   baseServingsError: "Base servings must be a whole number from 1 to 12.",
   servingsError: "Servings must be a whole number from 1 to 12.",
   tenMealsError: "Exactly ten meals are required.",

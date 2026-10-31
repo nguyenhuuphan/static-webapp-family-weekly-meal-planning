@@ -4,7 +4,11 @@ export const DAYS = [
   "Wednesday",
   "Thursday",
   "Friday",
+  "Saturday",
+  "Sunday",
 ] as const;
+export const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner"] as const;
+export type MealType = (typeof MEAL_TYPES)[number];
 export type Day = (typeof DAYS)[number];
 export type Unit = "g" | "ml" | "each" | "tsp" | "tbsp";
 export type Ingredient = {
@@ -24,9 +28,10 @@ export type Step = {
 };
 export type Meal = {
   recipeId?: string;
+  equipment?: string[];
   id: string;
   day: Day;
-  type: "Lunch" | "Dinner";
+  type: MealType;
   main: string;
   side: string;
   minutes: number;
@@ -37,7 +42,8 @@ export type Meal = {
   thaw: string;
 };
 export type Plan = {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
+  translations?: { vi: Record<string, string> };
   name: string;
   servings: number;
   meals: Meal[];
@@ -151,7 +157,7 @@ export type SavedFood = {
   preparedTasks: Record<string, { servings: number; at: string }>;
   storageNote: string;
   date?: string;
-  type?: "Lunch" | "Dinner";
+  type?: MealType;
   status: "pending" | "scheduled" | "used" | "discarded" | "assigned";
 };
 export type FoodStorage = {

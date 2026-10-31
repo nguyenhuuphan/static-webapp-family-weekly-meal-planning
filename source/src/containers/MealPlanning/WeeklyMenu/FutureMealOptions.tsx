@@ -1,3 +1,4 @@
+import { MEAL_TYPES } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useI18n, useText } from "src/i18n";
 import { CALENDAR_DAYS, calendarDate } from "src/helpers/calendar";
@@ -25,7 +26,10 @@ export default function FutureMealOptions() {
         >
           {Array.from({ length: to - from }, (_, i) => from + i).flatMap(
             (offset) =>
-              (["Lunch", "Dinner"] as const).map((type) => (
+              (s.plan.schemaVersion === 2
+                ? MEAL_TYPES
+                : (["Lunch", "Dinner"] as const)
+              ).map((type) => (
                 <option
                   key={`${offset}-${type}`}
                   value={`date:${calendarDate(s.weekStart, offset)}:${type}`}

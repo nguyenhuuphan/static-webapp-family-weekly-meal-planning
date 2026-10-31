@@ -1,3 +1,4 @@
+import type { MealType } from "src/types";
 import FutureMealOptions from "./FutureMealOptions";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import { useState } from "react";
@@ -14,7 +15,7 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
     text = useText(),
     { content: ct } = useI18n();
   const [date, setDate] = useState(food.date || "");
-  const [type, setType] = useState<"Lunch" | "Dinner">(food.type || "Dinner");
+  const [type, setType] = useState<MealType>(food.type || "Dinner");
   const [eaten, setEaten] = useState("1"),
     [reviewed, setReviewed] = useState(false);
   const change = (patch: Partial<SavedFood>) =>
@@ -97,7 +98,7 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
           onChange={(e) => {
             const [, date, type] = e.target.value.split(":");
             setDate(date || "");
-            setType((type as "Lunch" | "Dinner") || "Dinner");
+            setType((type as MealType) || "Dinner");
           }}
         >
           <option value="">{text("Chọn bữa", "Choose meal")}</option>

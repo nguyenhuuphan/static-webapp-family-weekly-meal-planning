@@ -2,6 +2,10 @@
 
 React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No account or paid API keys. Optional family sharing uses Netlify Functions + Blobs; new saved content uses the free MyMemory translation service. UI translations and built-in recipe translations are bundled locally.
 
+## AI weekly menus
+
+Use **Create menu with AI** in the weekly plan. The guided popup collects diners, meal slots, cuisines, available cooking appliances and custom preferences, then previews a Gemini-generated bilingual draft before applying it. Configure `GEMINI_API_KEY` privately on Netlify. See [AI setup and limits](../docs/ai-menu.md) for free-tier configuration, background jobs, quota limits and schema-v2 compatibility.
+
 ## Netlify shared data and automatic translation
 
 See [setup instructions](../docs/netlify-sync.md). Configure a private `FAMILY_ACCESS_CODE` (at least 16 characters) in Netlify Functions environment variables and deploy from Git so both static assets and functions are included. Uploading only `dist` supports local editing and bundled translations but cannot provide shared storage or automatic custom-content translation.
@@ -65,7 +69,7 @@ The browser key remains `weekday-table:v1` and the JSON schema remains 1. Deploy
 
 The file `public/meal-plan.json` (or `dist/meal-plan.json` in a manual deployment) is the default menu for new browsers. Existing browser edits take precedence. Export provides `{plan, servings}`; to update deployment defaults, use the `plan` object as meal-plan.json and redeploy. Export includes menu and serving setting, not progress, timers or week-start. Family sync is opt-in per page session using the configured family code. JSON is stored in Netlify Blobs, not committed into this repository.
 
-Exactly 10 unique Monday–Friday lunch/dinner slots must exist. Ingredient units: g, ml, each, tsp, tbsp. Tablespoons and teaspoons are consolidated by volume in shopping; no volume-to-weight conversion is invented. Edible weights exclude peel/bones/shells. Rice and cooking water are managed separately.
+Legacy schema-v1 plans require 10 unique Monday–Friday lunch/dinner slots. Schema-v2 plans support 1–21 unique breakfast/lunch/dinner slots across Monday–Sunday. Ingredient units: g, ml, each, tsp, tbsp. Tablespoons and teaspoons are consolidated by volume in shopping; no volume-to-weight conversion is invented. Edible weights exclude peel/bones/shells. Rice and cooking water are managed separately.
 
 Changing servings, importing, restoring defaults or choosing a new week resets progress. Saving one recipe/copying a pair clears that meal's prep/readiness/completion/timer and all shopping/at-home flags while retaining other meal progress. Existing food does not change; review quantities and storage after edits. Copying a pair updates storage guidance for manual review.
 

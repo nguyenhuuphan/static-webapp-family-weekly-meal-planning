@@ -10,14 +10,23 @@ import type { Plan } from "src/types";
 interface IProps {
   meal: Meal;
   plan: Plan;
-  onSave: (m: Meal) => void;
+  onSave: (m: Meal) => void | boolean | Promise<void | boolean>;
+  confirmSave?: boolean;
   onCancel: () => void;
+  draftNamespace?: string;
 }
-const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
+const MealEditor: React.FC<IProps> = ({
+  meal,
+  plan,
+  onSave,
+  onCancel,
+  draftNamespace = "meal-draft",
+  confirmSave = true,
+}) => {
   const text = useText();
   const editor = useRef<HTMLDivElement>(null);
   const [attempted, setAttempted] = useState(false);
-  const draftKey = `meal-draft:${meal.id}`;
+  const draftKey = `${draftNamespace}:${meal.id}`;
   const { t: tr, language, unit, error: translateError } = useI18n();
   // Keep input values stable while the user types; translate saved content only.
   const { content: ct } = useMemo(() => createTranslator(language), [language]);
@@ -98,7 +107,7 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
       [kind]: s[kind].map((i, n) => (n === index ? { ...i, [k]: v } : i)),
     }));
   }
-  function save() {
+  async function save() {
     setAttempted(true);
     const errors = validateMealDraft(plan, meal.id, draft);
     if (errors.length) {
@@ -113,16 +122,20 @@ const MealEditor: React.FC<IProps> = ({ meal, plan, onSave, onCancel }) => {
       return;
     }
     if (
+      !confirmSave ||
       confirm(
         tr("saveChangesShoppingChecksAndThisMealSPrepReadinessAndCompletion"),
       )
     ) {
+      const result = onSave(draft);
+      if (result && typeof (result as Promise<unknown>).then === "function") {
+        if ((await result) === false) return;
+      } else if (result === false) return;
       try {
         sessionStorage.removeItem(draftKey);
       } catch {
         /* Optional draft storage. */
       }
-      onSave(draft);
     }
   }
   return (

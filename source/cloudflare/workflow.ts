@@ -87,6 +87,7 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
                   requirements: claimed.job.input,
                   meals: plans.flatMap((plan) => plan.meals),
                   alternatives: isAlternative,
+                  diagnostic: claimed.job.diagnostic === true,
                 },
                 claimed.job.diagnostic === true
                   ? async (failure) => {

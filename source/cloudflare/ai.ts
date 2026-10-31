@@ -111,7 +111,7 @@ export async function generateWithBackup(
   const payload = JSON.stringify(
     generationPayload(input, masterPrompt, recentMeals, context),
   );
-  // At most six bounded backup calls/day for this app, below the free 10k neuron allowance.
+  // Six regular and six administrative diagnostic calls/day, each bounded below ~800 neurons.
   // A shared account's other Workers AI usage still counts toward the account limit.
   if (
     new TextEncoder().encode(
@@ -119,7 +119,13 @@ export async function generateWithBackup(
     ).length > 64000
   )
     throw new GenerationError("backup_input_limit");
-  if (!(await reserveGeneration(env.DB, "6", "cloudflare-ai")))
+  if (
+    !(await reserveGeneration(
+      env.DB,
+      "6",
+      context.diagnostic ? "cloudflare-ai-diagnostics" : "cloudflare-ai",
+    ))
+  )
     throw new GenerationError("backup_quota");
   try {
     const output = await env.AI!.run(CLOUDFLARE_MODEL, {

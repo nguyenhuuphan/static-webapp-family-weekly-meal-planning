@@ -611,6 +611,7 @@ export type WeekContext = {
   requirements: MenuInput;
   meals: Plan["meals"];
   alternatives?: boolean;
+  diagnostic?: boolean;
 };
 export function generationPayload(
   input: MenuInput,

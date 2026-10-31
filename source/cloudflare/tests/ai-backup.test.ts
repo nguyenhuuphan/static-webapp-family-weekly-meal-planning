@@ -66,6 +66,32 @@ describe("Cloudflare backup", () => {
     ).rejects.toMatchObject({ code: "backup_quota" });
     expect(env.AI!.run).toHaveBeenCalledTimes(6);
   });
+  it("keeps bounded administrative checks separate from the family's backup allowance", async () => {
+    const env = environment();
+    delete env.GEMINI_API_KEY;
+    for (let i = 0; i < 6; i++)
+      await generateWithBackup(env, aiInput, DEFAULT_MASTER_PROMPT, [], {
+        ...context,
+        diagnostic: true,
+      });
+    await expect(
+      generateWithBackup(env, aiInput, DEFAULT_MASTER_PROMPT, [], {
+        ...context,
+        diagnostic: true,
+      }),
+    ).rejects.toMatchObject({ code: "backup_quota" });
+    expect(
+      (
+        await generateWithBackup(
+          env,
+          aiInput,
+          DEFAULT_MASTER_PROMPT,
+          [],
+          context,
+        )
+      ).provider,
+    ).toBe("cloudflare");
+  });
   it("tries the backup when Gemini mentions an unselected appliance", async () => {
     const env = environment(),
       invalid = aiBilingualOutput();
@@ -74,19 +100,17 @@ describe("Cloudflare backup", () => {
     recipe.steps[0].text.vi += " Dùng lò nướng.";
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json({
-            status: "completed",
-            steps: [
-              {
-                type: "model_output",
-                content: [{ type: "text", text: JSON.stringify(invalid) }],
-              },
-            ],
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        Response.json({
+          status: "completed",
+          steps: [
+            {
+              type: "model_output",
+              content: [{ type: "text", text: JSON.stringify(invalid) }],
+            },
+          ],
+        }),
+      ),
     );
     const result = await generateWithBackup(
       env,

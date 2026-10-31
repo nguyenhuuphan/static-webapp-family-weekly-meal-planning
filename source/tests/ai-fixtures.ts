@@ -70,20 +70,25 @@ export function aiBilingualOutput(input = aiInput) {
   const text = (en: string) => ({ en, vi: translations[en] });
   return {
     name: text(output.name),
-    meals: output.meals.map((meal) => ({
-      equipment: meal.equipment,
-      minutes: meal.minutes,
-      main: text(meal.main),
-      side: text(meal.side),
-      storage: text(meal.storage),
-      thaw: text(meal.thaw),
-      ingredients: meal.ingredients.map((ingredient) => ({
-        ...ingredient,
-        name: text(ingredient.name),
-        category: text(ingredient.category),
-      })),
-      prep: meal.prep.map((step) => ({ ...step, text: text(step.text) })),
-      steps: meal.steps.map((step) => ({ ...step, text: text(step.text) })),
-    })),
+    meals: Object.fromEntries(
+      output.meals.map((meal) => [
+        meal.id,
+        {
+          equipment: meal.equipment,
+          minutes: meal.minutes,
+          main: text(meal.main),
+          side: text(meal.side),
+          storage: text(meal.storage),
+          thaw: text(meal.thaw),
+          ingredients: meal.ingredients.map((ingredient) => ({
+            ...ingredient,
+            name: text(ingredient.name),
+            category: text(ingredient.category),
+          })),
+          prep: meal.prep.map((step) => ({ ...step, text: text(step.text) })),
+          steps: meal.steps.map((step) => ({ ...step, text: text(step.text) })),
+        },
+      ]),
+    ),
   };
 }

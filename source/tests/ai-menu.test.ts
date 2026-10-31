@@ -63,13 +63,18 @@ describe("AI requirements and flexible weeks", () => {
     expect(validateGeneratedPlan(aiBilingualOutput(), aiInput)).toEqual(
       validateGeneratedPlan(aiOutput(), aiInput),
     );
+    const incomplete = aiBilingualOutput();
+    delete incomplete.meals["sat-breakfast"];
+    expect(() => validateGeneratedPlan(incomplete, aiInput)).toThrow(
+      GenerationError,
+    );
     const missing = aiBilingualOutput();
-    Object.assign(missing.meals[0].main, { vi: undefined });
+    Object.assign(missing.meals["sat-breakfast"].main, { vi: undefined });
     expect(() => validateGeneratedPlan(missing, aiInput)).toThrow(
       GenerationError,
     );
     const changed = aiBilingualOutput();
-    changed.meals[0].prep[0].text.vi += " 999";
+    changed.meals["sat-breakfast"].prep[0].text.vi += " 999";
     expect(() => validateGeneratedPlan(changed, aiInput)).toThrow(
       GenerationError,
     );
@@ -170,12 +175,11 @@ describe("Gemini API boundary", () => {
     expect(sent.generationConfig.responseMimeType).toBe("application/json");
     const mealSchema =
       sent.generationConfig.responseJsonSchema.properties.meals;
-    expect(mealSchema.minItems).toBe(1);
+    expect(mealSchema.required).toEqual(["sat-breakfast"]);
+    const recipeSchema = sent.generationConfig.responseJsonSchema.$defs.recipe;
     expect(plan.meals[0].id).toBe("sat-breakfast");
-    expect(mealSchema.items.properties.minutes.maximum).toBe(
-      aiInput.maxMinutes,
-    );
-    expect(mealSchema.items.properties.equipment.items.enum).toEqual(
+    expect(recipeSchema.properties.minutes.maximum).toBe(aiInput.maxMinutes);
+    expect(recipeSchema.properties.equipment.items.enum).toEqual(
       aiInput.equipment,
     );
     expect(fetcher).toHaveBeenCalledTimes(1);

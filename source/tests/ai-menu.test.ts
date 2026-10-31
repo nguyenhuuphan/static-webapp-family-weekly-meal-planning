@@ -254,7 +254,7 @@ describe("Gemini API boundary", () => {
     ]);
     expect(plan.meals[0].type).toBe("Breakfast");
     const [url, init] = fetcher.mock.calls[0];
-    expect(url).toContain("gemini-3.1-flash-lite:generateContent");
+    expect(url).toContain("gemini-3.5-flash-lite:generateContent");
     expect(init.headers["x-goog-api-key"]).toBe("test-only-key");
     const sent = JSON.parse(init.body);
     const requirements = JSON.parse(sent.contents[0].parts[0].text);

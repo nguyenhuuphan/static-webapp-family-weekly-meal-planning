@@ -5,11 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build && node scripts/ai-live-smoke.mjs",
-    "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && tsc --noEmit -p cloudflare/tsconfig.json && vite build",
+    "test": "vitest run && vitest run --config cloudflare/vitest.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p cloudflare/tsconfig.json",
     "preview": "vite preview",
-    "format": "prettier --write src tests"
+    "format": "prettier --write src tests",
+    "dev:cloudflare": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "test:cloudflare": "vitest run --config cloudflare/vitest.config.ts"
   },
   "dependencies": {
     "@netlify/blobs": "^11.1.6",
@@ -22,6 +27,7 @@
     "react-redux": "9.3.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20261031.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.1",
     "@types/node": "26.6.5",
@@ -32,6 +38,7 @@
     "sass": "1.105.1",
     "typescript": "5.9.3",
     "vite": "8.3.4",
-    "vitest": "4.1.11"
+    "vitest": "4.1.11",
+    "wrangler": "4.156.0"
   }
 }

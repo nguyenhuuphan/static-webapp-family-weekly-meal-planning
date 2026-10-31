@@ -14,6 +14,6 @@ export default defineConfig({
     maxWorkers: 2,
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
-    exclude: ["node_modules/**", "dist/**"],
+    exclude: ["node_modules/**", "dist/**", "cloudflare/tests/**"],
   },
 });

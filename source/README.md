@@ -1,10 +1,18 @@
+# Cloudflare development and deployment
+
+The current deployment target is **Cloudflare Workers Static Assets + D1 + Workflows**, with Cloudflare Access sign-in and the existing family access code. See [the migration runbook](../docs/cloudflare-migration.md). The retired Netlify configuration remains for rollback; it explicitly selects the legacy API prefix.
+
+Run `npm ci`, `npm test`, and `npm run build` in this directory. `npm run db:migrate:local` and `npm run dev:cloudflare` start the full local Worker/D1 workflow. Copy `.dev.vars.example` to the ignored `.dev.vars` and supply a private local family code. The development Access bypass is limited to loopback hosts and is not deployed. Plain `npm run dev` starts the frontend only.
+
+`wrangler.jsonc` intentionally contains an unprovisioned D1 identifier and empty Access settings until account setup is completed. Production denies access until login is configured; do not interpret a local build or dry run as a deployed website.
+
 # Weekday Table · React edition
 
-React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No account or paid API keys. Optional family sharing uses Netlify Functions + Blobs; new saved content uses the free MyMemory translation service. UI translations and built-in recipe translations are bundled locally.
+React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No personal ChatGPT subscription is used. The Cloudflare target uses Workers + D1 + Workflows with Cloudflare Access. New saved content can use the free MyMemory translation service. UI translations and built-in recipe translations are bundled locally.
 
 ## AI weekly menus
 
-Use **Create menu with AI** in the weekly plan. The guided popup collects diners, meal slots, cuisines, available cooking appliances and custom preferences, then previews a Gemini-generated bilingual draft before applying it. Configure `GEMINI_API_KEY` privately on Netlify. See [AI setup and limits](../docs/ai-menu.md) for free-tier configuration, background jobs, quota limits and schema-v2 compatibility.
+Use **Create menu with AI** in the weekly plan. The guided popup collects diners, meal slots, cuisines, available cooking appliances and custom preferences, then previews a Gemini-generated bilingual draft before applying it. Configure `GEMINI_API_KEY` privately on the Cloudflare Worker. See [AI setup and limits](../docs/ai-menu.md) for free-tier configuration, background jobs, quota limits and schema-v2 compatibility.
 
 ## Netlify shared data and automatic translation
 
@@ -22,30 +30,30 @@ When deploying this entire repository, the root `netlify.toml` sets base directo
 
 Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` and absolute `src/...` imports. Redux Toolkit owns persisted planner state; transient screen/editor state lives in hooks. There is no backend dependency.
 
-| Folder | Responsibility |
-| --- | --- |
-| `src/appConfig` | Storage key and app configuration |
-| `src/assets` | Code-based table illustration |
-| `src/components` | Application loading/error component |
-| `src/containers/MealPlanning` | WeeklyMenu and MealEditor with local schema.ts |
-| `src/containers/ShoppingManagement` | ShoppingList |
-| `src/containers/PreparationManagement` | PrepDay |
-| `src/containers/CookingManagement` | CookingSession |
-| `src/containers/SettingsManagement` | HouseholdSettings and AdvancedJson |
-| `src/containers/SafetyManagement` | SafetyGuide |
-| `src/helpers` | State hydration, initialization and recipe replacement |
-| `src/hooks` | Planner controller and screen context |
-| `src/i18n` | Typed language catalogues, recipe translations, Intl formatting and language preference |
-| `src/layout` | AppLayout and Sidebar |
-| `src/mocks` | Fresh meal-plan fixture for development/tests |
-| `src/modules/shared-main/components` | Shared Button and Heading |
-| `src/queries` | Default meal-plan query entry point |
-| `src/redux` | Typed store, selector/dispatch hooks and planner slice |
-| `src/scss` | Responsive application styles |
-| `src/services` | JSON loading and browser persistence |
-| `src/types` | Domain types |
-| `src/utils` | Quantities, dates and timer calculations |
-| `src/validations` | Plan and backup validation |
+| Folder                                 | Responsibility                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------------- |
+| `src/appConfig`                        | Storage key and app configuration                                                       |
+| `src/assets`                           | Code-based table illustration                                                           |
+| `src/components`                       | Application loading/error component                                                     |
+| `src/containers/MealPlanning`          | WeeklyMenu and MealEditor with local schema.ts                                          |
+| `src/containers/ShoppingManagement`    | ShoppingList                                                                            |
+| `src/containers/PreparationManagement` | PrepDay                                                                                 |
+| `src/containers/CookingManagement`     | CookingSession                                                                          |
+| `src/containers/SettingsManagement`    | HouseholdSettings and AdvancedJson                                                      |
+| `src/containers/SafetyManagement`      | SafetyGuide                                                                             |
+| `src/helpers`                          | State hydration, initialization and recipe replacement                                  |
+| `src/hooks`                            | Planner controller and screen context                                                   |
+| `src/i18n`                             | Typed language catalogues, recipe translations, Intl formatting and language preference |
+| `src/layout`                           | AppLayout and Sidebar                                                                   |
+| `src/mocks`                            | Fresh meal-plan fixture for development/tests                                           |
+| `src/modules/shared-main/components`   | Shared Button and Heading                                                               |
+| `src/queries`                          | Default meal-plan query entry point                                                     |
+| `src/redux`                            | Typed store, selector/dispatch hooks and planner slice                                  |
+| `src/scss`                             | Responsive application styles                                                           |
+| `src/services`                         | JSON loading and browser persistence                                                    |
+| `src/types`                            | Domain types                                                                            |
+| `src/utils`                            | Quantities, dates and timer calculations                                                |
+| `src/validations`                      | Plan and backup validation                                                              |
 
 `src/App.tsx` creates the Redux provider and planner context. Screens read `useMealPlanner()`; Redux actions contain serializable data. `src/domain.ts` is a compatibility export barrel. Default meals remain in `public/meal-plan.json`. To add a new screen, create its folder/index.tsx and wire it into AppLayout/Sidebar. Run `npm run format` to format code.
 

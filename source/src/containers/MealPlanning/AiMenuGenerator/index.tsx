@@ -1,3 +1,4 @@
+import { signInUrl } from "src/services/signIn";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { useI18n, useText } from "src/i18n";
@@ -323,12 +324,12 @@ function GeneratorDialog({ close }: { close: () => void }) {
       "The generated menu included a restricted ingredient and was rejected.",
     ),
     not_configured: text(
-      "AI chưa được bật. Quản trị viên cần thêm GEMINI_API_KEY vào Netlify Functions.",
-      "AI is not configured. The site owner needs to add GEMINI_API_KEY to Netlify Functions.",
+      "AI chưa được bật. Quản trị viên cần thêm GEMINI_API_KEY vào Cloudflare Worker.",
+      "AI is not configured. The site owner needs to add GEMINI_API_KEY to Cloudflare Worker.",
     ),
     unauthorized: text(
-      "Mã gia đình không đúng hoặc Netlify đang yêu cầu đăng nhập.",
-      "The family code is invalid, or Netlify requires sign-in.",
+      "Mã gia đình không đúng hoặc Cloudflare Access đang yêu cầu đăng nhập.",
+      "The family code is invalid, or Cloudflare Access requires sign-in.",
     ),
     daily_limit: text(
       "Đã hết số lượt tạo hôm nay. Menu hiện tại vẫn được giữ.",
@@ -351,8 +352,8 @@ function GeneratorDialog({ close }: { close: () => void }) {
       "Gemini denied access. The site owner should check the key, model and API access.",
     ),
     dispatch_failed: text(
-      "Chưa khởi động được AI. Kiểm tra Netlify SSO và Background Functions.",
-      "Could not start generation. Check Netlify SSO and Background Functions.",
+      "Chưa khởi động được AI. Kiểm tra Cloudflare Access và Workflows.",
+      "Could not start generation. Check Cloudflare Access and Workflows.",
     ),
     conflict: text(
       "Master prompt đã đổi trên thiết bị khác. Đóng và mở lại popup để tải bản mới.",
@@ -445,6 +446,16 @@ function GeneratorDialog({ close }: { close: () => void }) {
               "Chưa kết nối được dịch vụ. Dữ liệu hiện tại được giữ nguyên.",
               "The service is unavailable. Your current data is retained.",
             )}
+        </p>
+      )}
+      {["unauthorized", "network", "dispatch_failed"].includes(error) && (
+        <p>
+          <a href={signInUrl} target="_blank" rel="noopener noreferrer">
+            {text(
+              "Đăng nhập lại trên tab mới, rồi quay lại thử",
+              "Sign in in a new tab, then return to retry",
+            )}
+          </a>
         </p>
       )}
       {notice && <p role="status">{notice}</p>}

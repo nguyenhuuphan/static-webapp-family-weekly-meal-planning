@@ -11,6 +11,7 @@ self.addEventListener("activate", event => event.waitUntil((async () => { const 
 self.addEventListener("message", event => { if (event.data === "ACTIVATE_UPDATE") self.skipWaiting(); });
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
+  if (url.searchParams.has("sign-in") || url.pathname.startsWith("/cdn-cgi/")) return;
   if (event.request.method !== "GET" || url.origin !== self.location.origin || !url.href.startsWith(self.registration.scope)) return;
   const key = event.request.mode === "navigate" ? new URL("index.html", self.registration.scope).href : url.href;
   if (event.request.mode === "navigate") {

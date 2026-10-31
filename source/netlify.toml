@@ -3,6 +3,7 @@
   publish = "dist"
 [build.environment]
   NODE_VERSION = "24"
+  VITE_API_BASE = "/.netlify/functions"
 
 [functions]
   directory = "netlify/functions"

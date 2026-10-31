@@ -4,3 +4,11 @@ source/dist/
 .env.*
 !.env.example
 *.log
+
+source/.wrangler/
+source/.dev.vars
+source/.dev.vars.*
+!source/.dev.vars.example
+
+__pycache__/
+*.pyc

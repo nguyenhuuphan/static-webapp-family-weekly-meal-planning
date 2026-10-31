@@ -1,3 +1,4 @@
+import { apiEndpoint } from "src/services/apiEndpoint";
 export class MenuApiError extends Error {
   constructor(public code: string) {
     super(code);
@@ -9,8 +10,7 @@ export async function menuRequest<T>(
   job?: string,
 ): Promise<T> {
   const response = await fetch(
-    "/.netlify/functions/ai-menu" +
-      (job ? "?job=" + encodeURIComponent(job) : ""),
+    apiEndpoint("ai-menu") + (job ? "?job=" + encodeURIComponent(job) : ""),
     {
       method: body ? "POST" : "GET",
       cache: "no-store",

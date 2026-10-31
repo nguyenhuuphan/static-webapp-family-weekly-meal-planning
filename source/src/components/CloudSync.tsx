@@ -1,3 +1,4 @@
+import { signInUrl } from "src/services/signIn";
 import { useFamilyAccess } from "src/hooks/useFamilyAccess";
 import { useEffect, useRef, useState } from "react";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -143,8 +144,8 @@ export default function CloudSync() {
       "Synced. Devices using the same code receive changes while the app is open.",
     ),
     error: text(
-      "Chưa đồng bộ được. Kiểm tra kết nối, mã gia đình và cấu hình Netlify. Bản trên thiết bị vẫn được giữ.",
-      "Could not sync. Check your connection, family code and Netlify configuration. Your device copy is retained.",
+      "Chưa đồng bộ được. Kiểm tra kết nối, mã gia đình và cấu hình dịch vụ. Bản trên thiết bị vẫn được giữ.",
+      "Could not sync. Check your connection, family code and service configuration. Your device copy is retained.",
     ),
     conflict: text(
       "Có bản khác đã lưu. Xuất backup trước, rồi ngắt kết nối và mở bản dùng chung. Không tự ghi đè.",
@@ -158,6 +159,13 @@ export default function CloudSync() {
     >
       <h2>{text("Đồng bộ gia đình", "Family sync")}</h2>
       <p role="status">{messages[displayStatus]}</p>
+      {status === "error" && (
+        <p>
+          <a href={signInUrl} target="_blank" rel="noopener noreferrer">
+            {text("Đăng nhập lại trên tab mới", "Sign in again in a new tab")}
+          </a>
+        </p>
+      )}
       {!session ? (
         <>
           <label>

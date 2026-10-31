@@ -115,4 +115,22 @@ it("fetches current HTML online and leaves function requests uncached", async ()
     respondWith,
   });
   expect(respondWith).not.toHaveBeenCalled();
+  events.fetch({
+    request: {
+      method: "GET",
+      mode: "navigate",
+      url: "https://example.test/?sign-in=1",
+    },
+    respondWith,
+  });
+  expect(respondWith).not.toHaveBeenCalled();
+  events.fetch({
+    request: {
+      method: "GET",
+      mode: "navigate",
+      url: "https://example.test/cdn-cgi/access/login",
+    },
+    respondWith,
+  });
+  expect(respondWith).not.toHaveBeenCalled();
 });

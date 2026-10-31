@@ -1,0 +1,4 @@
+# Local development only. Real secrets must never be committed.
+DEV_ALLOW_AUTH_BYPASS="true"
+FAMILY_ACCESS_CODE="replace-with-a-private-code-at-least-16-characters"
+GEMINI_API_KEY=""

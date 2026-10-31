@@ -1,3 +1,4 @@
+import { apiEndpoint } from "src/services/apiEndpoint";
 import type { Language } from "./catalog";
 
 const cache = new Map<string, string>();
@@ -64,7 +65,7 @@ export function automaticContent(value: string, target: Language): string {
     pending.add(key);
     queue.push(async () => {
       try {
-        const response = await fetch("/.netlify/functions/translate", {
+        const response = await fetch(apiEndpoint("translate"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: value, target }),

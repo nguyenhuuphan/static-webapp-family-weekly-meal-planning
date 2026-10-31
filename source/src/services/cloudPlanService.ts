@@ -1,3 +1,4 @@
+import { apiEndpoint } from "src/services/apiEndpoint";
 import type { State } from "src/types";
 export class CloudError extends Error {
   constructor(public status: number) {
@@ -9,7 +10,7 @@ export async function cloudRequest(
   state?: State,
   revision?: string | null,
 ) {
-  const response = await fetch("/.netlify/functions/family-plan", {
+  const response = await fetch(apiEndpoint("family-plan"), {
     method: state ? "PUT" : "GET",
     headers: {
       Authorization: `Bearer ${code}`,

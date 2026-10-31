@@ -76,9 +76,20 @@ export default function AIProviderStatus({
       <strong>{title}</strong>
       {generating && progress && (
         <span>
-          {progress.batch === "alternatives"
-            ? text("Đang tạo 5 món thay thế", "Generating 5 alternatives")
-            : text("Đang tạo bữa ", "Generating ") + content(progress.batch)}
+          {progress.activity === "planning_alternatives"
+            ? text(
+                "Đang chọn 5 món thay thế khác nhau",
+                "Choosing 5 distinct alternatives",
+              )
+            : progress.activity === "repairing_translations"
+              ? text(
+                  "Đang sửa bản dịch, giữ nguyên công thức và định lượng",
+                  "Repairing translations; recipes and quantities stay unchanged",
+                )
+              : progress.batch === "alternatives"
+                ? text("Đang tạo 5 món thay thế", "Generating 5 alternatives")
+                : text("Đang tạo bữa ", "Generating ") +
+                  content(progress.batch)}
         </span>
       )}
       {generating &&

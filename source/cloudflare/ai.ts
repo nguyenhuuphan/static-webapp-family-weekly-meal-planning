@@ -1,4 +1,15 @@
 import {
+  CHOICES_SYSTEM,
+  CHOICES_SCHEMA,
+  validateChoices,
+  choiceRecipeSchema,
+} from "./alternativeChoices";
+import {
+  normalizeRecipeTranslations,
+  translationRepairRequest,
+  TRANSLATION_REPAIR_SYSTEM,
+} from "../src/server/recipeTranslations";
+import {
   generateMenuBatch,
   generationPayload,
   providerSchema,
@@ -30,6 +41,27 @@ export function cloudflareSchema(input: MenuInput) {
           ...recipe,
           properties: {
             ...recipe.properties,
+            equipment: input.equipment.includes("No heating appliance")
+              ? { type: "array", items: { type: "string" }, maxItems: 0 }
+              : {
+                  type: "array",
+                  items: { type: "string", enum: input.equipment },
+                },
+            minutes: { type: "integer", minimum: 1, maximum: input.maxMinutes },
+            ingredients: {
+              ...recipe.properties.ingredients,
+              items: {
+                ...recipe.properties.ingredients.items,
+                properties: {
+                  ...recipe.properties.ingredients.items.properties,
+                  unit: {
+                    type: "string",
+                    enum: ["g", "ml", "each", "tsp", "tbsp"],
+                  },
+                  qty: { type: "number", exclusiveMinimum: 0 },
+                },
+              },
+            },
             steps: {
               ...recipe.properties.steps,
               minItems: 4,
@@ -53,6 +85,20 @@ export function cloudflareSchema(input: MenuInput) {
       },
     },
   };
+}
+function parseCloudflareOutput(output: unknown): unknown {
+  let raw: unknown = output;
+  if (raw && typeof raw === "object") {
+    const response = raw as {
+      response?: unknown;
+      choices?: { finish_reason?: string; message?: { content?: string } }[];
+    };
+    if (response.choices?.[0]?.finish_reason === "length")
+      throw new GenerationError("invalid_output");
+    raw = response.choices?.[0]?.message?.content ?? response.response ?? raw;
+  }
+  if (typeof raw === "string") raw = JSON.parse(raw);
+  return raw;
 }
 const FALLBACK_CODES = new Set([
   "quota",
@@ -80,7 +126,16 @@ export async function generateWithBackup(
     event: Omit<MenuProviderProgress, "batch">,
   ) => Promise<void>,
 ) {
+  let chosenNames: string[] | undefined;
   const validateBatch = (plan: Plan) => {
+    if (
+      chosenNames &&
+      JSON.stringify(plan.meals.map((meal) => meal.main)) !==
+        JSON.stringify(chosenNames)
+    )
+      throw new GenerationError("invalid_output", {
+        reason: "alternative_choice_mismatch",
+      });
     if (context.alternatives) {
       const names = new Set(
         context.meals.map((m) => m.main.trim().toLowerCase()),
@@ -116,15 +171,77 @@ export async function generateWithBackup(
       throw error;
     fallbackReason = error instanceof GenerationError ? error.code : "network";
   }
-  const payload = JSON.stringify(
-    generationPayload(input, masterPrompt, recentMeals, context),
+  const basePayload = generationPayload(
+    input,
+    masterPrompt,
+    recentMeals,
+    context,
   );
+  let payload = JSON.stringify(basePayload);
+  let outputSchema: unknown = cloudflareSchema(input);
+  if (context.alternatives) {
+    const choiceInput = JSON.stringify({
+      requirements: context.requirements,
+      masterPrompt,
+      plannedMeals: context.meals.map((meal) => ({
+        main: meal.main,
+        ingredients: meal.ingredients.map((i) => i.name),
+      })),
+      previousMealsToAvoid: recentMeals,
+    });
+    if (
+      new TextEncoder().encode(
+        CHOICES_SYSTEM + choiceInput + JSON.stringify(CHOICES_SCHEMA),
+      ).length > (context.diagnostic ? 24000 : 64000)
+    )
+      throw new GenerationError("backup_input_limit");
+    if (
+      !(await reserveGeneration(
+        env.DB,
+        context.diagnostic ? "8" : "6",
+        context.diagnostic ? "cloudflare-ai-diagnostics" : "cloudflare-ai",
+      ))
+    )
+      throw new GenerationError("backup_quota");
+    await onProviderStart?.({
+      provider: "cloudflare",
+      model: CLOUDFLARE_MODEL,
+      activity: "planning_alternatives",
+      ...(fallbackReason ? { fallbackReason } : {}),
+    });
+    let result: unknown;
+    try {
+      result = await env.AI!.run(CLOUDFLARE_MODEL, {
+        messages: [
+          { role: "system", content: CHOICES_SYSTEM },
+          { role: "user", content: choiceInput + "\n/no_think" },
+        ],
+        response_format: { type: "json_schema", json_schema: CHOICES_SCHEMA },
+        max_tokens: 1024,
+        stream: false,
+      });
+    } catch {
+      throw new GenerationError("backup_unavailable");
+    }
+    const choices = validateChoices(
+      parseCloudflareOutput(result),
+      context.meals,
+    );
+    chosenNames = choices.map((choice) => choice.en);
+    outputSchema = choiceRecipeSchema(cloudflareSchema(input), input, choices);
+    payload = JSON.stringify({
+      ...basePayload,
+      responseSchema: outputSchema,
+      chosenAlternatives: choices,
+      finalInstruction:
+        "Write the five chosen recipes exactly once using the supplied object keys and fixed dish names. Do not invent or repeat dish names. Produce complete recipes matching the original requirements and all translations.",
+    });
+  }
   // Six regular calls below ~800 neurons each; eight smaller diagnostic calls below ~612 each.
   // A shared account's other Workers AI usage still counts toward the account limit.
   if (
-    new TextEncoder().encode(
-      SYSTEM + payload + JSON.stringify(cloudflareSchema(input)),
-    ).length > (context.diagnostic ? 24000 : 64000)
+    new TextEncoder().encode(SYSTEM + payload + JSON.stringify(outputSchema))
+      .length > (context.diagnostic ? 24000 : 64000)
   )
     throw new GenerationError("backup_input_limit");
   if (
@@ -148,22 +265,47 @@ export async function generateWithBackup(
       ],
       response_format: {
         type: "json_schema",
-        json_schema: cloudflareSchema(input),
+        json_schema: outputSchema,
       },
       max_tokens: 16384,
       stream: false,
     });
-    let raw: unknown = output;
-    if (raw && typeof raw === "object") {
-      const response = raw as {
-        response?: unknown;
-        choices?: { finish_reason?: string; message?: { content?: string } }[];
-      };
-      if (response.choices?.[0]?.finish_reason === "length")
-        throw new GenerationError("invalid_output");
-      raw = response.choices?.[0]?.message?.content ?? response.response ?? raw;
+    let raw = normalizeRecipeTranslations(parseCloudflareOutput(output));
+    const repair = translationRepairRequest(raw);
+    if (repair) {
+      // One small translation-only request. English recipes and all protected numbers stay fixed.
+      if (
+        !(await reserveGeneration(
+          env.DB,
+          context.diagnostic ? "8" : "6",
+          context.diagnostic ? "cloudflare-ai-diagnostics" : "cloudflare-ai",
+        ))
+      )
+        throw new GenerationError("backup_quota");
+      await onProviderStart?.({
+        provider: "cloudflare",
+        model: CLOUDFLARE_MODEL,
+        activity: "repairing_translations",
+        ...(fallbackReason ? { fallbackReason } : {}),
+      });
+      const repaired = await env.AI!.run(CLOUDFLARE_MODEL, {
+        messages: [
+          { role: "system", content: TRANSLATION_REPAIR_SYSTEM },
+          { role: "user", content: repair.input + "\n/no_think" },
+        ],
+        response_format: { type: "json_schema", json_schema: repair.schema },
+        max_tokens: 4096,
+        stream: false,
+      });
+      try {
+        raw = repair.apply(parseCloudflareOutput(repaired));
+      } catch {
+        throw new GenerationError("invalid_output", {
+          reason: "translation_repair",
+        });
+      }
     }
-    if (typeof raw === "string") raw = JSON.parse(raw);
+
     return {
       plan: validateBatch(validateGeneratedPlan(raw, input)),
       provider: "cloudflare" as const,

@@ -130,6 +130,46 @@ describe("Cloudflare backup", () => {
     expect(result.provider).toBe("cloudflare");
     expect(env.AI!.run).toHaveBeenCalledTimes(1);
   });
+  it("repairs only broken translations once and validates the complete recipe afterwards", async () => {
+    const env = environment();
+    delete env.GEMINI_API_KEY;
+    const raw = aiBilingualOutput();
+    Object.values(raw.meals)[0].prep[0].text.vi = "Bản dịch thiếu định lượng";
+    vi.mocked(env.AI!.run)
+      .mockReset()
+      .mockImplementation(async (_model, payload) => {
+        const request = payload as { messages: { content: string }[] };
+        if (request.messages[0].content.startsWith("Translate each")) {
+          const input = JSON.parse(
+            request.messages[1].content.replace("\n/no_think", ""),
+          );
+          return {
+            response: {
+              translations: input.translations.map(
+                (field: { id: number; en: string }) => ({
+                  id: field.id,
+                  vi: "VI " + field.en,
+                }),
+              ),
+            },
+          } as never;
+        }
+        return { response: raw } as never;
+      });
+    const starts = vi.fn().mockResolvedValue(undefined);
+    const generated = await generateWithBackup(
+      env,
+      aiInput,
+      DEFAULT_MASTER_PROMPT,
+      [],
+      context,
+      undefined,
+      starts,
+    );
+    expect(generated.plan.meals).toHaveLength(1);
+    expect(env.AI!.run).toHaveBeenCalledTimes(2);
+    expect(starts.mock.calls[1][0].activity).toBe("repairing_translations");
+  });
   it("uses successful Gemini output without calling the backup", async () => {
     const env = environment();
     vi.stubGlobal(

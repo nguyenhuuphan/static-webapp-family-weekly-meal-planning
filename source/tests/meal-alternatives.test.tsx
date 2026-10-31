@@ -56,6 +56,8 @@ describe("five replacement recipes", () => {
     expect(swapped.pantry).toEqual(state.pantry);
     expect(swapped.purchased).toEqual(state.purchased);
     expect(swapped.progress.ready[second]).toBe(true);
+    const returned = swapped.plan.alternatives![1].prep[0].text;
+    expect(swapped.plan.translations!.vi[returned]).toBeTruthy();
     state.cookingBatches = {
       [first]: { servings: 2, startedAt: new Date().toISOString() },
     };

@@ -1,6 +1,6 @@
 import type { MenuInput } from "./contracts";
 import { DAYS, type Plan } from "../types";
-import { unschedule } from "../helpers/mealAlternatives";
+import { flexibleAlternative } from "../helpers/mealAlternatives";
 export function alternativeInput(input: MenuInput): MenuInput {
   return {
     ...input,
@@ -21,13 +21,11 @@ export function attachAlternatives(plan: Plan, options: Plan): Plan {
     if (names.has(name)) throw Error("Alternative dishes must be different");
     names.add(name);
   }
-  return {
-    ...plan,
-    alternatives: options.meals.map((meal, index) =>
-      unschedule(meal, `alternative-${index + 1}`),
-    ),
-    translations: {
-      vi: { ...plan.translations?.vi, ...options.translations?.vi },
-    },
-  };
+  let vi = { ...plan.translations?.vi, ...options.translations?.vi };
+  const alternatives = options.meals.map((meal, index) => {
+    const flexible = flexibleAlternative(meal, `alternative-${index + 1}`, vi);
+    vi = flexible.translations;
+    return flexible.recipe;
+  });
+  return { ...plan, alternatives, translations: { vi } };
 }

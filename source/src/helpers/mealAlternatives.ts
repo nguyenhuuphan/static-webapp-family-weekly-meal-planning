@@ -28,21 +28,13 @@ export function unschedule(meal: Meal, id: string): MealAlternative {
   const { day: _day, type: _type, ...recipe } = meal;
   return recipeWithId(recipe, id);
 }
-export function swapPlanMeal(
-  plan: Plan,
-  mealId: string,
-  alternativeId: string,
-): Plan {
-  const original = plan.meals.find((m) => m.id === mealId);
-  const option = plan.alternatives?.find((m) => m.id === alternativeId);
-  if (!original || !option) throw Error("This recipe is no longer available.");
-  const replacement: Meal = {
-    ...recipeWithId(option, original.id),
-    day: original.day,
-    type: original.type,
-  };
-  const returned = unschedule(original, alternativeId);
-  const translations = { ...plan.translations?.vi };
+export function flexibleAlternative(
+  meal: Meal,
+  id: string,
+  vi: Record<string, string> = {},
+) {
+  const returned = unschedule(meal, id);
+  const translations = { ...vi };
   // A recipe returned to the pool can be selected for another day. Remove stale container/day labels.
   const flexible = (source: string) => {
     const result = source.replace(
@@ -73,6 +65,26 @@ export function swapPlanMeal(
     if (step.label) step.label = flexible(step.label);
     if (step.storage) step.storage = flexible(step.storage);
   }
+  return { recipe: returned, translations };
+}
+export function swapPlanMeal(
+  plan: Plan,
+  mealId: string,
+  alternativeId: string,
+): Plan {
+  const original = plan.meals.find((m) => m.id === mealId);
+  const option = plan.alternatives?.find((m) => m.id === alternativeId);
+  if (!original || !option) throw Error("This recipe is no longer available.");
+  const replacement: Meal = {
+    ...recipeWithId(option, original.id),
+    day: original.day,
+    type: original.type,
+  };
+  const { recipe: returned, translations } = flexibleAlternative(
+    original,
+    alternativeId,
+    plan.translations?.vi,
+  );
   const next = {
     ...plan,
     translations: { vi: translations },
@@ -107,5 +119,6 @@ export function swapStateMeal(
     plan.meals.find((m) => m.id === mealId)!,
   );
   updated.plan.alternatives = plan.alternatives;
+  updated.plan.translations = plan.translations;
   return updated;
 }

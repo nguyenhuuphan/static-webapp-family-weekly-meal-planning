@@ -71,7 +71,8 @@ export function aiBilingualOutput(input = aiInput) {
   return {
     name: text(output.name),
     meals: output.meals.map((meal) => ({
-      ...meal,
+      equipment: meal.equipment,
+      minutes: meal.minutes,
       main: text(meal.main),
       side: text(meal.side),
       storage: text(meal.storage),

@@ -171,8 +171,7 @@ describe("Gemini API boundary", () => {
     const mealSchema =
       sent.generationConfig.responseJsonSchema.properties.meals;
     expect(mealSchema.minItems).toBe(1);
-    expect(mealSchema.maxItems).toBe(1);
-    expect(mealSchema.items.properties.id.enum).toEqual(["sat-breakfast"]);
+    expect(plan.meals[0].id).toBe("sat-breakfast");
     expect(mealSchema.items.properties.minutes.maximum).toBe(
       aiInput.maxMinutes,
     );

@@ -74,12 +74,7 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
               const plan = await generateMenuBatch(
                 { ...claimed.job.input, mealTypes: [type] },
                 claimed.job.masterPrompt,
-                [
-                  ...claimed.job.recentMeals,
-                  ...plans.flatMap((plan) =>
-                    plan.meals.map((meal) => meal.main),
-                  ),
-                ],
+                claimed.job.recentMeals,
                 {
                   apiKey: this.env.GEMINI_API_KEY,
                   ...(claimed.job.diagnostic === true
@@ -96,6 +91,10 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
                         },
                       }
                     : {}),
+                },
+                {
+                  requirements: claimed.job.input,
+                  meals: plans.flatMap((plan) => plan.meals),
                 },
               );
               return { status: "ready" as const, plan };

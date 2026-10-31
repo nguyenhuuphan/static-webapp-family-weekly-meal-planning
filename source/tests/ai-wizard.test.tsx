@@ -15,7 +15,12 @@ import { aiInput, aiPlan } from "./ai-fixtures";
 const code = "test-only-family-access-code",
   id = "20000000-0000-4000-8000-000000000001";
 afterEach(() => vi.unstubAllGlobals());
-async function boot(configured = true, ready = false, savedPlan?: Plan) {
+async function boot(
+  configured = true,
+  ready = false,
+  savedPlan?: Plan,
+  savedMaster = DEFAULT_MASTER_PROMPT,
+) {
   const initial = freshState(data as Plan);
   initial.weekStart = "2026-10-26";
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
@@ -25,7 +30,7 @@ async function boot(configured = true, ready = false, savedPlan?: Plan) {
         revision: "v1",
         status: "ready",
         input: aiInput,
-        masterPrompt: DEFAULT_MASTER_PROMPT,
+        masterPrompt: savedMaster,
         recentMeals: [],
         createdAt: new Date().toISOString(),
         plan: savedPlan || aiPlan(),
@@ -264,4 +269,33 @@ it("keeps prototype-like translation source keys after a generated menu is appli
       0,
     ),
   );
+});
+
+it("starts a new request with current family defaults and lets the user restore the English default without generating", async () => {
+  const { fetcher, dialog } = await boot(
+    true,
+    true,
+    undefined,
+    "Instructions used by an older draft",
+  );
+  const ui = within(dialog);
+  await ui.findByRole("button", { name: "Apply this menu" });
+  fireEvent.click(
+    ui.getByRole("button", { name: "Change request / create another menu" }),
+  );
+  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  fireEvent.click(ui.getByText("Shared master prompt"));
+  const master = ui.getByLabelText(
+    "General instructions for AI",
+  ) as HTMLTextAreaElement;
+  expect(master.value).toBe(DEFAULT_MASTER_PROMPT);
+  fireEvent.change(master, { target: { value: "Temporary preference" } });
+  fireEvent.click(ui.getByRole("button", { name: "Use default prompt" }));
+  expect(master.value).toBe(DEFAULT_MASTER_PROMPT);
+  expect(
+    fetcher.mock.calls.filter(
+      ([, init]) =>
+        init?.body && JSON.parse(init.body as string).action === "generate",
+    ),
+  ).toHaveLength(0);
 });

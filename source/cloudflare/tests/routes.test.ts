@@ -47,6 +47,22 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("D1 and Cloudflare routes", () => {
+  it("serves the current default for an unconfigured family and preserves a saved custom master", async () => {
+    const fallback = await (await aiMenu(request("/api/ai-menu"), env)).json();
+    expect(fallback).toMatchObject({
+      masterPrompt: DEFAULT_MASTER_PROMPT,
+      revision: null,
+    });
+    const store = new DocumentStore(env.DB, "ai");
+    await store.setJSON("settings", {
+      masterPrompt: "Custom family instructions",
+    });
+    const configured = (await (
+      await aiMenu(request("/api/ai-menu"), env)
+    ).json()) as { masterPrompt: string; revision: string | null };
+    expect(configured.masterPrompt).toBe("Custom family instructions");
+    expect(configured.revision).toBeTruthy();
+  });
   it("uses persistent revisions and rejects competing writes", async () => {
     const store = new DocumentStore(env.DB, "test");
     expect(
@@ -195,6 +211,15 @@ describe("D1 and Cloudflare routes", () => {
         if (failSecond && calls === 2)
           return new Response(null, { status: 429 });
         const batch = JSON.parse(JSON.parse(init.body).input).requirements;
+        const context = JSON.parse(JSON.parse(init.body).input);
+        expect(context.weekRequirements.mealTypes).toEqual(MEAL_TYPES);
+        expect(context.plannedMealsThisWeek).toHaveLength(
+          (calls - 1) * DAYS.length,
+        );
+        if (calls > 1)
+          expect(
+            context.plannedMealsThisWeek[0].ingredients[0].name,
+          ).toBeTruthy();
         return Response.json({
           status: "completed",
           steps: [

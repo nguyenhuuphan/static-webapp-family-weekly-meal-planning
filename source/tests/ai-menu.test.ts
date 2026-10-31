@@ -249,8 +249,17 @@ describe("Gemini API boundary", () => {
   it("assembles a complete week from bounded meal-time requests and stops on a failed batch", async () => {
     const input = { ...aiInput, days: [...DAYS], mealTypes: [...MEAL_TYPES] };
     const requests: (typeof input)[] = [];
+    const weeklyContexts: {
+      weekRequirements: typeof input;
+      plannedMealsThisWeek: {
+        main: string;
+        ingredients: { name: string; qty: number; unit: string }[];
+      }[];
+    }[] = [];
     const fetcher = vi.fn().mockImplementation(async (_url, init) => {
-      const batch = JSON.parse(JSON.parse(init.body).input).requirements;
+      const payload = JSON.parse(JSON.parse(init.body).input);
+      const batch = payload.requirements;
+      weeklyContexts.push(payload);
       requests.push(batch);
       expect(batch.mealTypes).toHaveLength(1);
       expect(
@@ -273,6 +282,20 @@ describe("Gemini API boundary", () => {
       apiKey: "test-key",
     });
     expect(requests.map((batch) => batch.mealTypes[0])).toEqual(MEAL_TYPES);
+    expect(
+      weeklyContexts.map((context) => context.plannedMealsThisWeek.length),
+    ).toEqual([0, 7, 14]);
+    expect(weeklyContexts[1].weekRequirements.mealTypes).toEqual(MEAL_TYPES);
+    expect(weeklyContexts[1].plannedMealsThisWeek[0].main).toBe(
+      plan.meals[0].main,
+    );
+    expect(weeklyContexts[1].plannedMealsThisWeek[0].ingredients).toEqual(
+      plan.meals[0].ingredients.map(({ name, qty, unit }) => ({
+        name,
+        qty,
+        unit,
+      })),
+    );
     expect(plan.meals).toHaveLength(21);
     expect(plan.meals.slice(0, 3).map((meal) => meal.id)).toEqual([
       "mon-breakfast",

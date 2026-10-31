@@ -909,17 +909,29 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   )}
                   <textarea
                     rows={7}
+                    aria-label={text(
+                      "Hướng dẫn chung cho AI",
+                      "General instructions for AI",
+                    )}
                     maxLength={6000}
                     value={master}
                     onChange={(e) => setMaster(e.target.value)}
                   />
                 </label>
-                <Button
-                  disabled={!settings || busy}
-                  onClick={() => void saveMaster()}
-                >
-                  {text("Lưu master prompt", "Save master prompt")}
-                </Button>
+                <div className="actions">
+                  <Button
+                    disabled={busy}
+                    onClick={() => setMaster(DEFAULT_MASTER_PROMPT)}
+                  >
+                    {text("Dùng prompt mặc định", "Use default prompt")}
+                  </Button>
+                  <Button
+                    disabled={!settings || busy}
+                    onClick={() => void saveMaster()}
+                  >
+                    {text("Lưu master prompt", "Save master prompt")}
+                  </Button>
+                </div>
               </details>
             </>
           )}
@@ -1084,6 +1096,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
                 setPreview(null);
                 submissionId.current = null;
                 setStep(0);
+                setMaster(settings?.masterPrompt || DEFAULT_MASTER_PROMPT);
                 setError("");
               }}
             >
@@ -1202,6 +1215,9 @@ function GeneratorDialog({ close }: { close: () => void }) {
                         setPreview(null);
                         submissionId.current = null;
                         setStep(0);
+                        setMaster(
+                          settings?.masterPrompt || DEFAULT_MASTER_PROMPT,
+                        );
                         setError("");
                         setNotice("");
                       }}

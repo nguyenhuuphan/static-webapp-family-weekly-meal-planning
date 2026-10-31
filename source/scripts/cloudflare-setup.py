@@ -112,7 +112,10 @@ def main():
     if verified.get('status') != 'active':
         raise SetupError('Cloudflare token is not active.')
     config_path = ROOT / 'wrangler.jsonc'
-    config = json.loads(config_path.read_text())
+    config = json.loads(run('node', '--input-type=module', '-e',
+        "import {readFileSync} from 'node:fs'; import {parse} from 'jsonc-parser'; "
+        "const errors=[]; const config=parse(readFileSync('wrangler.jsonc','utf8'),errors,{allowTrailingComma:true}); "
+        "if(errors.length) throw Error('Invalid Wrangler JSONC'); process.stdout.write(JSON.stringify(config));", capture=True))
     name = config['name']
     subdomain = api.call(f'/accounts/{account}/workers/subdomain', missing_ok=True)
     if not subdomain or not subdomain.get('subdomain'):

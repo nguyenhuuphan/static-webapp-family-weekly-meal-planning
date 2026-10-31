@@ -4,31 +4,31 @@ The current deployment target is **Cloudflare Workers Static Assets + D1 + Workf
 
 Run `npm ci`, `npm test`, and `npm run build` in this directory. `npm run db:migrate:local` and `npm run dev:cloudflare` start the full local Worker/D1 workflow. Copy `.dev.vars.example` to the ignored `.dev.vars` and supply a private local family code. The development Access bypass is limited to loopback hosts and is not deployed. Plain `npm run dev` starts the frontend only.
 
-`wrangler.jsonc` intentionally contains an unprovisioned D1 identifier and empty Access settings until account setup is completed. Production denies access until login is configured; do not interpret a local build or dry run as a deployed website.
+`wrangler.jsonc` contains the provisioned account, D1 and Access identifiers. The production URL is https://family-weekly-meal-planning.family-3adfa3459c6c.workers.dev . Runtime credentials belong in Worker secrets. A successful deployment does not replace live API/AI verification; follow the migration runbook.
 
 # Weekday Table · React edition
 
-React 19 + TypeScript + Vite. English/Vietnamese family meal planner with 10 Monday–Friday lunch/dinner slots. No personal ChatGPT subscription is used. The Cloudflare target uses Workers + D1 + Workflows with Cloudflare Access. New saved content can use the free MyMemory translation service. UI translations and built-in recipe translations are bundled locally.
+React 19 + TypeScript + Vite. English/Vietnamese family meal planner with ten default weekday lunch/dinner slots and AI menus supporting up to 21 weekly slots. No personal ChatGPT subscription is used. The Cloudflare target uses Workers + D1 + Workflows with Cloudflare Access. New saved content can use the free MyMemory translation service. UI translations and built-in recipe translations are bundled locally.
 
 ## AI weekly menus
 
 Use **Create menu with AI** in the weekly plan. The guided popup collects diners, meal slots, cuisines, available cooking appliances and custom preferences, then previews a Gemini-generated bilingual draft before applying it. Configure `GEMINI_API_KEY` privately on the Cloudflare Worker. See [AI setup and limits](../docs/ai-menu.md) for free-tier configuration, background jobs, quota limits and schema-v2 compatibility.
 
-## Netlify shared data and automatic translation
+## Legacy Netlify deployment
 
 See [setup instructions](../docs/netlify-sync.md). Configure a private `FAMILY_ACCESS_CODE` (at least 16 characters) in Netlify Functions environment variables and deploy from Git so both static assets and functions are included. Uploading only `dist` supports local editing and bundled translations but cannot provide shared storage or automatic custom-content translation.
 
-## Deploy the ready-made build
+### Frontend-only manual build
 
-Extract the delivery ZIP. Upload the **dist** folder to https://app.netlify.com/drop or your existing site's manual deploy area. Do not upload the parent folder containing source and dist. This folder already contains compiled React assets, index.html, editable meal-plan.json and _headers. No local install/build is required for manual deployment.
+A manual upload of `dist` contains only the frontend. Shared storage, AI generation and custom-content translation require the server deployment described above. The existing Netlify configuration is retained for rollback.
 
-## Develop or deploy from Git
+### Legacy builds from Git
 
 When deploying this entire repository, the root `netlify.toml` sets base directory `source`, build command `npm run build`, and publish directory `dist` relative to that base (the generated `source/dist` folder). If you instead use **source** as a standalone repository root, its included `netlify.toml` sets the same build command and publish directory without a base directory. Node 24 is recommended (Vite requires modern Node). For local development, run `npm ci`, `npm run dev`, `npm test`, and `npm run build` inside **source**. `npm run typecheck` checks TypeScript separately.
 
 ## Source structure
 
-Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` and absolute `src/...` imports. Redux Toolkit owns persisted planner state; transient screen/editor state lives in hooks. There is no backend dependency.
+Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` and absolute `src/...` imports. Redux Toolkit owns persisted planner state; transient screen/editor state lives in hooks. `cloudflare/` implements authenticated APIs, D1 storage and AI Workflows.
 
 | Folder                                 | Responsibility                                                                          |
 | -------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -71,11 +71,11 @@ Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` an
 
 ## Preserving the older app's data
 
-The browser key remains `weekday-table:v1` and the JSON schema remains 1. Deploy this upgrade to the **same Netlify site/domain** to read valid old plan edits, servings, progress and active timers automatically. Browser storage is scoped to origin: a different website URL, browser profile or device cannot read it. Export from the older app first for a backup; import works across devices, but starts fresh checklists. Never clear browser storage if you want to preserve it.
+The browser key remains `weekday-table:v1`; both legacy schema-v1 and flexible schema-v2 plans are supported. Browser storage is scoped to origin: a different website URL, browser profile or device cannot read it. This migration initializes the Cloudflare destination with the owner's chosen default menu. The old Netlify site remains available for exporting personal edits if needed. Never clear browser storage to refresh the app.
 
 ## Defaults versus personal edits
 
-The file `public/meal-plan.json` (or `dist/meal-plan.json` in a manual deployment) is the default menu for new browsers. Existing browser edits take precedence. Export provides `{plan, servings}`; to update deployment defaults, use the `plan` object as meal-plan.json and redeploy. Export includes menu and serving setting, not progress, timers or week-start. Family sync is opt-in per page session using the configured family code. JSON is stored in Netlify Blobs, not committed into this repository.
+The file `public/meal-plan.json` is the bundled default. Family Sync connects each device using the configured family code after Access sign-in. Shared JSON is stored in Cloudflare D1 with revision checks, not committed into this repository. Browser state remains available if a request fails; review any conflict before replacing a newer shared copy.
 
 Legacy schema-v1 plans require 10 unique Monday–Friday lunch/dinner slots. Schema-v2 plans support 1–21 unique breakfast/lunch/dinner slots across Monday–Sunday. Ingredient units: g, ml, each, tsp, tbsp. Tablespoons and teaspoons are consolidated by volume in shopping; no volume-to-weight conversion is invented. Edible weights exclude peel/bones/shells. Rice and cooking water are managed separately.
 
@@ -91,4 +91,4 @@ Timers keep the deadline across refresh/view changes. There are no OS notificati
 
 Vitest tests cover quantity aggregation/scaling, schema validation, timer math, old-state hydration, targeted recipe reset, and React interactions in jsdom: shopping/owned flags, prep, cooking, readiness, completion, timer, recipe edit/copy, servings/default restore, advanced JSON, import and export. `npm run build` runs TypeScript checks then produces minified static assets.
 
-Localization tests also cover translation completeness, quantity preservation, browser/saved preferences, unavailable storage, and language switching while shopping, preparing, cooking and editing. Chrome headless checks cover Vietnamese layouts at widths 320–1440 and shopping/settings/editor on mobile, with no horizontal page overflow or runtime exceptions. Print/download behavior and the deployed Netlify site still need deployment-specific checks; this change has not been published to Netlify.
+Localization tests also cover translation completeness, quantity preservation, browser/saved preferences, unavailable storage, and language switching while shopping, preparing, cooking and editing. Cloudflare tests cover Access verification, family authorization, D1 concurrency and Workflow behavior. Use `scripts/verify-cloudflare.py` for the private production site; its optional live generation check consumes one daily allowance. Owner email OTP and print/download behavior also need browser verification.

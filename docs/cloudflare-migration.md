@@ -39,6 +39,21 @@ The Cloudflare test suite uses SQLite to exercise real SQL revision checks and a
 
 Workers and D1 are provisioned in the owner's Cloudflare account. Worker static assets and API routes share one hostname. The canonical routes are `/api/family-plan`, `/api/ai-menu`, `/api/translate` and the authenticated `/api/health`. Legacy `/.netlify/functions/...` aliases remain during migration, but production does not execute the retired Netlify handlers.
 
+## Private production checks
+
+The configured deployment is https://family-weekly-meal-planning.family-3adfa3459c6c.workers.dev . Sign in with the approved owner email, then connect Family Sync using the existing family code. The destination was initialized with the owner-selected bundled menu; personal edits on the old Netlify origin remain there.
+
+From `source`, with the administration token securely available:
+
+```
+python3 scripts/verify-cloudflare.py --url https://family-weekly-meal-planning.family-3adfa3459c6c.workers.dev
+python3 scripts/verify-cloudflare.py --url https://family-weekly-meal-planning.family-3adfa3459c6c.workers.dev --generate-menu
+```
+
+The verifier first checks network reachability, then creates a short-lived Access service token and a token-specific service-auth policy for this application. It checks anonymous blocking, frontend delivery, family authorization, D1 reads, a same-content save/readback, stale-write rejection and custom-content translation. `--generate-menu` additionally requires the Gemini secret and generates one synthetic ten-meal bilingual draft, consuming one daily application allowance. It does not apply the draft to the active menu. The test restores the prior latest-draft pointer only if a newer user job has not replaced it, and removes its own job. Every cleanup path attempts to revoke both the temporary policy and token. Confirm the report's `temporaryAccessRemoved` field; resolve any cleanup errors before finishing.
+
+The administration token needs Access Service Tokens Edit in addition to the provisioning permissions for these automated checks. These tests use a service identity; separately confirm that the owner receives the email OTP and can sign in from a browser. Reports in `/workspace/scratch` contain status and counts, never API keys or recipe contents. A proxy `Tunnel connection failed: 403 Forbidden` is an environment egress error, not evidence that the Cloudflare application rejected the login.
+
 ## Importing a backup
 
 Run from `source`:
@@ -62,7 +77,7 @@ The old Netlify scripts/configuration and SDK remain only for rollback and legac
 
 ## Codex environment Secrets and setup
 
-In Codex Cloud, environment Secrets are made available during the setup script and removed before the agent phase. Adding a secret does not inject it into an already-running agent shell. Do not work around this by printing a token, committing it, copying it into a persistent token file, or making it a public environment variable.
+Secret availability depends on how the Codex environment is started. Check only whether the required variable is present in the current runtime; do not assume a newly saved secret has reached an already-running shell. Do not work around a missing binding by printing a token, committing it, copying it into a persistent token file, or making it a public environment variable.
 
 The private environment setup script can call `scripts/cloudflare-onboarding.sh` with the approved owner email in `CLOUDFLARE_ALLOWED_EMAIL`. The wrapper consumes `CLOUDFLARE_API_TOKEN` in that setup phase and invokes the provisioner. Its sanitized report is written to `/workspace/scratch/cloudflare-migration-status.json`; this report contains deployment status/URLs, not credentials. Restrict this automatic one-time action to the tested migration commit; do not auto-deploy arbitrary future task changes during dependency setup.
 

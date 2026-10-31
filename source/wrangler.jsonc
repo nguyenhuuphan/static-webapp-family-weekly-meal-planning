@@ -3,7 +3,9 @@
   "name": "family-weekly-meal-planning",
   "main": "cloudflare/worker.ts",
   "compatibility_date": "2026-10-30",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "tsconfig": "cloudflare/tsconfig.json",
   "workers_dev": true,
   "preview_urls": false,
@@ -11,27 +13,31 @@
     "directory": "./dist",
     "binding": "ASSETS",
     "run_worker_first": true,
-    "not_found_handling": "single-page-application",
+    "not_found_handling": "single-page-application"
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "family-weekly-meal-planning",
-      "database_id": "00000000-0000-4000-8000-000000000000",
-      "migrations_dir": "cloudflare/migrations",
-    },
+      "database_id": "7a5f3036-ed94-4d3a-a977-ea782ecd1277",
+      "migrations_dir": "cloudflare/migrations"
+    }
   ],
   "workflows": [
     {
       "binding": "MENU_WORKFLOW",
       "name": "family-weekly-meal-menu",
-      "class_name": "MenuWorkflow",
-    },
+      "class_name": "MenuWorkflow"
+    }
   ],
   "vars": {
     "AI_MAX_DAILY_REQUESTS": "3",
-    "CF_ACCESS_TEAM_DOMAIN": "",
-    "CF_ACCESS_AUD": "",
+    "CF_ACCESS_TEAM_DOMAIN": "family-3adfa3459c6c.cloudflareaccess.com",
+    "CF_ACCESS_AUD": "27e4bb8b3ae11c35e576d9df92429b7cf9351a6e6d9d1d539f261ad8e95ff036"
   },
-  "observability": { "enabled": true, "head_sampling_rate": 0.1 },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "account_id": "3adfa3459c6ccefd7ac13915503ecbdb"
 }

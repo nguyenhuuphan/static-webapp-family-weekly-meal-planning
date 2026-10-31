@@ -79,6 +79,16 @@ describe("AI requirements and flexible weeks", () => {
       GenerationError,
     );
   });
+  it("assigns canonical slots to constrained bilingual arrays and rejects a missing slot", () => {
+    const input = { ...aiInput, days: [...DAYS], mealTypes: [...MEAL_TYPES] };
+    const output = aiBilingualOutput(input);
+    const array = { ...output, meals: Object.values(output.meals) };
+    const plan = validateGeneratedPlan(array, input);
+    expect(plan).toEqual(validateGeneratedPlan(output, input));
+    expect(plan.meals.at(-1)?.id).toBe("sun-dinner");
+    array.meals.pop();
+    expect(() => validateGeneratedPlan(array, input)).toThrow("invalid_output");
+  });
   it("returns a Workflow-serializable translation map without invoking prototype setters", () => {
     const output = aiOutput();
     output.translations.push({ source: "__proto__", vi: "A safe translation" });
@@ -272,8 +282,13 @@ describe("Gemini API boundary", () => {
     );
     expect(sent.generationConfig.responseMimeType).toBe("application/json");
     const mealSchema = requirements.responseSchema.properties.meals;
-    expect(mealSchema.required).toEqual(["sat-breakfast"]);
-    const recipeSchema = requirements.responseSchema.$defs.recipe;
+    expect(mealSchema.type).toBe("array");
+    expect(mealSchema.minItems).toBe(1);
+    expect(mealSchema.maxItems).toBe(1);
+    expect(sent.generationConfig.responseJsonSchema).toEqual(
+      requirements.responseSchema,
+    );
+    const recipeSchema = mealSchema.items;
     expect(plan.meals[0].id).toBe("sat-breakfast");
     expect(recipeSchema.properties.minutes.maximum).toBe(aiInput.maxMinutes);
     expect(recipeSchema.properties.equipment.items.enum).toEqual(
@@ -303,12 +318,14 @@ describe("Gemini API boundary", () => {
     ).rejects.toMatchObject({ code: "invalid_output" });
   });
   it("reports temporary provider overload without retrying or exposing its message", async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      Response.json(
-        { error: { status: "UNAVAILABLE", message: "Provider details" } },
-        { status: 503 },
-      ),
-    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { error: { status: "UNAVAILABLE", message: "Provider details" } },
+          { status: 503 },
+        ),
+      );
     vi.stubGlobal("fetch", fetcher);
     const error = await generateMenu(aiInput, DEFAULT_MASTER_PROMPT, [], {
       apiKey: "test-key",

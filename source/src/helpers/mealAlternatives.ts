@@ -56,8 +56,8 @@ export function swapPlanMeal(
       if (translated)
         Object.defineProperty(translations, result, {
           value: translated.replace(
-            /(?:THỨ|Thứ|thứ)\s+(?:HAI|BA|TƯ|NĂM|SÁU|BẢY|Hai|Ba|Tư|Năm|Sáu|Bảy|hai|ba|tư|năm|sáu|bảy)|(?:CHỦ NHẬT|Chủ nhật|chủ nhật)/g,
-            "ngày nấu",
+            /(?:(?:BỮA|Bữa|bữa)\s+(?:SÁNG|TRƯA|TỐI|sáng|trưa|tối)\s+)?(?:(?:THỨ|Thứ|thứ)\s+(?:HAI|BA|TƯ|NĂM|SÁU|BẢY|Hai|Ba|Tư|Năm|Sáu|Bảy|hai|ba|tư|năm|sáu|bảy)|(?:CHỦ NHẬT|Chủ nhật|chủ nhật))(?:\s+(?:SÁNG|TRƯA|TỐI|sáng|trưa|tối))?/g,
+            "bữa đã chọn",
           ),
           enumerable: true,
           configurable: true,

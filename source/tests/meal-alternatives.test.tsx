@@ -34,6 +34,9 @@ describe("five replacement recipes", () => {
     });
     expect(swapped.alternatives![0].main).toBe(slot.main);
     expect(swapped.alternatives![0]).not.toHaveProperty("day");
+    const returnedText = swapped.alternatives![0].prep[0].text;
+    expect(returnedText).not.toMatch(/MON LUNCH/);
+    expect(swapped.translations!.vi[returnedText]).not.toMatch(/THỨ HAI|TRƯA/);
     expect(validatePlan(swapped)).toEqual([]);
     expect(swapPlanMeal(swapped, slot.id, option.id).meals[0].main).toBe(
       slot.main,

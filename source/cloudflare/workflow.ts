@@ -3,8 +3,13 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
-import { generateMenu, GenerationError } from "../src/server/gemini";
+import {
+  generateMenuBatch,
+  combineMenuPlans,
+  GenerationError,
+} from "../src/server/gemini";
 import type { MenuJob } from "../src/ai/contracts";
+import type { Plan } from "../src/types";
 import { DocumentStore } from "./store";
 import type { Env } from "./types";
 const NO_RETRIES = {
@@ -50,54 +55,80 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
     if (!claimed) return;
     try {
       // Return expected provider failures as durable data so their codes survive step replay.
-      const result = await step.do(
-        "generate-validated-plan",
-        NO_RETRIES,
-        async () => {
-          try {
-            if (!this.env.GEMINI_API_KEY)
-              throw new GenerationError("not_configured");
-            const plan = await generateMenu(
-              claimed.job.input,
-              claimed.job.masterPrompt,
-              claimed.job.recentMeals,
-              {
-                apiKey: this.env.GEMINI_API_KEY,
-                ...(claimed.job.diagnostic === true
-                  ? {
-                      onProviderFailure: async (failure: {
-                        httpStatus: number;
-                        status?: string;
-                        message: string;
-                      }) => {
-                        await new DocumentStore(
-                          this.env.DB,
-                          "diagnostics",
-                        ).setJSON("gemini/" + id, failure);
-                      },
-                    }
-                  : {}),
-              },
-            );
-            return { status: "ready" as const, plan };
-          } catch (error) {
-            if (!(error instanceof GenerationError) && claimed.job.diagnostic)
-              await recordSyntheticFailure(this.env, id, error);
-            return {
-              status: "failed" as const,
-              errorCode:
-                error instanceof GenerationError
-                  ? error.code
-                  : "provider_error",
-              ...(error instanceof GenerationError && error.diagnostic
-                ? { errorDiagnostic: error.diagnostic }
-                : !(error instanceof GenerationError)
-                  ? { errorDiagnostic: runtimeDiagnostic(error) }
-                  : {}),
-            };
+      const plans: Plan[] = [];
+      let failure:
+        | {
+            status: "failed";
+            errorCode: string;
+            errorDiagnostic?: MenuJob["errorDiagnostic"];
           }
-        },
-      );
+        | undefined;
+      for (const type of claimed.job.input.mealTypes) {
+        const batch = await step.do(
+          "generate-validated-" + type.toLowerCase(),
+          NO_RETRIES,
+          async () => {
+            try {
+              if (!this.env.GEMINI_API_KEY)
+                throw new GenerationError("not_configured");
+              const plan = await generateMenuBatch(
+                { ...claimed.job.input, mealTypes: [type] },
+                claimed.job.masterPrompt,
+                [
+                  ...claimed.job.recentMeals,
+                  ...plans.flatMap((plan) =>
+                    plan.meals.map((meal) => meal.main),
+                  ),
+                ],
+                {
+                  apiKey: this.env.GEMINI_API_KEY,
+                  ...(claimed.job.diagnostic === true
+                    ? {
+                        onProviderFailure: async (failure: {
+                          httpStatus: number;
+                          status?: string;
+                          message: string;
+                        }) => {
+                          await new DocumentStore(
+                            this.env.DB,
+                            "diagnostics",
+                          ).setJSON("gemini/" + id, failure);
+                        },
+                      }
+                    : {}),
+                },
+              );
+              return { status: "ready" as const, plan };
+            } catch (error) {
+              if (!(error instanceof GenerationError) && claimed.job.diagnostic)
+                await recordSyntheticFailure(this.env, id, error);
+              return {
+                status: "failed" as const,
+                errorCode:
+                  error instanceof GenerationError
+                    ? error.code
+                    : "provider_error",
+                ...(error instanceof GenerationError && error.diagnostic
+                  ? { errorDiagnostic: error.diagnostic }
+                  : !(error instanceof GenerationError)
+                    ? { errorDiagnostic: runtimeDiagnostic(error) }
+                    : {}),
+              };
+            }
+          },
+        );
+        if (batch.status === "failed") {
+          failure = batch;
+          break;
+        }
+        plans.push(batch.plan);
+      }
+      const result =
+        failure ??
+        (await step.do("assemble-complete-menu", NO_RETRIES, async () => ({
+          status: "ready" as const,
+          plan: combineMenuPlans(plans, claimed.job.input),
+        })));
       await step.do(
         "save-result",
         { retries: { limit: 2, delay: "2 seconds" }, timeout: "30 seconds" },

@@ -8,7 +8,7 @@ import { MenuWorkflow } from "../workflow";
 import type { Env } from "../types";
 import { freshState } from "../../src/helpers";
 import original from "../../public/meal-plan.json";
-import type { Plan } from "../../src/types";
+import { DAYS, MEAL_TYPES, type Plan } from "../../src/types";
 import { aiInput, aiBilingualOutput } from "../../tests/ai-fixtures";
 import { DEFAULT_MASTER_PROMPT, type MenuJob } from "../../src/ai/contracts";
 import type { WorkflowEvent, WorkflowStep } from "cloudflare:workers";
@@ -176,6 +176,73 @@ describe("D1 and Cloudflare routes", () => {
     );
     expect(fetch).toHaveBeenCalledTimes(1);
   });
+  it.each([false, true])(
+    "persists a whole week only after all durable meal-time batches succeed (failure: %s)",
+    async (failSecond) => {
+      const input = { ...aiInput, days: [...DAYS], mealTypes: [...MEAL_TYPES] };
+      const job: MenuJob = {
+        id,
+        status: "queued",
+        input,
+        masterPrompt: DEFAULT_MASTER_PROMPT,
+        recentMeals: [],
+        createdAt: new Date().toISOString(),
+      };
+      await new DocumentStore(env.DB, "ai").setJSON("jobs/" + id, job);
+      let calls = 0;
+      const fetcher = vi.fn().mockImplementation(async (_url, init) => {
+        calls++;
+        if (failSecond && calls === 2)
+          return new Response(null, { status: 429 });
+        const batch = JSON.parse(JSON.parse(init.body).input).requirements;
+        return Response.json({
+          status: "completed",
+          steps: [
+            {
+              type: "model_output",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(aiBilingualOutput(batch)),
+                },
+              ],
+            },
+          ],
+        });
+      });
+      vi.stubGlobal("fetch", fetcher);
+      const names: string[] = [];
+      const step = {
+        do: vi.fn(
+          async (
+            name: string,
+            _options: unknown,
+            callback: () => Promise<unknown>,
+          ) => {
+            names.push(name);
+            const value = await callback();
+            assertPlainStepResult(value);
+            return value;
+          },
+        ),
+      } as unknown as WorkflowStep;
+      await new MenuWorkflow({} as ExecutionContext, env).run(
+        { payload: { id } } as WorkflowEvent<{ id: string }>,
+        step,
+      );
+      const result = await new DocumentStore(env.DB, "ai").get<MenuJob>(
+        "jobs/" + id,
+      );
+      expect(result?.status).toBe(failSecond ? "failed" : "ready");
+      expect(result?.plan?.meals.length).toBe(failSecond ? undefined : 21);
+      expect(fetcher).toHaveBeenCalledTimes(failSecond ? 2 : 3);
+      expect(names).toContain("generate-validated-breakfast");
+      expect(names.includes("assemble-complete-menu")).toBe(!failSecond);
+      expect(
+        await new DocumentStore(env.DB, "planner").get("state.json"),
+      ).toBeNull();
+    },
+  );
   it("retains provider quota errors as durable failure codes", async () => {
     const job: MenuJob = {
       id,

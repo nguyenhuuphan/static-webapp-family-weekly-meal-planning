@@ -246,6 +246,66 @@ describe("AI requirements and flexible weeks", () => {
   });
 });
 describe("Gemini API boundary", () => {
+  it("assembles a complete week from bounded meal-time requests and stops on a failed batch", async () => {
+    const input = { ...aiInput, days: [...DAYS], mealTypes: [...MEAL_TYPES] };
+    const requests: (typeof input)[] = [];
+    const fetcher = vi.fn().mockImplementation(async (_url, init) => {
+      const batch = JSON.parse(JSON.parse(init.body).input).requirements;
+      requests.push(batch);
+      expect(batch.mealTypes).toHaveLength(1);
+      expect(
+        JSON.parse(init.body).response_format.schema.properties.meals.minItems,
+      ).toBe(7);
+      return Response.json({
+        status: "completed",
+        steps: [
+          {
+            type: "model_output",
+            content: [
+              { type: "text", text: JSON.stringify(aiBilingualOutput(batch)) },
+            ],
+          },
+        ],
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const plan = await generateMenu(input, DEFAULT_MASTER_PROMPT, [], {
+      apiKey: "test-key",
+    });
+    expect(requests.map((batch) => batch.mealTypes[0])).toEqual(MEAL_TYPES);
+    expect(plan.meals).toHaveLength(21);
+    expect(plan.meals.slice(0, 3).map((meal) => meal.id)).toEqual([
+      "mon-breakfast",
+      "mon-lunch",
+      "mon-dinner",
+    ]);
+    expect(validatePlan(plan)).toEqual([]);
+    fetcher
+      .mockClear()
+      .mockResolvedValueOnce(
+        Response.json({
+          status: "completed",
+          steps: [
+            {
+              type: "model_output",
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify(
+                    aiBilingualOutput({ ...input, mealTypes: ["Breakfast"] }),
+                  ),
+                },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 429 }));
+    await expect(
+      generateMenu(input, DEFAULT_MASTER_PROMPT, [], { apiKey: "test-key" }),
+    ).rejects.toMatchObject({ code: "quota" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
   it("sends master prompt, equipment and form data through the fixed server-side model", async () => {
     vi.stubEnv("GEMINI_API_KEY", "test-only-key");
     const fetcher = vi.fn().mockResolvedValue(

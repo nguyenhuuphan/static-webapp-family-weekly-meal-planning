@@ -545,15 +545,77 @@ export function validateGeneratedPlan(raw: unknown, input: MenuInput): Plan {
     ),
   });
 }
+type Credentials = {
+  apiKey: string;
+  onProviderFailure?: (failure: ProviderFailure) => Promise<void>;
+};
+
+export function combineMenuPlans(plans: Plan[], input: MenuInput): Plan {
+  const all = plans.flatMap((plan) => plan.meals);
+  const slots = input.days.flatMap((day) =>
+    input.mealTypes.map((type) => menuSlotId(day, type)),
+  );
+  const byId = new Map(all.map((meal) => [meal.id, meal]));
+  if (
+    !plans.length ||
+    plans.some((plan) => plan.servings !== input.servings) ||
+    all.length !== slots.length ||
+    byId.size !== slots.length ||
+    slots.some((id) => !byId.has(id))
+  )
+    throw invalidOutput("meal_count");
+  const name =
+    plans.length === 1 ? plans[0].name : `Family menu · ${input.weekStart}`;
+  const translations = Object.fromEntries(
+    plans.flatMap((plan) => Object.entries(plan.translations?.vi || {})),
+  );
+  return {
+    schemaVersion: 2,
+    name,
+    servings: input.servings,
+    meals: slots.map((id) => byId.get(id)!),
+    translations: {
+      vi: {
+        ...translations,
+        [name]:
+          plans.length === 1
+            ? translations[name]
+            : `Thực đơn gia đình · ${input.weekStart}`,
+      },
+    },
+  };
+}
+
 export async function generateMenu(
   input: MenuInput,
   masterPrompt: string,
   recentMeals: string[],
-  credentials?: {
-    apiKey: string;
-    onProviderFailure?: (failure: ProviderFailure) => Promise<void>;
-  },
+  credentials?: Credentials,
 ): Promise<Plan> {
+  const plans: Plan[] = [];
+  for (const type of input.mealTypes) {
+    plans.push(
+      await generateMenuBatch(
+        { ...input, mealTypes: [type] },
+        masterPrompt,
+        [
+          ...recentMeals,
+          ...plans.flatMap((plan) => plan.meals.map((meal) => meal.main)),
+        ],
+        credentials,
+      ),
+    );
+  }
+  return combineMenuPlans(plans, input);
+}
+
+export async function generateMenuBatch(
+  input: MenuInput,
+  masterPrompt: string,
+  recentMeals: string[],
+  credentials?: Credentials,
+): Promise<Plan> {
+  if (input.mealTypes.length !== 1) throw new GenerationError("invalid_input");
   const apiKey = credentials?.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GenerationError("not_configured");
   const response = await fetch(
@@ -564,9 +626,7 @@ export async function generateMenu(
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
-      signal: AbortSignal.timeout(
-        input.days.length * input.mealTypes.length > 10 ? 360000 : 180000,
-      ),
+      signal: AbortSignal.timeout(180000),
       body: JSON.stringify({
         model: GEMINI_MODEL,
         store: false,
@@ -606,8 +666,7 @@ export async function generateMenu(
           schema: providerSchema(input),
         },
         generation_config: {
-          max_output_tokens:
-            input.days.length * input.mealTypes.length > 10 ? 65536 : 32768,
+          max_output_tokens: 32768,
         },
       }),
     },

@@ -982,6 +982,12 @@ function GeneratorDialog({ close }: { close: () => void }) {
               </dl>
               <p className="caption">
                 {text(
+                  `Lần tạo này dùng ${input.mealTypes.length} yêu cầu Gemini, chia theo nhóm bữa ăn. Đổi ngôn ngữ không gọi lại AI.`,
+                  `This generation uses ${input.mealTypes.length} Gemini requests, grouped by meal time. Switching language makes no new AI calls.`,
+                )}
+              </p>
+              <p className="caption">
+                {text(
                   "AI có thể sai. Kiểm tra dị ứng, lượng nguyên liệu và hướng dẫn an toàn trước khi áp dụng. Dữ liệu trong biểu mẫu được gửi tới Gemini; không gửi thông tin cá nhân không cần thiết.",
                   "AI can make mistakes. Review allergens, quantities and safety instructions before applying. Form contents are sent to Gemini; omit unnecessary personal information.",
                 )}

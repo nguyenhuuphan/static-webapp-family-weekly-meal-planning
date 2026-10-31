@@ -90,6 +90,40 @@ export const RESPONSE_SCHEMA = {
   required: ["name", "meals"],
   additionalProperties: false,
 };
+
+function responseSchema(input: MenuInput) {
+  const meals = RESPONSE_SCHEMA.properties.meals;
+  const slots = input.days.flatMap((day) =>
+    input.mealTypes.map((type) => menuSlotId(day, type)),
+  );
+  return {
+    ...RESPONSE_SCHEMA,
+    properties: {
+      ...RESPONSE_SCHEMA.properties,
+      meals: {
+        ...meals,
+        minItems: slots.length,
+        maxItems: slots.length,
+        items: {
+          ...meals.items,
+          properties: {
+            ...meals.items.properties,
+            id: { type: "string", enum: slots },
+            day: { type: "string", enum: input.days },
+            type: { type: "string", enum: input.mealTypes },
+            minutes: { type: "integer", minimum: 1, maximum: input.maxMinutes },
+            equipment: input.equipment.includes("No heating appliance")
+              ? { type: "array", items: string, maxItems: 0 }
+              : {
+                  type: "array",
+                  items: { type: "string", enum: input.equipment },
+                },
+          },
+        },
+      },
+    },
+  };
+}
 export class GenerationError extends Error {
   constructor(
     public code: string,
@@ -218,29 +252,34 @@ export function validateGeneratedPlan(raw: unknown, input: MenuInput): Plan {
   const expected = input.days.flatMap((day) =>
     input.mealTypes.map((type) => menuSlotId(day, type)),
   );
-  if (
-    result.meals.length !== expected.length ||
-    result.meals.some(
-      (m) =>
-        !m ||
-        !expected.includes(m.id) ||
-        !DAYS.includes(m.day) ||
-        !MEAL_TYPES.includes(m.type) ||
-        m.id !== menuSlotId(m.day, m.type) ||
-        m.minutes > input.maxMinutes ||
-        !Array.isArray(m.ingredients) ||
-        m.ingredients.length > 30 ||
-        !Array.isArray(m.prep) ||
-        m.prep.length > 10 ||
-        !Array.isArray(m.steps) ||
-        m.steps.length > 15 ||
-        !Array.isArray(m.equipment) ||
-        m.equipment.some(
-          (e) => !input.equipment.includes(e) || e === "No heating appliance",
-        ),
+  if (result.meals.length !== expected.length)
+    throw invalidOutput("meal_count");
+  for (const meal of result.meals) {
+    if (
+      !meal ||
+      !expected.includes(meal.id) ||
+      !DAYS.includes(meal.day) ||
+      !MEAL_TYPES.includes(meal.type) ||
+      meal.id !== menuSlotId(meal.day, meal.type)
     )
-  )
-    throw invalidOutput("meal_requirements");
+      throw invalidOutput("meal_slot");
+    if (meal.minutes > input.maxMinutes) throw invalidOutput("cooking_limit");
+    if (!Array.isArray(meal.ingredients) || meal.ingredients.length > 30)
+      throw invalidOutput("ingredient_limit");
+    if (!Array.isArray(meal.prep) || meal.prep.length > 10)
+      throw invalidOutput("prep_limit");
+    if (!Array.isArray(meal.steps) || meal.steps.length > 15)
+      throw invalidOutput("step_limit");
+    if (
+      !Array.isArray(meal.equipment) ||
+      meal.equipment.some(
+        (equipment) =>
+          !input.equipment.includes(equipment) ||
+          equipment === "No heating appliance",
+      )
+    )
+      throw invalidOutput("equipment");
+  }
   const translations: Record<string, string> = Object.create(null);
   for (const pair of result.translations) {
     if (!pair || typeof pair.source !== "string" || typeof pair.vi !== "string")
@@ -378,7 +417,7 @@ export async function generateMenu(
         ],
         generationConfig: {
           responseMimeType: "application/json",
-          responseJsonSchema: RESPONSE_SCHEMA,
+          responseJsonSchema: responseSchema(input),
           maxOutputTokens:
             input.days.length * input.mealTypes.length > 10 ? 65536 : 32768,
         },

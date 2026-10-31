@@ -168,6 +168,17 @@ describe("Gemini API boundary", () => {
     expect(requirements.requirements.equipment).toEqual(["Gas stove"]);
     expect(requirements.masterPrompt).toBe(DEFAULT_MASTER_PROMPT);
     expect(sent.generationConfig.responseMimeType).toBe("application/json");
+    const mealSchema =
+      sent.generationConfig.responseJsonSchema.properties.meals;
+    expect(mealSchema.minItems).toBe(1);
+    expect(mealSchema.maxItems).toBe(1);
+    expect(mealSchema.items.properties.id.enum).toEqual(["sat-breakfast"]);
+    expect(mealSchema.items.properties.minutes.maximum).toBe(
+      aiInput.maxMinutes,
+    );
+    expect(mealSchema.items.properties.equipment.items.enum).toEqual(
+      aiInput.equipment,
+    );
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
   it("does not retry quota errors or accept incomplete output", async () => {

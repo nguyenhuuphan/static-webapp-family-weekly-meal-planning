@@ -180,3 +180,34 @@ it("rejects cross-origin writes even with valid login and family credentials", a
   );
   expect(response.status).toBe(403);
 });
+
+it("protects receipt photos with both sign-in and family access", async () => {
+  const url =
+    "https://app.workers.dev/api/receipt-photos?id=20000000-0000-4000-8000-000000000001";
+  expect((await app.fetch(new Request(url), env, context)).status).toBe(403);
+  expect(
+    (
+      await app.fetch(
+        new Request(url, {
+          headers: { "Cf-Access-Jwt-Assertion": await token() },
+        }),
+        env,
+        context,
+      )
+    ).status,
+  ).toBe(401);
+  expect(
+    (
+      await app.fetch(
+        new Request(url, {
+          headers: {
+            "Cf-Access-Jwt-Assertion": await token(),
+            Authorization: "Bearer " + env.FAMILY_ACCESS_CODE,
+          },
+        }),
+        env,
+        context,
+      )
+    ).status,
+  ).toBe(404);
+});

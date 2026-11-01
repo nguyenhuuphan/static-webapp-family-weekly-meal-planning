@@ -1,3 +1,4 @@
+import PurchaseHistory from "../PurchaseHistory";
 import type { Ingredient } from "src/types";
 import PurchaseEntry from "./PurchaseEntry";
 import { useI18n, useText } from "src/i18n";
@@ -13,6 +14,7 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 interface IProps {}
 const ShoppingList: React.FC<IProps> = () => {
   const text = useText();
+  const [view, setView] = usePersistentState("planner:shopping-view", "list");
   const [filter, setFilter] = usePersistentState(
     "planner:shopping-filter",
     "needed",
@@ -43,252 +45,292 @@ const ShoppingList: React.FC<IProps> = () => {
     <>
       <Heading
         eyebrow={tr("oneTripEverythingCovered")}
-        title={tr("aGoodWeekStartsHere")}
-        description={tr(
-          "usableQuantitiesNeatlyGatheredBuyBonelessMeatPeeledShrimpAndALittle",
-        )}
+        title={
+          view === "history"
+            ? text("Lịch sử mua & hóa đơn", "Purchase history & receipts")
+            : tr("aGoodWeekStartsHere")
+        }
+        description={
+          view === "history"
+            ? text(
+                "Tra cứu giá đã trả và hóa đơn qua các tuần.",
+                "Look up paid prices and receipts across weeks.",
+              )
+            : tr(
+                "usableQuantitiesNeatlyGatheredBuyBonelessMeatPeeledShrimpAndALittle",
+              )
+        }
       >
         <Button onClick={() => window.print()}>
           <Printer size={17} />
-          {tr("printList")}
+          {view === "history"
+            ? text("In lịch sử", "Print history")
+            : tr("printList")}
         </Button>
       </Heading>
-      <div className="progress-panel">
-        <div>
-          <strong>
-            {tr("shoppingProgress", { count: bought, total: needs.length })}
-          </strong>
-          <span>{tr("servingsPerMealCount", { count: s.servings })}</span>
-        </div>
-        <progress value={bought} max={needs.length || 1} />
-      </div>
-      {surplus.length > 0 && (
-        <details className="panel">
-          <summary>
-            {text(
-              "Đã mua ngoài nhu cầu hiện tại",
-              "Purchased beyond current requirements",
-            )}{" "}
-            ({surplus.length})
-          </summary>
-          <p>
-            {text(
-              "Lượng này có thể đang nằm trong phần đã sơ chế cần sắp xếp. Đây là ghi nhận đã mua, không phải lượng tồn kho được kiểm kê.",
-              "Some of this may be in prepared portions awaiting a meal. These are purchase records, not a stock count.",
-            )}
-          </p>
-          <ul>
-            {surplus.map((i) => (
-              <li key={ingredientKey(i)}>
-                {ct(i.name)} · {num(i.qty)} {unit(i.unit)}
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      <div className="search-field">
-        <Search size={17} />
-        <input
-          aria-label={tr("searchShoppingList")}
-          placeholder={tr("findAnIngredient")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {search && (
-          <button
-            className="icon-button"
-            aria-label={tr("clearSearch")}
-            onClick={() => setSearch("")}
-          >
-            <X size={16} />
-          </button>
-        )}
-      </div>
       <div
-        className="actions"
+        className="actions shopping-view-switch"
         role="group"
-        aria-label={text("Lọc danh sách", "Filter shopping list")}
+        aria-label={text("Mục mua sắm", "Shopping section")}
       >
-        {[
-          ["needed", text("Cần mua", "To buy")],
-          ["bought", text("Đã mua", "Bought")],
-          ["owned", text("Có sẵn", "At home")],
-          ["all", text("Tất cả", "All")],
-        ].map(([value, label]) => (
-          <Button
-            key={value}
-            aria-pressed={filter === value}
-            onClick={() => setFilter(value)}
-          >
-            {label}
-          </Button>
-        ))}
+        <Button
+          aria-pressed={view !== "history"}
+          onClick={() => setView("list")}
+        >
+          {text("Danh sách mua sắm", "Shopping list")}
+        </Button>
+        <Button
+          aria-pressed={view === "history"}
+          onClick={() => setView("history")}
+        >
+          {text("Lịch sử mua & hóa đơn", "Purchase history & receipts")}
+        </Button>
       </div>
-      <div className="shopping-grid">
-        {[...new Set(shopping.map((i) => i.category))].map((category) => {
-          const items = shopping.filter(
-            (i) =>
-              i.category === category &&
-              matches(i.name) &&
-              (filter === "all" ||
-                (filter === "owned"
-                  ? s.progress.owned[ingredientKey(i)]
-                  : filter === "bought"
-                    ? s.progress.shopping[ingredientKey(i)] &&
-                      !s.progress.owned[ingredientKey(i)]
-                    : !s.progress.owned[ingredientKey(i)] &&
-                      !s.progress.shopping[ingredientKey(i)])),
-          );
-          if (!items.length) return null;
-          return (
-            <section className="panel" key={category}>
-              <div className="section-title">
-                <h2>{ct(category)}</h2>
-                <span className="pill">
-                  {tr("itemCount", { count: items.length })}
-                </span>
-              </div>
-              {items.map((i) => {
-                const k = ingredientKey(i),
-                  owned = s.progress.owned[k],
-                  checked = s.progress.shopping[k];
-                return (
-                  <div
-                    className={`shopping-row ${owned || checked ? "checked" : ""}`}
-                    key={k}
-                  >
-                    <label className="item-check">
-                      <input
-                        type="checkbox"
-                        disabled={
-                          owned ||
-                          s.purchaseReceipts?.some((r) => r.key === k) ||
-                          Object.values(s.stockUses || {}).some(
-                            (use) => (use.purchased[k] || 0) > 0,
-                          )
-                        }
-                        checked={!!checked}
-                        onChange={(e) =>
-                          toggle("shopping", k, e.target.checked)
-                        }
-                        aria-label={tr("boughtLabel", { name: ct(i.name) })}
-                      />
-                      <span>
-                        <strong>{ct(i.name)}</strong>
-                        <small>
-                          {tr("mealCount", { count: i.meals.length })}
-                        </small>
-                      </span>
-                    </label>
-                    <span className="quantity">
-                      {num(
-                        owned
-                          ? 0
-                          : checked
-                            ? (s.purchased?.[k]?.qty ?? i.toBuy)
-                            : i.toBuy,
-                      )}{" "}
-                      {unit(i.unit)}
-                      <small>
-                        {text("Cần dùng", "Required")}: {num(i.qty)}{" "}
-                        {unit(i.unit)}
-                      </small>
-                      {!owned && !checked && i.toBuy > 0 && (
-                        <small>
-                          {text("Gợi ý mua", "Suggested purchase")}:{" "}
+      {view === "history" ? (
+        <PurchaseHistory />
+      ) : (
+        <>
+          <div className="progress-panel">
+            <div>
+              <strong>
+                {tr("shoppingProgress", { count: bought, total: needs.length })}
+              </strong>
+              <span>{tr("servingsPerMealCount", { count: s.servings })}</span>
+            </div>
+            <progress value={bought} max={needs.length || 1} />
+          </div>
+          {surplus.length > 0 && (
+            <details className="panel">
+              <summary>
+                {text(
+                  "Đã mua ngoài nhu cầu hiện tại",
+                  "Purchased beyond current requirements",
+                )}{" "}
+                ({surplus.length})
+              </summary>
+              <p>
+                {text(
+                  "Lượng này có thể đang nằm trong phần đã sơ chế cần sắp xếp. Đây là ghi nhận đã mua, không phải lượng tồn kho được kiểm kê.",
+                  "Some of this may be in prepared portions awaiting a meal. These are purchase records, not a stock count.",
+                )}
+              </p>
+              <ul>
+                {surplus.map((i) => (
+                  <li key={ingredientKey(i)}>
+                    {ct(i.name)} · {num(i.qty)} {unit(i.unit)}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          <div className="search-field">
+            <Search size={17} />
+            <input
+              aria-label={tr("searchShoppingList")}
+              placeholder={tr("findAnIngredient")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                className="icon-button"
+                aria-label={tr("clearSearch")}
+                onClick={() => setSearch("")}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <div
+            className="actions"
+            role="group"
+            aria-label={text("Lọc danh sách", "Filter shopping list")}
+          >
+            {[
+              ["needed", text("Cần mua", "To buy")],
+              ["bought", text("Đã mua", "Bought")],
+              ["owned", text("Có sẵn", "At home")],
+              ["all", text("Tất cả", "All")],
+            ].map(([value, label]) => (
+              <Button
+                key={value}
+                aria-pressed={filter === value}
+                onClick={() => setFilter(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <div className="shopping-grid">
+            {[...new Set(shopping.map((i) => i.category))].map((category) => {
+              const items = shopping.filter(
+                (i) =>
+                  i.category === category &&
+                  matches(i.name) &&
+                  (filter === "all" ||
+                    (filter === "owned"
+                      ? s.progress.owned[ingredientKey(i)]
+                      : filter === "bought"
+                        ? s.progress.shopping[ingredientKey(i)] &&
+                          !s.progress.owned[ingredientKey(i)]
+                        : !s.progress.owned[ingredientKey(i)] &&
+                          !s.progress.shopping[ingredientKey(i)])),
+              );
+              if (!items.length) return null;
+              return (
+                <section className="panel" key={category}>
+                  <div className="section-title">
+                    <h2>{ct(category)}</h2>
+                    <span className="pill">
+                      {tr("itemCount", { count: items.length })}
+                    </span>
+                  </div>
+                  {items.map((i) => {
+                    const k = ingredientKey(i),
+                      owned = s.progress.owned[k],
+                      checked = s.progress.shopping[k];
+                    return (
+                      <div
+                        className={`shopping-row ${owned || checked ? "checked" : ""}`}
+                        key={k}
+                      >
+                        <label className="item-check">
+                          <input
+                            type="checkbox"
+                            disabled={
+                              owned ||
+                              (s.purchased?.[k]?.qty || 0) > 0 ||
+                              Object.values(s.stockUses || {}).some(
+                                (use) => (use.purchased[k] || 0) > 0,
+                              )
+                            }
+                            checked={!!checked}
+                            onChange={(e) =>
+                              toggle("shopping", k, e.target.checked)
+                            }
+                            aria-label={tr("boughtLabel", { name: ct(i.name) })}
+                          />
+                          <span>
+                            <strong>{ct(i.name)}</strong>
+                            <small>
+                              {tr("mealCount", { count: i.meals.length })}
+                            </small>
+                          </span>
+                        </label>
+                        <span className="quantity">
                           {num(
-                            i.unit === "each"
-                              ? Math.ceil(i.toBuy)
-                              : ["g", "ml"].includes(i.unit)
-                                ? Math.ceil(i.toBuy / 50) * 50
+                            owned
+                              ? 0
+                              : checked
+                                ? (s.purchased?.[k]?.qty ?? i.toBuy)
                                 : i.toBuy,
                           )}{" "}
                           {unit(i.unit)}
-                        </small>
-                      )}
-                    </span>
-                    <PurchaseEntry
-                      key={`${k}:${i.toBuy}`}
-                      item={i as Ingredient}
-                      needed={i.toBuy}
-                    />
-                    <label className="pantry-amount">
-                      {text("Lượng có sẵn", "Amount at home")} ({unit(i.unit)})
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        defaultValue={availableAcquisitions(s, k).home}
-                        aria-label={`${text("Lượng có sẵn", "Amount at home")}: ${ct(i.name)} (${unit(i.unit)})`}
-                        key={`${k}:${availableAcquisitions(s, k).home}`}
-                        onBlur={(event) => {
-                          const amount = Number(event.target.value);
-                          if (!Number.isFinite(amount) || amount < 0) {
-                            event.target.value = String(
-                              availableAcquisitions(s, k).home,
-                            );
-                            return;
-                          }
-                          if (amount === availableAcquisitions(s, k).home)
-                            return;
-                          update((state) => updateHomeStock(state, k, amount));
-                        }}
-                      />
-                    </label>
-                    <label className="pantry-check">
-                      <input
-                        type="checkbox"
-                        checked={!!owned}
-                        onChange={(event) => {
-                          const owned = event.target.checked;
-                          update((state) =>
-                            updateHomeStock(state, k, owned ? i.qty : 0),
-                          );
-                        }}
-                      />
-                      {tr("atHome")}
-                    </label>
-                  </div>
-                );
-              })}
-            </section>
-          );
-        })}
-      </div>
-      {filter === "needed" && bought === needs.length && (
-        <p role="status">
-          {text("Đã đủ nguyên liệu cần mua.", "Your shopping is complete.")}
-        </p>
-      )}
-      {!shopping.some((i) => matches(i.name)) && (
-        <div className="panel empty">
-          {tr("noSearchResults", { query: search })}
-        </div>
-      )}
-      <div className="notice">
-        <ShoppingBag size={20} />
-        <p>
-          <strong>{tr("donTForgetTheBasics")}</strong>{" "}
-          {s.plan.schemaVersion === 2
-            ? text(
-                "Danh sách tính từ nguyên liệu từng món, gồm gạo hoặc bánh mì khi công thức dùng. Chuẩn bị thêm nước sạch, hộp thực phẩm và nhãn. Chỉ chọn đã có khi đủ lượng cần dùng.",
-                "The list follows each recipe, including rice or bread when used. Have clean water, food-safe containers and labels ready. Mark an item at home only when the full quantity is available.",
-              )
-            : tr("riceAbout152KgForTwoAdultsCleanWaterFood")}
-        </p>
-      </div>
-      <details className="panel">
-        <p className="caption">
-          {text(
-            "Gợi ý mua làm tròn lên theo đơn vị hoặc 50 g/ml; chọn quy cách đóng gói phù hợp. Lượng cần dùng trong công thức không thay đổi.",
-            "Purchase suggestions round up to whole items or 50 g/ml; choose a suitable package. Recipe quantities stay exact.",
+                          <small>
+                            {text("Cần dùng", "Required")}: {num(i.qty)}{" "}
+                            {unit(i.unit)}
+                          </small>
+                          {!owned && !checked && i.toBuy > 0 && (
+                            <small>
+                              {text("Gợi ý mua", "Suggested purchase")}:{" "}
+                              {num(
+                                i.unit === "each"
+                                  ? Math.ceil(i.toBuy)
+                                  : ["g", "ml"].includes(i.unit)
+                                    ? Math.ceil(i.toBuy / 50) * 50
+                                    : i.toBuy,
+                              )}{" "}
+                              {unit(i.unit)}
+                            </small>
+                          )}
+                        </span>
+                        <PurchaseEntry
+                          key={`${k}:${i.toBuy}`}
+                          item={i as Ingredient}
+                          needed={i.toBuy}
+                        />
+                        <label className="pantry-amount">
+                          {text("Lượng có sẵn", "Amount at home")} (
+                          {unit(i.unit)})
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            defaultValue={availableAcquisitions(s, k).home}
+                            aria-label={`${text("Lượng có sẵn", "Amount at home")}: ${ct(i.name)} (${unit(i.unit)})`}
+                            key={`${k}:${availableAcquisitions(s, k).home}`}
+                            onBlur={(event) => {
+                              const amount = Number(event.target.value);
+                              if (!Number.isFinite(amount) || amount < 0) {
+                                event.target.value = String(
+                                  availableAcquisitions(s, k).home,
+                                );
+                                return;
+                              }
+                              if (amount === availableAcquisitions(s, k).home)
+                                return;
+                              update((state) =>
+                                updateHomeStock(state, k, amount),
+                              );
+                            }}
+                          />
+                        </label>
+                        <label className="pantry-check">
+                          <input
+                            type="checkbox"
+                            checked={!!owned}
+                            onChange={(event) => {
+                              const owned = event.target.checked;
+                              update((state) =>
+                                updateHomeStock(state, k, owned ? i.qty : 0),
+                              );
+                            }}
+                          />
+                          {tr("atHome")}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </section>
+              );
+            })}
+          </div>
+          {filter === "needed" && bought === needs.length && (
+            <p role="status">
+              {text("Đã đủ nguyên liệu cần mua.", "Your shopping is complete.")}
+            </p>
           )}
-        </p>
-        <summary>{tr("buyingWholeVegetables")}</summary>
-        <p>
-          {tr("forTheDefaultTwoServingsBuyApproximately450500GWinterMelon")}
-        </p>
-      </details>
+          {!shopping.some((i) => matches(i.name)) && (
+            <div className="panel empty">
+              {tr("noSearchResults", { query: search })}
+            </div>
+          )}
+          <div className="notice">
+            <ShoppingBag size={20} />
+            <p>
+              <strong>{tr("donTForgetTheBasics")}</strong>{" "}
+              {s.plan.schemaVersion === 2
+                ? text(
+                    "Danh sách tính từ nguyên liệu từng món, gồm gạo hoặc bánh mì khi công thức dùng. Chuẩn bị thêm nước sạch, hộp thực phẩm và nhãn. Chỉ chọn đã có khi đủ lượng cần dùng.",
+                    "The list follows each recipe, including rice or bread when used. Have clean water, food-safe containers and labels ready. Mark an item at home only when the full quantity is available.",
+                  )
+                : tr("riceAbout152KgForTwoAdultsCleanWaterFood")}
+            </p>
+          </div>
+          <details className="panel">
+            <p className="caption">
+              {text(
+                "Gợi ý mua làm tròn lên theo đơn vị hoặc 50 g/ml; chọn quy cách đóng gói phù hợp. Lượng cần dùng trong công thức không thay đổi.",
+                "Purchase suggestions round up to whole items or 50 g/ml; choose a suitable package. Recipe quantities stay exact.",
+              )}
+            </p>
+            <summary>{tr("buyingWholeVegetables")}</summary>
+            <p>
+              {tr("forTheDefaultTwoServingsBuyApproximately450500GWinterMelon")}
+            </p>
+          </details>
+        </>
+      )}
     </>
   );
 };

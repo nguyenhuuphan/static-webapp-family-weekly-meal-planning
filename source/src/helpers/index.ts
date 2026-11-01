@@ -1,3 +1,4 @@
+import { validatePurchaseHistory } from "./purchaseHistory";
 import {
   MEAL_TYPES,
   type Plan,
@@ -150,6 +151,7 @@ export function hydrateState(raw: unknown, defaults: Plan): State {
       ))
   )
     throw Error("Invalid purchase history.");
+  validatePurchaseHistory(v);
   if (
     v.avoidanceProfiles !== undefined &&
     (!Array.isArray(v.avoidanceProfiles) ||

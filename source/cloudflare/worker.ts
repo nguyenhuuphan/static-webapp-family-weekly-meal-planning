@@ -1,3 +1,4 @@
+import { receiptPhotos } from "./routes/receipt-photos";
 import { authenticatedByAccess } from "./access";
 import { json, requireFamilyCode, sameOrigin } from "./http";
 import { aiMenu } from "./routes/ai-menu";
@@ -46,6 +47,8 @@ export default {
         if (denied) return securityHeaders(denied);
         if (path === "/api/family-plan")
           return securityHeaders(await familyPlan(request, env));
+        if (path === "/api/receipt-photos")
+          return securityHeaders(await receiptPhotos(request, env));
         if (path === "/api/ai-menu")
           return securityHeaders(await aiMenu(request, env));
         if (path === "/api/health" && request.method === "GET") {

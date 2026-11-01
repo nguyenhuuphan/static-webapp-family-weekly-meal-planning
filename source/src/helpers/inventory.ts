@@ -1,3 +1,4 @@
+import { validatePurchaseHistory, type Money } from "./purchaseHistory";
 import type { Ingredient, State } from "src/types";
 import { ingredientKey, mealPortions } from "src/utils";
 import {
@@ -93,6 +94,12 @@ export function recordPurchase(
   location: string,
   packages?: number,
   packageSize?: number,
+  details?: {
+    paid?: Money;
+    invoiceId?: string;
+    shop?: string;
+    purchasedOn?: string;
+  },
 ): State {
   if (
     !Number.isFinite(qty) ||
@@ -124,6 +131,8 @@ export function recordPurchase(
     ...(next.purchaseReceipts || []),
     {
       id: crypto.randomUUID(),
+      name: item.name,
+      ...details,
       key,
       qty: normalized.qty,
       unit: normalized.unit,
@@ -133,5 +142,6 @@ export function recordPurchase(
       at: new Date().toISOString(),
     },
   ];
+  validatePurchaseHistory(next);
   return reconcileShopping(next);
 }

@@ -9,6 +9,12 @@ export function database() {
       "utf8",
     ),
   );
+  sqlite.exec(
+    readFileSync(
+      new URL("../migrations/0002_receipt_photos.sql", import.meta.url),
+      "utf8",
+    ),
+  );
   const db = {
     prepare(sql: string) {
       let values: unknown[] = [];

@@ -1,3 +1,4 @@
+import type { Money, ShoppingInvoice } from "../helpers/purchaseHistory";
 export const DAYS = [
   "Monday",
   "Tuesday",
@@ -66,8 +67,14 @@ export type Timer = {
   paused?: number;
 } | null;
 export type State = {
+  shoppingInvoices?: ShoppingInvoice[];
   avoidanceProfiles?: { id: string; name: string; avoid: string[] }[];
   purchaseReceipts?: {
+    name?: string;
+    paid?: Money;
+    shop?: string;
+    purchasedOn?: string;
+    invoiceId?: string;
     id: string;
     key: string;
     qty: number;

@@ -5,7 +5,7 @@ import { finishCooking } from "src/helpers/cooking";
 import { mealPortions } from "src/domain";
 import { Button } from "src/modules/shared-main/components";
 export default function MealOutcome() {
-  const { s, meal, ready, update } = useMealPlanner();
+  const { s, meal, ready, command } = useMealPlanner();
   const text = useText();
   const batch = s.cookingBatches?.[meal.id]?.servings ?? mealPortions(s, meal);
   const [cooked, setCooked] = useState(String(batch));
@@ -73,7 +73,11 @@ export default function MealOutcome() {
         primary
         disabled={!ready || !valid}
         onClick={() =>
-          update((s) => finishCooking(s, meal.id, +cooked, +eaten))
+          command("cooking.finish", {
+            id: meal.id,
+            cooked: +cooked,
+            eaten: +eaten,
+          })
         }
       >
         {text("Hoàn tất bữa ăn", "Finish meal")}

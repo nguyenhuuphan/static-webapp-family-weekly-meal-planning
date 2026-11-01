@@ -12,10 +12,10 @@ export default function Stocktake({
   week: string;
   close: () => void;
 }) {
-  const { s, update } = useMealPlanner();
+  const { s, command, stocktakeCandidates: serverStocktake } = useMealPlanner();
   const text = useText();
   const { content: ct, unit } = useI18n();
-  const [candidates] = useState(() => stocktakeCandidates(retainPrepared(s)));
+  const [candidates] = useState(() => serverStocktake);
   const [quantities, setQuantities] = useState(() =>
     Object.fromEntries(candidates.map((i) => [i.key, String(i.estimated)])),
   );
@@ -80,16 +80,19 @@ export default function Stocktake({
         <Button
           disabled={!checked || !valid}
           primary
-          onClick={() => {
-            update((s) =>
-              startWeek(
-                s,
-                week,
-                Object.fromEntries(
-                  Object.entries(quantities).map(([k, v]) => [k, Number(v)]),
+          onClick={async () => {
+            if (
+              !(await command("week.start", {
+                weekStart: week,
+                stock: Object.fromEntries(
+                  Object.entries(quantities).map(([key, v]) => [
+                    key,
+                    Number(v),
+                  ]),
                 ),
-              ),
-            );
+              }))
+            )
+              return;
             close();
           }}
         >

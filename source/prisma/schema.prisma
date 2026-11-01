@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client"
+  output = "../api/generated/prisma"
+  engineType = "client"
+}
+generator workerClient {
+  provider = "prisma-client"
+  output = "../api/generated/worker"
+  runtime = "workerd"
+  engineType = "client"
+}
+datasource db {
+  provider = "sqlite"
+}
+model Document {
+  namespace String
+  key String
+  value String
+  revision String
+  updatedAt String @default(dbgenerated("(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))")) @map("updated_at")
+  @@id([namespace,key])
+  @@map("documents")
+}
+model ReceiptPhoto {
+  id String @id
+  invoiceId String @map("invoice_id")
+  data String
+  byteSize Int @map("byte_size")
+  createdAt String @default(dbgenerated("(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))")) @map("created_at")
+  @@index([invoiceId],map:"receipt_photos_invoice")
+  @@map("receipt_photos")
+}
+model PlannerState {
+  id String @id
+  value String
+  revision Int @default(1)
+  commandId String? @map("command_id")
+  commandHash String @default("") @map("command_hash")
+  commandKind String @default("bootstrap") @map("command_kind")
+  actor String @default("system")
+  updatedAt String @default(dbgenerated("(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))")) @map("updated_at")
+  @@map("planner_state")
+}
+model CommandReceipt {
+  id String @id
+  fingerprint String
+  revision Int @unique
+  kind String
+  actor String
+  createdAt String @map("created_at")
+  @@index([createdAt])
+  @@map("command_receipts")
+}
+model StateVersion {
+  revision Int @id
+  value String
+  createdAt String @map("created_at")
+  @@map("state_versions")
+}
+model PurchaseRecord {
+  id String @id
+  ingredientKey String @map("ingredient_key")
+  name String
+  qty Float
+  unit String
+  paidMinor BigInt? @map("paid_minor")
+  currency String?
+  shop String?
+  purchasedOn String @map("purchased_on")
+  invoiceId String? @map("invoice_id")
+  createdAt String @map("created_at")
+  @@index([purchasedOn])
+  @@index([invoiceId])
+  @@map("purchase_records")
+}
+model InvoiceRecord {
+  id String @id
+  shop String
+  purchasedOn String @map("purchased_on")
+  totalMinor BigInt? @map("total_minor")
+  currency String?
+  note String
+  photos String
+  createdAt String @map("created_at")
+  updatedAt String @map("updated_at")
+  @@index([purchasedOn])
+  @@map("invoice_records")
+}
+model MealRecord {
+  id String @id
+  main String
+  side String
+  day String
+  mealType String @map("meal_type")
+  servings Int
+  done Boolean
+  minutes Int
+  cuisine String?
+  @@map("meal_records")
+}
+model BehaviorEvent {
+  id String @id
+  actor String
+  kind String
+  view String?
+  createdAt String @map("created_at")
+  @@index([createdAt])
+  @@index([kind,createdAt])
+  @@map("behavior_events")
+}

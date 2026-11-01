@@ -6,14 +6,14 @@ it("explains missing readiness and focuses the required confirmation", async () 
     (_, index) => (initial.progress.prep[`mon-lunch:${index}`] = true),
   );
   await boot(initial);
-  nav("Cook");
+  await nav("Cook");
   const finish = screen.getByRole("button", {
     name: "Finish meal",
   }) as HTMLButtonElement;
   expect(finish.disabled).toBe(true);
-  fireEvent.click(screen.getByRole("button", { name: "Review now" }));
+  await fireEvent.click(screen.getByRole("button", { name: "Review now" }));
   const ready = screen.getByRole("checkbox", { name: /I checked:/ });
   expect(document.activeElement).toBe(ready);
-  fireEvent.click(ready);
+  await fireEvent.click(ready);
   expect(finish.disabled).toBe(false);
 });

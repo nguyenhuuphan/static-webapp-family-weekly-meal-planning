@@ -1,4 +1,5 @@
 export interface Env {
+  PERSISTENCE_MODE?: "prisma";
   DB: D1Database;
   AI?: Ai;
   ASSETS: Fetcher;

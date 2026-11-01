@@ -77,14 +77,28 @@ def main():
         status,_,raw=call('/api/family-plan');state=json.loads(raw)
         assert status==200 and state.get('state',{}).get('plan',{}).get('meals'),'Shared planner read failed'
         result['checks']['sharedPlanner']=True
-        status,_,raw=call('/api/family-plan',{'state':state['state'],'revision':state['revision']},'PUT')
-        assert status==200,'Shared planner same-content save failed'
-        saved=json.loads(raw)
-        status,_,raw=call('/api/family-plan');readback=json.loads(raw)
-        assert status==200 and readback.get('revision')==saved.get('revision') and readback['state']['plan']==state['state']['plan'],'Shared planner readback failed'
+        status,_,raw=call('/api/v1/health');api_health=json.loads(raw)
+        assert status==200 and api_health.get('database')=='prisma','Prisma API health failed'
+        result['checks']['prismaApi']=True
+        status,_,raw=call('/api/v1/planner');snapshot=json.loads(raw)
+        assert status==200 and snapshot.get('calculations') and isinstance(snapshot.get('revision'),int),'Versioned planner read failed'
+        # Removing an absent preference changes no household data, while exercising a real command commit.
+        request_id=str(uuid.uuid4())
+        body={'id':request_id,'revision':snapshot['revision'],'command':{'name':'avoidance.remove','args':{'id':str(uuid.uuid4())}}}
+        status,_,raw=call('/api/v1/commands',body);saved=json.loads(raw)
+        assert status==200 and saved['revision']==snapshot['revision']+1,'API command save failed'
+        status,_,raw=call('/api/v1/commands',body);retried=json.loads(raw)
+        assert status==200 and retried.get('replayed') and retried['revision']==saved['revision'],'Idempotent retry failed'
+        body['id']=str(uuid.uuid4())
+        status,_,_=call('/api/v1/commands',body)
+        assert status==409,'Stale planner commands must be rejected'
         status,_,_=call('/api/family-plan',{'state':state['state'],'revision':state['revision']},'PUT')
-        assert status==409,'Stale planner writes must be rejected'
+        assert status==409,'Old whole-document writers must be rejected'
+        status,_,raw=call('/api/v1/reports');report=json.loads(raw)
+        assert status==200 and 'spending' in report,'Prisma reports failed'
         result['checks']['saveAndConflict']=True
+        result['checks']['idempotentRetry']=True
+        result['checks']['reports']=True
         status,_,raw=call('/api/translate',{'text':'Fresh vegetables','target':'vi'})
         assert status==200 and json.loads(raw).get('translation'),'English–Vietnamese content translation failed'
         result['checks']['contentTranslation']=True

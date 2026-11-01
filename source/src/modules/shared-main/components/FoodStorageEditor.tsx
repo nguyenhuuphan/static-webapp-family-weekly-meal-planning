@@ -11,7 +11,7 @@ export default function FoodStorageEditor({
 }: {
   cookedOnly?: boolean;
   value?: FoodStorage;
-  onChange: (next: FoodStorage) => void;
+  onChange: (next: FoodStorage) => void | Promise<boolean | void>;
 }) {
   const text = useText(),
     current = value || unknownStorage();
@@ -21,6 +21,7 @@ export default function FoodStorageEditor({
     useState<FoodStorage["events"][number]["type"]>("checked");
   const [at, setAt] = useState(""),
     [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const labels = {
     unknown: text("Chưa biết", "Unknown"),
     raw: text("Sống / mới sơ chế", "Raw / partly prepared"),
@@ -111,7 +112,10 @@ export default function FoodStorageEditor({
         />
       </label>
       <Button
-        onClick={() => {
+        disabled={busy}
+        onClick={async () => {
+          if (busy) return;
+          setBusy(true);
           try {
             const next = recordStorage(
               value,
@@ -120,7 +124,15 @@ export default function FoodStorageEditor({
               cookedOnly ? "cooked" : stage,
               place,
             );
-            onChange(next);
+            if ((await onChange(next)) === false) {
+              setError(
+                text(
+                  "Chưa lưu được ghi nhận. Thử lại kết nối ở đầu trang.",
+                  "The record was not saved. Retry the connection at the top of the page.",
+                ),
+              );
+              return;
+            }
             setStage(next.stage);
             setPlace(next.place);
             setError("");
@@ -131,6 +143,8 @@ export default function FoodStorageEditor({
                 "Invalid time: use a valid time, not in the future.",
               ),
             );
+          } finally {
+            setBusy(false);
           }
         }}
       >

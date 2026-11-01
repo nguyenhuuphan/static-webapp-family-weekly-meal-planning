@@ -22,7 +22,7 @@ export default function PurchaseEntry({
 }) {
   const text = useText(),
     { content: ct, unit, language } = useI18n(),
-    { s, update, setToast } = useMealPlanner();
+    { s, command, apiBusy, setToast } = useMealPlanner();
   const [size, setSize] = useState(
     String(item.unit === "each" ? Math.ceil(needed || 1) : needed || 1),
   );
@@ -190,24 +190,21 @@ export default function PurchaseEntry({
         {valid ? Math.max(0, Math.round((qty - needed) * 100) / 100) : "—"}
       </p>
       <Button
-        disabled={!valid || !validPrice || !validPurchaseDate(date)}
-        onClick={() => {
-          const changed = update((s) =>
-            recordPurchase(
-              s,
-              item,
-              qty,
-              location,
-              packaged ? +count : undefined,
-              packaged ? +size : undefined,
-              {
-                paid,
-                invoiceId: invoiceId || undefined,
-                shop: shop.trim() || undefined,
-                purchasedOn: date,
-              },
-            ),
-          );
+        disabled={apiBusy || !valid || !validPrice || !validPurchaseDate(date)}
+        onClick={async () => {
+          const changed = await command("purchase.record", {
+            key: ingredientKey(item),
+            qty,
+            location,
+            packages: packaged ? +count : undefined,
+            packageSize: packaged ? +size : undefined,
+            details: {
+              paid,
+              invoiceId: invoiceId || undefined,
+              shop: shop.trim() || undefined,
+              purchasedOn: date,
+            },
+          });
           if (changed) {
             setSaved(true);
             setToast(

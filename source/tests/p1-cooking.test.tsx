@@ -82,12 +82,14 @@ it("keeps uncooked prepared surplus when actual cooked quantity is smaller", () 
 it("finishes a two-person meal with one cooked leftover through the cooking screen", async () => {
   const s = prepared();
   await boot(s);
-  nav("Cook");
-  fireEvent.change(screen.getByLabelText("Eaten"), { target: { value: "1" } });
-  fireEvent.click(screen.getByRole("button", { name: "Finish meal" }));
+  await nav("Cook");
+  await fireEvent.change(screen.getByLabelText("Eaten"), {
+    target: { value: "1" },
+  });
+  await fireEvent.click(screen.getByRole("button", { name: "Finish meal" }));
   expect(readState().mealResults?.[s.plan.meals[0].id].remaining).toBe(1);
-  nav("This Week");
-  fireEvent.click(screen.getByText("Review and arrange"));
+  await nav("This Week");
+  await fireEvent.click(screen.getByText("Review and arrange"));
   expect(screen.getByText(/1 cooked portions/)).toBeTruthy();
   expect(
     screen.getByRole("link", { name: "USDA: Leftovers and Food Safety" }),

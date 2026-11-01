@@ -1,8 +1,8 @@
 # Cloudflare development and deployment
 
-The current deployment target is **Cloudflare Workers Static Assets + D1 + Workflows**, with Cloudflare Access sign-in and the existing family access code. See [the migration runbook](../docs/cloudflare-migration.md). The retired Netlify configuration remains for rollback; it explicitly selects the legacy API prefix.
+The app uses React + a versioned Hono API + Prisma. The current deployment target is **Cloudflare Workers (Node.js compatibility) + D1 + Workflows**, with Cloudflare Access sign-in and the existing family access code. See [the migration runbook](../docs/cloudflare-migration.md). A real Node.js + Prisma/SQLite server is also included. See [the full-stack API runbook](../docs/full-stack-api.md) for development, data contracts, reports and migration. The Netlify files are historical and do not implement the current versioned API.
 
-Run `npm ci`, `npm test`, and `npm run build` in this directory. `npm run db:migrate:local` and `npm run dev:cloudflare` start the full local Worker/D1 workflow. Copy `.dev.vars.example` to the ignored `.dev.vars` and supply a private local family code. The development Access bypass is limited to loopback hosts and is not deployed. Plain `npm run dev` starts the frontend only.
+Run `npm ci`, `npm test`, and `npm run build` in this directory. `npm run db:migrate:local` and `npm run dev:cloudflare` start the full local Worker/D1 workflow. Copy `.dev.vars.example` to the ignored `.dev.vars` and supply a private local family code. The development Access bypass is limited to loopback hosts and is not deployed. For Node development, set a private `FAMILY_ACCESS_CODE`, run `npm run dev:api`, then `npm run dev` in another terminal (Vite proxies the API).
 
 `wrangler.jsonc` contains the provisioned account, D1 and Access identifiers. The production URL is https://family-weekly-meal-planning.family-3adfa3459c6c.workers.dev . Runtime credentials belong in Worker secrets. A successful deployment does not replace live API/AI verification; follow the migration runbook.
 
@@ -16,11 +16,11 @@ Use **Create menu with AI** in the weekly plan. The guided popup collects diners
 
 The generator uses the bundled default recipe as a formatting/detail reference and checks ingredient coverage, actionable cooking steps and scalable instruction quantities. The guided form keeps answers when moving between steps, offers weekday/full-week presets and separates request review from applying a draft. Family connection controls are disclosed on demand so planning remains visible on mobile. See [the UX research and implementation rationale](../docs/ux-research.md).
 
-Family sync keeps a device copy, debounces local saves, checks visible idle tabs every five seconds, pauses hidden/offline polling and refreshes on return. A failed or conflicting write pauses for explicit recovery instead of overwriting another device.
+All business changes run as validated API commands with revision checks and idempotent retries. Shopping/preparation quantities, reporting and activity records are calculated on the server. The UI polls visible idle tabs every five seconds and keeps a browser read cache; offline writes are not marked saved. Unconfirmed saves can be retried safely without duplicate purchases.
 
 ## Legacy Netlify deployment
 
-See [setup instructions](../docs/netlify-sync.md). Configure a private `FAMILY_ACCESS_CODE` (at least 16 characters) in Netlify Functions environment variables and deploy from Git so both static assets and functions are included. Uploading only `dist` supports local editing and bundled translations but cannot provide shared storage or automatic custom-content translation.
+See [setup instructions](../docs/netlify-sync.md). Configure a private `FAMILY_ACCESS_CODE` (at least 16 characters) in Netlify Functions environment variables and deploy from Git so both static assets and functions are included. The historical Netlify functions do not support the current `/api/v1` contract; use the Cloudflare or Node deployment for this frontend.
 
 ### Frontend-only manual build
 
@@ -32,7 +32,7 @@ When deploying this entire repository, the root `netlify.toml` sets base directo
 
 ## Source structure
 
-Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` and absolute `src/...` imports. Redux Toolkit owns persisted planner state; transient screen/editor state lives in hooks. `cloudflare/` implements authenticated APIs, D1 storage and AI Workflows.
+Components use a folder per screen with `index.tsx`, typed `React.FC<IProps>` and absolute `src/...` imports. Redux Toolkit caches confirmed API state; transient screen/editor state lives in hooks. `api/` implements server business operations, Prisma persistence, reports and the Node entrypoint; `cloudflare/` adapts them to D1 and durable AI Workflows.
 
 | Folder                                 | Responsibility                                                                          |
 | -------------------------------------- | --------------------------------------------------------------------------------------- |
@@ -79,7 +79,7 @@ The browser key remains `weekday-table:v1`; both legacy schema-v1 and flexible s
 
 ## Defaults versus personal edits
 
-The file `public/meal-plan.json` is the bundled default. Family Sync connects each device using the configured family code after Access sign-in. Shared JSON is stored in Cloudflare D1 with revision checks, not committed into this repository. Browser state remains available if a request fails; review any conflict before replacing a newer shared copy.
+The file `public/meal-plan.json` is the bundled default. Family Sync connects each device using the configured family code after Access sign-in. Shared JSON is stored in Cloudflare D1 with revision checks, not committed into this repository. The browser copy is retained for offline reading and backup. It is never automatically uploaded over the current server state.
 
 Legacy schema-v1 plans require 10 unique Monday–Friday lunch/dinner slots. Schema-v2 plans support 1–21 unique breakfast/lunch/dinner slots across Monday–Sunday. Ingredient units: g, ml, each, tsp, tbsp. Tablespoons and teaspoons are consolidated by volume in shopping; no volume-to-weight conversion is invented. Edible weights exclude peel/bones/shells. Rice and cooking water are managed separately.
 
@@ -89,7 +89,7 @@ Changing servings, importing, restoring defaults or choosing a new week resets p
 
 The app validates structure and slot coverage, not the safety of user-created recipes. Manual prep/thaw checkboxes are not certification. Cooking times are estimates and do not scale with servings: allow batches, check doneness and use a thermometer. Egg quantities can be fractional; round appropriately. The displayed USDA/FoodSafety.gov references have not reviewed this app or its recipes.
 
-Timers keep the deadline across refresh/view changes. There are no OS notifications or guaranteed alarms while the tab is closed/asleep. The **At home** checkbox marks the full listed quantity; stocktake and purchase records also support measured amounts. Offline use retains the device copy; family updates and new AI generation need a network connection.
+Timers keep the deadline across refresh/view changes. There are no OS notifications or guaranteed alarms while the tab is closed/asleep. The **At home** checkbox marks the full listed quantity; stocktake and purchase records also support measured amounts. Offline use permits reading the device copy; saving changes, shared reports and AI generation need a network connection.
 
 ## Tests and verification
 

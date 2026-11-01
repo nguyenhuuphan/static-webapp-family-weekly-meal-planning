@@ -3,7 +3,7 @@ import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useText } from "src/i18n";
 import { Button } from "src/modules/shared-main/components";
 export default function AvoidanceProfiles() {
-  const { s, update } = useMealPlanner(),
+  const { s, command } = useMealPlanner(),
     text = useText();
   const [name, setName] = useState(""),
     [avoid, setAvoid] = useState("");
@@ -43,21 +43,17 @@ export default function AvoidanceProfiles() {
       </label>
       <Button
         disabled={!name.trim() || !avoid.split(",").some((s) => s.trim())}
-        onClick={() => {
-          update((s) => ({
-            ...s,
-            avoidanceProfiles: [
-              ...(s.avoidanceProfiles || []),
-              {
-                id: crypto.randomUUID(),
-                name: name.trim(),
-                avoid: avoid
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              },
-            ],
-          }));
+        onClick={async () => {
+          if (
+            !(await command("avoidance.add", {
+              name: name.trim(),
+              avoid: avoid
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean),
+            }))
+          )
+            return;
           setName("");
           setAvoid("");
         }}
@@ -69,14 +65,7 @@ export default function AvoidanceProfiles() {
           <li key={p.id}>
             {p.name}: {p.avoid.join(", ")}{" "}
             <Button
-              onClick={() =>
-                update((s) => ({
-                  ...s,
-                  avoidanceProfiles: s.avoidanceProfiles?.filter(
-                    (person) => person.id !== p.id,
-                  ),
-                }))
-              }
+              onClick={() => void command("avoidance.remove", { id: p.id })}
             >
               {text("Xóa hồ sơ", "Remove profile")}: {p.name}
             </Button>

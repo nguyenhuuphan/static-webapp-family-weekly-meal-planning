@@ -39,15 +39,17 @@ it("requires an actual stocktake before a new week is saved", async () => {
   s.weekStart = "2026-10-12";
   s.pantry = { "Shrimp, peeled|g": 500 };
   await boot(s);
-  nav("Settings");
-  fireEvent.change(screen.getByLabelText("Week beginning"), {
+  await nav("Settings");
+  await fireEvent.change(screen.getByLabelText("Week beginning"), {
     target: { value: "2026-10-20" },
   });
   expect(readState().weekStart).toBe("2026-10-12");
   const panel = within(
     screen.getByRole("region", { name: "Stocktake before new week" }),
   );
-  fireEvent.change(panel.getByRole("spinbutton"), { target: { value: "125" } });
+  await fireEvent.change(panel.getByRole("spinbutton"), {
+    target: { value: "125" },
+  });
   expect(
     (
       panel.getByRole("button", {
@@ -55,8 +57,8 @@ it("requires an actual stocktake before a new week is saved", async () => {
       }) as HTMLButtonElement
     ).disabled,
   ).toBe(true);
-  fireEvent.click(panel.getByRole("checkbox"));
-  fireEvent.click(
+  await fireEvent.click(panel.getByRole("checkbox"));
+  await fireEvent.click(
     panel.getByRole("button", { name: "Confirm stocktake and start week" }),
   );
   expect(readState().weekStart).toBe("2026-10-19");

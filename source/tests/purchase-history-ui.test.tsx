@@ -20,60 +20,73 @@ it("creates a receipt, links a price without buying stock again, and searches ac
     "fridge",
   );
   await boot(initial);
-  nav("Shopping");
-  fireEvent.click(
+  await nav("Shopping");
+  await fireEvent.click(
     screen.getByRole("button", {
       name: "Purchase history & receipts",
     }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Add receipt" }));
-  fireEvent.change(screen.getByLabelText("Shop / place of purchase"), {
+  await fireEvent.click(screen.getByRole("button", { name: "Add receipt" }));
+  await fireEvent.change(screen.getByLabelText("Shop / place of purchase"), {
     target: { value: "ĐÀ NẴNG Market" },
   });
-  fireEvent.change(screen.getByLabelText("Receipt total (optional)"), {
+  await fireEvent.change(screen.getByLabelText("Receipt total (optional)"), {
     target: { value: "125000" },
   });
-  fireEvent.change(
+  await fireEvent.change(
     screen.getByLabelText("Notes / purchased items to help you search later"),
     { target: { value: "Family food receipt" } },
   );
-  fireEvent.click(screen.getByRole("button", { name: "Save receipt" }));
+  await fireEvent.click(screen.getByRole("button", { name: "Save receipt" }));
   await waitFor(() => expect(readState().shoppingInvoices).toHaveLength(1));
   const invoice = readState().shoppingInvoices![0];
   expect(invoice.total).toEqual({ amount: 125000, currency: "VND" });
-  fireEvent.click(screen.getByRole("button", { name: "Record / edit price" }));
-  fireEvent.change(screen.getByLabelText("Total paid for this quantity"), {
-    target: { value: "45000" },
-  });
-  fireEvent.change(screen.getByLabelText("Link receipt"), {
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Record / edit price" }),
+  );
+  await fireEvent.change(
+    screen.getByLabelText("Total paid for this quantity"),
+    {
+      target: { value: "45000" },
+    },
+  );
+  await fireEvent.change(screen.getByLabelText("Link receipt"), {
     target: { value: invoice.id },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Save purchase price" }));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Save purchase price" }),
+  );
   await screen.findByText("Purchase price saved.");
   expect(readState().purchased).toEqual(initial.purchased);
   expect(readState().purchaseReceipts?.[0]).toMatchObject({
     paid: { amount: 45000, currency: "VND" },
     invoiceId: invoice.id,
   });
-  fireEvent.change(screen.getByLabelText("Search items, shops or notes"), {
-    target: { value: "da nang" },
-  });
+  await fireEvent.change(
+    screen.getByLabelText("Search items, shops or notes"),
+    {
+      target: { value: "da nang" },
+    },
+  );
   expect(screen.getByRole("heading", { name: "ĐÀ NẴNG Market" })).toBeTruthy();
-  fireEvent.change(screen.getByLabelText("Search items, shops or notes"), {
-    target: { value: "a shop that does not exist" },
-  });
+  await fireEvent.change(
+    screen.getByLabelText("Search items, shops or notes"),
+    {
+      target: { value: "a shop that does not exist" },
+    },
+  );
   expect(screen.queryByRole("heading", { name: "ĐÀ NẴNG Market" })).toBeNull();
   expect(screen.getByText("No matching receipts.")).toBeTruthy();
 });
 it("keeps camera and library controls distinct and preserves an unfinished receipt after invalid input", async () => {
   await boot();
-  nav("Shopping");
-  fireEvent.click(
+  await nav("Shopping");
+  await fireEvent.click(
     screen.getByRole("button", {
       name: "Purchase history & receipts",
     }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Add receipt" }));
+  await fireEvent.click(screen.getByRole("button", { name: "Add receipt" }));
   const camera = screen.getByLabelText(
     "Capture receipt with camera",
   ) as HTMLInputElement;
@@ -84,10 +97,10 @@ it("keeps camera and library controls distinct and preserves an unfinished recei
   expect(camera.accept).toBe("image/*");
   expect(library.hasAttribute("capture")).toBe(false);
   expect(library.multiple).toBe(true);
-  fireEvent.change(screen.getByLabelText("Shop / place of purchase"), {
+  await fireEvent.change(screen.getByLabelText("Shop / place of purchase"), {
     target: { value: "My shop" },
   });
-  fireEvent.change(screen.getByLabelText("Receipt total (optional)"), {
+  await fireEvent.change(screen.getByLabelText("Receipt total (optional)"), {
     target: { value: "-1" },
   });
   expect(

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import { fireEvent } from "./userEvents";
 import { afterEach, expect, it, vi } from "vitest";
 const model = vi.hoisted(() => ({
   editing: null,
@@ -28,14 +29,12 @@ it("allows a saved update despite historical cooking batches", async () => {
     serviceWorker: {
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
-      register: vi
-        .fn()
-        .mockResolvedValue({
-          waiting: { postMessage },
-          active: {},
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-        }),
+      register: vi.fn().mockResolvedValue({
+        waiting: { postMessage },
+        active: {},
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
     },
   });
   render(<OfflineStatus />);
@@ -43,6 +42,6 @@ it("allows a saved update despite historical cooking batches", async () => {
     name: "Load new version",
   });
   expect((button as HTMLButtonElement).disabled).toBe(false);
-  fireEvent.click(button);
+  await fireEvent.click(button);
   expect(postMessage).toHaveBeenCalledWith("ACTIVATE_UPDATE");
 });

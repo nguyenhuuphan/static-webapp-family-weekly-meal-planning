@@ -7,7 +7,7 @@ import { mealPortions } from "src/utils";
 import { Button } from "src/modules/shared-main/components";
 
 export default function ScheduleControls({ meal }: { meal: Meal }) {
-  const { s, update } = useMealPlanner();
+  const { s, command } = useMealPlanner();
   const { content: ct } = useI18n();
   const text = useText();
   const [open, setOpen] = useState(false);
@@ -27,7 +27,10 @@ export default function ScheduleControls({ meal }: { meal: Meal }) {
           }
           value={mealPortions(s, meal)}
           onChange={(e) =>
-            update((s) => changePortions(s, meal.id, Number(e.target.value)))
+            command("meal.portions", {
+              id: meal.id,
+              count: Number(e.target.value),
+            })
           }
         >
           {Array.from({ length: s.servings + 1 }, (_, count) => (
@@ -82,8 +85,9 @@ export default function ScheduleControls({ meal }: { meal: Meal }) {
           </p>
           <Button
             disabled={!other}
-            onClick={() => {
-              update((s) => swapSchedule(s, meal.id, target));
+            onClick={async () => {
+              if (!(await command("schedule.swap", { id: meal.id, target })))
+                return;
               setOpen(false);
               setTarget("");
             }}

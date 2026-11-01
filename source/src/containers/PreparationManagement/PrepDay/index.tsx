@@ -85,7 +85,7 @@ const PrepDay: React.FC = () => {
     plan: string;
   } | null>("prep:undo", null);
   const { t: tr, content: ct, number, unit, instruction, language } = useI18n();
-  const { s, plan, navigate, toggle, update } = useMealPlanner();
+  const { s, plan, navigate, command, preparationGroups } = useMealPlanner();
   const prepInstruction = (value: string, meal: (typeof plan.meals)[number]) =>
     currentMealLabel(
       instruction(value, mealPortions(s, meal) / plan.servings),
@@ -129,9 +129,9 @@ const PrepDay: React.FC = () => {
     plan,
     s.servings,
     s.weekStart,
-    s.mealServings,
+    s.mealServings || {},
   ]);
-  const complete = (keys: string[], checked: boolean) => {
+  const complete = async (keys: string[], checked: boolean) => {
     setUndo({
       preparedTasks: s.preparedTasks,
       touched: keys,
@@ -150,7 +150,10 @@ const PrepDay: React.FC = () => {
       after: checked,
       plan: prepIdentity,
     });
-    keys.forEach((key) => toggle("prep", key, checked));
+    if (!(await command("prep.complete", { keys, value: checked }))) {
+      setUndo(null);
+      return;
+    }
     setExpanded((current) => {
       const next = { ...current };
       groups.forEach((group) => {
@@ -166,17 +169,7 @@ const PrepDay: React.FC = () => {
       return next;
     });
   };
-  const groups = useMemo(
-    () =>
-      recipePreparationCards(
-        groupPreparation(plan, s.servings, s.mealServings),
-      ).filter(
-        (group) =>
-          group.operation !== "prepareSauces" &&
-          group.operation !== "cookJustInTime",
-      ),
-    [plan, s.servings, s.mealServings],
-  );
+  const groups = preparationGroups;
   const completedGroups = groups.filter((group) =>
     group.allocations.every((allocation) =>
       preparationChecked(s, allocation.key),
@@ -249,26 +242,16 @@ const PrepDay: React.FC = () => {
             (key) => preparationChecked(s, key) === undo.after,
           ) && (
             <Button
-              onClick={() => {
-                update((state) => {
-                  const preparedTasks = { ...state.preparedTasks };
-                  for (const key of new Set(
-                    Object.keys(undo.before).map(sourcePreparationKey),
-                  )) {
-                    if (undo.preparedTasks?.[key])
-                      preparedTasks[key] = undo.preparedTasks[key];
-                    else delete preparedTasks[key];
-                  }
-                  return {
-                    ...state,
-                    preparedTasks,
-                    progress: {
-                      ...state.progress,
-                      prep: { ...state.progress.prep, ...undo.before },
-                      ready: { ...state.progress.ready, ...undo.ready },
-                    },
-                  };
-                });
+              onClick={async () => {
+                if (
+                  !(await command("prep.restore", {
+                    before: undo.before,
+                    touched: Object.keys(undo.before),
+                    preparedTasks: undo.preparedTasks,
+                    ready: undo.ready,
+                  }))
+                )
+                  return;
                 setUndo(null);
               }}
             >
@@ -573,27 +556,11 @@ const PrepDay: React.FC = () => {
                                   meal={allocation.meal}
                                   task={allocation.task}
                                   onChange={(refs) =>
-                                    update((s) => ({
-                                      ...s,
-                                      plan: {
-                                        ...s.plan,
-                                        meals: s.plan.meals.map((m) =>
-                                          m.id === allocation.meal.id
-                                            ? {
-                                                ...m,
-                                                prep: m.prep.map((p, index) =>
-                                                  index === allocation.taskIndex
-                                                    ? {
-                                                        ...p,
-                                                        ingredients: refs,
-                                                      }
-                                                    : p,
-                                                ),
-                                              }
-                                            : m,
-                                        ),
-                                      },
-                                    }))
+                                    command("prep.links", {
+                                      id: allocation.meal.id,
+                                      index: allocation.taskIndex,
+                                      refs,
+                                    })
                                   }
                                 />
                               )}

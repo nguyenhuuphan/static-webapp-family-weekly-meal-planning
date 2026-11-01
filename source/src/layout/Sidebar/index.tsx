@@ -1,5 +1,5 @@
 import { mealPortions } from "src/utils";
-import { useI18n } from "src/i18n";
+import { useI18n, useText } from "src/i18n";
 import {
   CalendarDays,
   ShoppingBag,
@@ -8,6 +8,7 @@ import {
   Settings,
   Leaf,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -19,17 +20,20 @@ const ICONS = {
   cook: Utensils,
   settings: Settings,
   safety: ShieldCheck,
+  reports: BarChart3,
 };
 const NAV = [
   ["week", "This Week"],
   ["shop", "Shopping"],
   ["prep", "Prep Day"],
   ["cook", "Cook"],
+  ["reports", "Reports"],
   ["settings", "Settings"],
 ] as const;
 interface IProps {}
 const Sidebar: React.FC<IProps> = () => {
   const { t: tr, content: ct } = useI18n();
+  const text = useText();
   const { navigate, view, editId, advanced, plan, s } = useMealPlanner();
   return (
     <aside className="sidebar">
@@ -88,9 +92,15 @@ const Sidebar: React.FC<IProps> = () => {
           {tr("safetyStorage")}
         </button>
         <span>
-          {tr("localToThisBrowser")}
+          {text(
+            "Dữ liệu được lưu trên máy chủ.",
+            "Data is saved on the server.",
+          )}
           <br />
-          {tr("noAccountNoAutomaticSync")}
+          {text(
+            "Mã gia đình kết nối các thiết bị.",
+            "Your family code connects devices.",
+          )}
         </span>
       </div>
     </aside>

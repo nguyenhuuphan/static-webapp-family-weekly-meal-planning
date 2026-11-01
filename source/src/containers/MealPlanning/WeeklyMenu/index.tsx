@@ -41,7 +41,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
   const { t: tr, content: ct, number: num, date: localizedDate } = useI18n();
   const {
     s,
-    update,
+    command,
     plan,
     doneCount,
     edit,
@@ -214,16 +214,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                       disabled={plan.meals
                         .filter((m) => m.day === day && !s.progress.done[m.id])
                         .every((m) => mealPortions(s, m) === 0)}
-                      onClick={() =>
-                        update((state) => {
-                          let next = state;
-                          for (const m of state.plan.meals.filter(
-                            (m) => m.day === day && !state.progress.done[m.id],
-                          ))
-                            next = changePortions(next, m.id, 0);
-                          return next;
-                        })
-                      }
+                      onClick={() => command("day.skip", { day })}
                     >
                       {text("Không ăn cả ngày", "Skip whole day")}: {ct(day)}
                     </button>
@@ -232,27 +223,7 @@ const WeeklyMenu: React.FC<IProps> = () => {
                     ) && (
                       <button
                         className="text-button"
-                        onClick={() =>
-                          update((state) => {
-                            let next = state;
-                            for (const m of state.plan.meals.filter(
-                              (m) =>
-                                m.day === day &&
-                                !state.progress.done[m.id] &&
-                                mealPortions(state, m) === 0,
-                            ))
-                              next = changePortions(
-                                next,
-                                m.id,
-                                Math.min(
-                                  state.servings,
-                                  state.lastMealServings?.[m.id] ||
-                                    state.servings,
-                                ),
-                              );
-                            return next;
-                          })
-                        }
+                        onClick={() => command("day.restore", { day })}
                       >
                         {text("Khôi phục các bữa", "Restore meals")}: {ct(day)}
                       </button>
@@ -347,9 +318,10 @@ const WeeklyMenu: React.FC<IProps> = () => {
                                 meal={m}
                                 disabled={!canSwapMeal(s, m.id)}
                                 onReplace={(id) =>
-                                  update((current) =>
-                                    swapStateMeal(current, m.id, id),
-                                  )
+                                  command("alternative.swap", {
+                                    id: m.id,
+                                    alternativeId: id,
+                                  })
                                 }
                               />
                             )}

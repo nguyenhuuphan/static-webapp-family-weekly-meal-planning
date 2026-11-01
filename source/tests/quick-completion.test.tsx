@@ -16,14 +16,18 @@ it("completes from the weekly menu without visiting cooking and saves leftovers"
     key = raw.name + "|" + raw.unit;
   s.pantry = { [key]: raw.qty };
   await boot(s);
-  fireEvent.click(screen.getAllByRole("button", { name: "Complete meal" })[0]);
+  await fireEvent.click(
+    screen.getAllByRole("button", { name: "Complete meal" })[0],
+  );
   const form = within(
     screen.getByRole("region", { name: "Quick meal completion" }),
   );
-  fireEvent.change(form.getByLabelText("Portions eaten"), {
+  await fireEvent.change(form.getByLabelText("Portions eaten"), {
     target: { value: "1" },
   });
-  fireEvent.click(form.getByRole("button", { name: "Confirm completion" }));
+  await fireEvent.click(
+    form.getByRole("button", { name: "Confirm completion" }),
+  );
   const next = readState();
   expect(next.progress.done[meal.id]).toBe(true);
   expect(next.mealResults?.[meal.id]).toMatchObject({
@@ -57,8 +61,10 @@ it("rejects duplicate completion, skipped meals and impossible portions", () => 
 it("cancel leaves the meal and inventory unchanged", async () => {
   await boot(freshState(structuredClone(plan)));
   const before = readState();
-  fireEvent.click(screen.getAllByRole("button", { name: "Complete meal" })[0]);
-  fireEvent.click(
+  await fireEvent.click(
+    screen.getAllByRole("button", { name: "Complete meal" })[0],
+  );
+  await fireEvent.click(
     within(
       screen.getByRole("region", { name: "Quick meal completion" }),
     ).getByRole("button", { name: "Cancel" }),

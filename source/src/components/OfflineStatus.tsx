@@ -78,8 +78,8 @@ export default function OfflineStatus() {
     <div className="offline-status" role="status">
       {!online
         ? text(
-            "Đang offline — dữ liệu lưu trên thiết bị này",
-            "Offline — data stays on this device",
+            "Đang offline — xem bản đã lưu. Kết nối lại để lưu thay đổi.",
+            "Offline — viewing the saved copy. Reconnect to save changes.",
           )
         : ready
           ? text("Đã sẵn sàng dùng offline", "Ready for offline use")

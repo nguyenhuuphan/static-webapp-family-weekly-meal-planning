@@ -38,7 +38,7 @@ it("browses a seven-day calendar without resetting current progress", async () =
   await boot(s);
   expect(screen.getByText("Saturday")).toBeTruthy();
   expect(screen.getByText("Sunday")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+  await fireEvent.click(screen.getByRole("button", { name: "Next week" }));
   expect(readState().weekStart).toBe(s.weekStart);
   expect(readState().progress.prep.kept).toBe(true);
   expect(calendarDate(s.weekStart, 6)).toBe("2026-10-18");

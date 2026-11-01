@@ -27,7 +27,7 @@ export default function InvoiceEditor({
   done: (saved?: boolean) => void;
 }) {
   const text = useText(),
-    { update } = useMealPlanner(),
+    { command } = useMealPlanner(),
     { accessCode } = useFamilyAccess();
   const [id] = useState(() => invoice?.id || crypto.randomUUID());
   const [shop, setShop] = useState(invoice?.shop || ""),
@@ -124,7 +124,7 @@ export default function InvoiceEditor({
         createdAt: invoice?.createdAt || now,
         updatedAt: now,
       };
-      if (update((s) => saveInvoice(s, next))) done(true);
+      if (await command("invoice.save", { invoice: next })) done(true);
       else setError("save_failed");
     } catch (e) {
       setError(e instanceof Error ? e.message : "network");

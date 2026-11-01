@@ -33,7 +33,8 @@
   "vars": {
     "AI_MAX_DAILY_REQUESTS": "10",
     "CF_ACCESS_TEAM_DOMAIN": "family-3adfa3459c6c.cloudflareaccess.com",
-    "CF_ACCESS_AUD": "27e4bb8b3ae11c35e576d9df92429b7cf9351a6e6d9d1d539f261ad8e95ff036"
+    "CF_ACCESS_AUD": "27e4bb8b3ae11c35e576d9df92429b7cf9351a6e6d9d1d539f261ad8e95ff036",
+    "PERSISTENCE_MODE": "prisma"
   },
   "observability": {
     "enabled": true,

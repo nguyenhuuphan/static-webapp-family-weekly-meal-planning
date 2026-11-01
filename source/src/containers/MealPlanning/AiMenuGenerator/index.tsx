@@ -582,15 +582,16 @@ function GeneratorDialog({ close }: { close: () => void }) {
     !model.s.timer &&
     !model.s.timers?.length &&
     !Object.keys(model.s.cookingBatches || {}).length;
-  function apply() {
+  async function apply() {
     if (!preview || !canApply) return;
     if (JSON.stringify(latest.current.s) !== baseline.current) {
       setError("local_changed");
       return;
     }
-    const changed = latest.current.update((s) =>
-      applyGeneratedMenu(s, preview, input.weekStart),
-    );
+    const changed = await latest.current.command("menu.apply", {
+      plan: preview,
+      weekStart: input.weekStart,
+    });
     if (!changed) return;
     latest.current.setSelected(preview.meals[0].id);
     latest.current.navigate("week");

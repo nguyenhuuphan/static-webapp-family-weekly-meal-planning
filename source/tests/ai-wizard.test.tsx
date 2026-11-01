@@ -1,11 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent } from "./userEvents";
 import App from "../src/App";
 import data from "../public/meal-plan.json";
 import { freshState, STORAGE_KEY } from "../src/domain";
@@ -22,6 +17,7 @@ async function boot(
   savedMaster = DEFAULT_MASTER_PROMPT,
   initialJob?: MenuJob,
 ) {
+  localStorage.removeItem("family-access-code-v1");
   const initial = freshState(data as Plan);
   initial.weekStart = "2026-10-26";
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
@@ -78,7 +74,9 @@ async function boot(
   vi.stubGlobal("fetch", fetcher);
   render(<App />);
   await screen.findByRole("navigation");
-  fireEvent.click(screen.getByRole("button", { name: "Create menu with AI" }));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Create menu with AI" }),
+  );
   const dialog = screen.getByRole("dialog");
   expect(
     (
@@ -87,10 +85,10 @@ async function boot(
       }) as HTMLButtonElement
     ).disabled,
   ).toBe(true);
-  fireEvent.change(within(dialog).getByLabelText("Family code for AI"), {
+  await fireEvent.change(within(dialog).getByLabelText("Family code for AI"), {
     target: { value: code },
   });
-  fireEvent.click(
+  await fireEvent.click(
     within(dialog).getByRole("button", { name: "Connect AI settings" }),
   );
   await waitFor(() =>
@@ -103,31 +101,31 @@ async function boot(
 it("collects equipment and custom preferences, previews and edits before applying a flexible week", async () => {
   const { fetcher, dialog, initial } = await boot();
   const ui = within(dialog);
-  fireEvent.change(ui.getByLabelText("Week beginning"), {
+  await fireEvent.change(ui.getByLabelText("Week beginning"), {
     target: { value: "2026-11-02" },
   });
-  fireEvent.change(ui.getByLabelText("Number of people"), {
+  await fireEvent.change(ui.getByLabelText("Number of people"), {
     target: { value: "3" },
   });
   for (const day of ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
-    fireEvent.click(ui.getByRole("checkbox", { name: day }));
-  fireEvent.click(ui.getByRole("checkbox", { name: "Saturday" }));
-  fireEvent.click(ui.getByRole("checkbox", { name: "Lunch" }));
-  fireEvent.click(ui.getByRole("checkbox", { name: "Dinner" }));
-  fireEvent.click(ui.getByRole("checkbox", { name: "Breakfast" }));
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+    await fireEvent.click(ui.getByRole("checkbox", { name: day }));
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Saturday" }));
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Lunch" }));
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Dinner" }));
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Breakfast" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
   expect(
     (ui.getByRole("button", { name: "Continue" }) as HTMLButtonElement)
       .disabled,
   ).toBe(true);
-  fireEvent.click(ui.getByRole("checkbox", { name: "Air fryer" }));
-  fireEvent.change(ui.getByLabelText("Other cooking equipment"), {
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Air fryer" }));
+  await fireEvent.change(ui.getByLabelText("Other cooking equipment"), {
     target: { value: "Toaster" },
   });
-  fireEvent.change(ui.getByLabelText("Additional request"), {
+  await fireEvent.change(ui.getByLabelText("Additional request"), {
     target: { value: "Use carrots and avoid beef" },
   });
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
   expect(ui.getByText("Air fryer, Toaster")).toBeTruthy();
   expect(
     fetcher.mock.calls.filter(
@@ -136,7 +134,7 @@ it("collects equipment and custom preferences, previews and edits before applyin
     ),
   ).toHaveLength(0);
   const before = localStorage.getItem(STORAGE_KEY);
-  fireEvent.click(ui.getByRole("button", { name: "Generate menu" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Generate menu" }));
   await ui.findByRole("button", { name: "Apply this menu" });
   expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
   const sent = fetcher.mock.calls.find(
@@ -150,14 +148,14 @@ it("collects equipment and custom preferences, previews and edits before applyin
     customPrompt: "Use carrots and avoid beef",
     servings: 3,
   });
-  fireEvent.click(ui.getByRole("button", { name: "Edit this meal" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Edit this meal" }));
   expect(ui.queryByRole("button", { name: "Apply this menu" })).toBeNull();
-  fireEvent.change(ui.getByRole("textbox", { name: "Main dish" }), {
+  await fireEvent.change(ui.getByRole("textbox", { name: "Main dish" }), {
     target: { value: "My edited breakfast" },
   });
-  fireEvent.click(ui.getByRole("button", { name: "Save meal" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Save meal" }));
   await ui.findByText("Edited draft saved.");
-  fireEvent.click(ui.getByRole("button", { name: "Apply this menu" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Apply this menu" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
   expect(saved.plan.schemaVersion).toBe(2);
@@ -171,20 +169,20 @@ it("keeps generation disabled without provider configuration and resumes shared 
   const { dialog } = await boot(false);
   const ui = within(dialog);
   await ui.findByText(/AI is not configured/);
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
-  fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
   expect(
     (ui.getByRole("button", { name: "Generate menu" }) as HTMLButtonElement)
       .disabled,
   ).toBe(true);
-  fireEvent.click(ui.getByRole("button", { name: "Close menu dialog" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Close menu dialog" }));
 });
 it("reopens the latest draft and lets users start another week without calling AI immediately", async () => {
   const { dialog, fetcher } = await boot(true, true);
   const ui = within(dialog);
   await ui.findByRole("button", { name: "Apply this menu" });
-  fireEvent.click(
+  await fireEvent.click(
     ui.getByRole("button", { name: "Change request / create another menu" }),
   );
   expect(ui.getByLabelText("Number of people")).toBeTruthy();
@@ -195,48 +193,54 @@ it("reopens the latest draft and lets users start another week without calling A
 it("supports day presets, validates each step and retains answers when changing the review", async () => {
   const { dialog, fetcher } = await boot();
   const ui = within(dialog);
-  fireEvent.change(ui.getByLabelText("Week beginning"), {
+  await fireEvent.change(ui.getByLabelText("Week beginning"), {
     target: { value: "" },
   });
   expect(
     (ui.getByRole("button", { name: "Continue" }) as HTMLButtonElement)
       .disabled,
   ).toBe(true);
-  fireEvent.change(ui.getByLabelText("Week beginning"), {
+  await fireEvent.change(ui.getByLabelText("Week beginning"), {
     target: { value: "2026-11-02" },
   });
-  fireEvent.click(ui.getByRole("button", { name: "All 7 days" }));
+  await fireEvent.click(ui.getByRole("button", { name: "All 7 days" }));
   expect(
     (ui.getByRole("checkbox", { name: "Sunday" }) as HTMLInputElement).checked,
   ).toBe(true);
-  fireEvent.click(ui.getByRole("button", { name: "Weekdays" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Weekdays" }));
   expect(
     (ui.getByRole("checkbox", { name: "Sunday" }) as HTMLInputElement).checked,
   ).toBe(false);
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
   expect(document.activeElement).toBe(
     ui.getByRole("heading", { name: "Preferences & requests", level: 3 }),
   );
-  fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
-  fireEvent.change(ui.getByRole("combobox", { name: "Diet" }), {
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
+  await fireEvent.change(ui.getByRole("combobox", { name: "Diet" }), {
     target: { value: "other" },
   });
-  fireEvent.change(ui.getByLabelText("Other diet details (optional)"), {
+  await fireEvent.change(ui.getByLabelText("Other diet details (optional)"), {
     target: { value: "Pescatarian" },
   });
-  fireEvent.change(ui.getByLabelText("Maximum cooking minutes per meal"), {
-    target: { value: "2" },
-  });
+  await fireEvent.change(
+    ui.getByLabelText("Maximum cooking minutes per meal"),
+    {
+      target: { value: "2" },
+    },
+  );
   expect(
     (ui.getByRole("button", { name: "Continue" }) as HTMLButtonElement)
       .disabled,
   ).toBe(true);
-  fireEvent.change(ui.getByLabelText("Maximum cooking minutes per meal"), {
-    target: { value: "25" },
-  });
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.change(
+    ui.getByLabelText("Maximum cooking minutes per meal"),
+    {
+      target: { value: "25" },
+    },
+  );
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
   expect(ui.getByText("Pescatarian")).toBeTruthy();
-  fireEvent.click(ui.getByRole("button", { name: "Change preferences" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Change preferences" }));
   expect(
     (ui.getByRole("checkbox", { name: "Gas stove" }) as HTMLInputElement)
       .checked,
@@ -260,11 +264,11 @@ it("keeps prototype-like translation source keys after a generated menu is appli
     enumerable: true,
   });
   const { dialog } = await boot(true, true, plan);
-  fireEvent.click(
+  await fireEvent.click(
     await within(dialog).findByRole("button", { name: "Apply this menu" }),
   );
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
+  await fireEvent.change(screen.getByRole("combobox", { name: "Language" }), {
     target: { value: "vi" },
   });
   await waitFor(() =>
@@ -283,17 +287,17 @@ it("starts a new request with current family defaults and lets the user restore 
   );
   const ui = within(dialog);
   await ui.findByRole("button", { name: "Apply this menu" });
-  fireEvent.click(
+  await fireEvent.click(
     ui.getByRole("button", { name: "Change request / create another menu" }),
   );
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
-  fireEvent.click(ui.getByText("Shared master prompt"));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByText("Shared master prompt"));
   const master = ui.getByLabelText(
     "General instructions for AI",
   ) as HTMLTextAreaElement;
   expect(master.value).toBe(DEFAULT_MASTER_PROMPT);
-  fireEvent.change(master, { target: { value: "Temporary preference" } });
-  fireEvent.click(ui.getByRole("button", { name: "Use default prompt" }));
+  await fireEvent.change(master, { target: { value: "Temporary preference" } });
+  await fireEvent.click(ui.getByRole("button", { name: "Use default prompt" }));
   expect(master.value).toBe(DEFAULT_MASTER_PROMPT);
   expect(
     fetcher.mock.calls.filter(
@@ -335,8 +339,8 @@ it("retries a failed menu with the same answers, shows loading immediately and p
     return original(url, init);
   });
   const retry = ui.getByRole("button", { name: "Retry generation" });
-  fireEvent.click(retry);
-  fireEvent.click(retry);
+  await fireEvent.click(retry);
+  await fireEvent.click(retry);
   await ui.findByRole("heading", { name: "Submitting your request…" });
   expect(
     ui.getByRole("progressbar", { name: "Menu generation progress" }),
@@ -362,9 +366,9 @@ it("retries a failed menu with the same answers, shows loading immediately and p
 it("retains the submission ID when retrying an uncertain network failure", async () => {
   const { dialog, fetcher } = await boot();
   const ui = within(dialog);
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
-  fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
-  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  await fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Continue" }));
   const original = fetcher.getMockImplementation()!;
   let fail = true;
   fetcher.mockImplementation(async (url, init) => {
@@ -378,9 +382,9 @@ it("retains the submission ID when retrying an uncertain network failure", async
     }
     return original(url, init);
   });
-  fireEvent.click(ui.getByRole("button", { name: "Generate menu" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Generate menu" }));
   await ui.findByRole("button", { name: "Retry generation" });
-  fireEvent.click(ui.getByRole("button", { name: "Retry generation" }));
+  await fireEvent.click(ui.getByRole("button", { name: "Retry generation" }));
   await ui.findByRole("heading", { name: "Your draft is ready" });
   const calls = fetcher.mock.calls
     .filter(

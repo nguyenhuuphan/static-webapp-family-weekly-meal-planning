@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import { fireEvent } from "./userEvents";
 import App from "../src/App";
 import { I18nProvider, LanguageSwitcher, useI18n } from "../src/i18n";
 import {
@@ -18,12 +19,12 @@ const placeholders = (text: string) =>
   [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
 const amounts = (text: string) =>
   text.match(/\[[\d.]+ (?:g|ml|each|tsp|tbsp)\]/g) || [];
-const navigation = (name: string) =>
-  fireEvent.click(
+const navigation = async (name: string) =>
+  await fireEvent.click(
     within(screen.getByRole("navigation")).getByRole("button", { name }),
   );
-const switchLanguage = (code: string) =>
-  fireEvent.change(
+const switchLanguage = async (code: string) =>
+  await fireEvent.change(
     screen.getByRole("combobox", { name: /Language|Ngôn ngữ/ }),
     { target: { value: code } },
   );
@@ -112,7 +113,7 @@ describe("language architecture", () => {
     );
   });
 
-  it("switches even when local storage is unavailable", () => {
+  it("switches even when local storage is unavailable", async () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw Error("blocked");
     });
@@ -133,7 +134,7 @@ describe("language architecture", () => {
         <Probe />
       </I18nProvider>,
     );
-    switchLanguage("vi");
+    await switchLanguage("vi");
     expect(screen.getByText("Danh sách đi chợ")).toBeTruthy();
     expect(document.documentElement.lang).toBe("vi");
   });
@@ -147,7 +148,7 @@ describe("bilingual meal planner", () => {
     state.timer = { mealId: "mon-lunch", step: 0, end: Date.now() + 600000 };
     const view = await boot(state);
     const before = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-    switchLanguage("vi");
+    await switchLanguage("vi");
     expect(
       screen.getByRole("heading", { name: "Thịt heo rim tỏi nước mắm" }),
     ).toBeTruthy();
@@ -155,19 +156,19 @@ describe("bilingual meal planner", () => {
     expect(document.title).toContain("Lên thực đơn gia đình");
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("vi");
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(before);
-    navigation("Đi chợ");
-    fireEvent.click(screen.getByRole("button", { name: "Tất cả" }));
+    await navigation("Đi chợ");
+    await fireEvent.click(screen.getByRole("button", { name: "Tất cả" }));
     const shrimp = screen.getByRole("checkbox", {
       name: "Đã mua Tôm đã bóc vỏ",
     }) as HTMLInputElement;
     expect(shrimp.checked).toBe(true);
-    fireEvent.change(
+    await fireEvent.change(
       screen.getByRole("textbox", { name: "Tìm trong danh sách đi chợ" }),
       { target: { value: "tom" } },
     );
     expect(screen.getByText("Tôm đã bóc vỏ")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Xóa tìm kiếm" }));
-    switchLanguage("en");
+    await fireEvent.click(screen.getByRole("button", { name: "Xóa tìm kiếm" }));
+    await switchLanguage("en");
     expect(
       (
         screen.getByRole("checkbox", {
@@ -175,7 +176,7 @@ describe("bilingual meal planner", () => {
         }) as HTMLInputElement
       ).checked,
     ).toBe(true);
-    switchLanguage("vi");
+    await switchLanguage("vi");
     view.unmount();
     await boot();
     expect(
@@ -183,7 +184,7 @@ describe("bilingual meal planner", () => {
         .getByRole("button", { name: "Đi chợ" })
         .getAttribute("aria-current"),
     ).toBe("page");
-    navigation("Tuần này");
+    await navigation("Tuần này");
     expect(
       screen.getByRole("heading", { name: "Thịt heo rim tỏi nước mắm" }),
     ).toBeTruthy();
@@ -191,15 +192,17 @@ describe("bilingual meal planner", () => {
 
   it("localizes prep and cooking while keeping edited recipe text across language switches", async () => {
     await boot();
-    switchLanguage("vi");
-    navigation("Sơ chế");
-    fireEvent.click(screen.getByRole("button", { name: "Mở rộng tất cả" }));
+    await switchLanguage("vi");
+    await navigation("Sơ chế");
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Mở rộng tất cả" }),
+    );
     expect(screen.getAllByText(/Cắt 300 g thịt heo/)).toHaveLength(2);
     const task = screen.getByRole("checkbox", {
       name: "Sơ chế Bữa trưa Thứ Hai, việc 1",
     });
-    fireEvent.click(task);
-    switchLanguage("en");
+    await fireEvent.click(task);
+    await switchLanguage("en");
     expect(
       (
         screen.getByRole("checkbox", {
@@ -207,26 +210,26 @@ describe("bilingual meal planner", () => {
         }) as HTMLInputElement
       ).checked,
     ).toBe(true);
-    navigation("Cook");
-    switchLanguage("vi");
+    await navigation("Cook");
+    await switchLanguage("vi");
     expect(
       screen.getByText(
         "Cho 600 ml nước vào nồi, đậy nắp và đun sôi ở lửa lớn.",
       ),
     ).toBeTruthy();
-    navigation("Tuần này");
-    fireEvent.click(
+    await navigation("Tuần này");
+    await fireEvent.click(
       screen.getByRole("button", { name: "Chỉnh sửa Bữa trưa Thứ Hai" }),
     );
-    fireEvent.change(screen.getByRole("textbox", { name: "Món chính" }), {
+    await fireEvent.change(screen.getByRole("textbox", { name: "Món chính" }), {
       target: { value: "Món riêng của gia đình" },
     });
-    switchLanguage("en");
+    await switchLanguage("en");
     expect(
       (screen.getByRole("textbox", { name: "Main dish" }) as HTMLInputElement)
         .value,
     ).toBe("Món riêng của gia đình");
-    fireEvent.click(screen.getByRole("button", { name: "Save meal" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Save meal" }));
     expect(
       screen.getByRole("heading", { name: "Món riêng của gia đình" }),
     ).toBeTruthy();

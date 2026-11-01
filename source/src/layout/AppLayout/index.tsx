@@ -1,3 +1,4 @@
+import Reports from "src/containers/ReportingManagement";
 import TranslationStatus from "src/components/TranslationStatus";
 import CloudSync from "src/components/CloudSync";
 import OfflineStatus from "src/components/OfflineStatus";
@@ -54,7 +55,8 @@ const AppLayout: React.FC<IProps> = () => {
     plan,
     editing,
     seconds,
-    update,
+    command,
+    apiStatus,
     view,
     setEditId,
     advanced,
@@ -79,23 +81,9 @@ const AppLayout: React.FC<IProps> = () => {
   const timers = [...(s.timers || []), ...(s.timer ? [s.timer] : [])];
   const changeTimer = (
     target: NonNullable<Timer>,
-    transform: (timer: NonNullable<Timer>) => Timer,
+    action: "extend" | "toggle" | "dismiss",
   ) =>
-    update((state) => ({
-      ...state,
-      timer:
-        state.timer?.mealId === target.mealId &&
-        state.timer.step === target.step
-          ? transform(state.timer)
-          : state.timer,
-      timers: (state.timers || []).flatMap((timer) => {
-        const next =
-          timer.mealId === target.mealId && timer.step === target.step
-            ? transform(timer)
-            : timer;
-        return next ? [next] : [];
-      }),
-    }));
+    command("timer.change", { id: target.mealId, index: target.step, action });
   return (
     <div className={`app-shell ${timers.length ? "has-timers" : ""}`}>
       <a className="skip-link" href="#main-content">
@@ -123,7 +111,11 @@ const AppLayout: React.FC<IProps> = () => {
             <LanguageSwitcher />
             <span className="saved">
               <i />
-              {storageError ? tr("changesNotSaved") : tr("savedOnThisDevice")}
+              {apiStatus === "synced"
+                ? text("Đã lưu trên máy chủ", "Saved on server")
+                : apiStatus === "saving"
+                  ? text("Đang lưu…", "Saving…")
+                  : text("Chưa kết nối máy chủ", "Server not connected")}
             </span>
           </div>
         </header>
@@ -135,47 +127,30 @@ const AppLayout: React.FC<IProps> = () => {
             <section className="panel notice warning" role="alert">
               <h2>
                 {text(
-                  "Dữ liệu đã thay đổi ở tab khác",
-                  "Data changed in another tab",
+                  "Dữ liệu đã thay đổi trên thiết bị khác",
+                  "Data changed on another device",
                 )}
               </h2>
               <p>
                 {text(
-                  "Tạm dừng lưu và chỉnh sửa để tránh ghi đè. Chọn bản muốn dùng; có thể tải bản của tab này trước.",
-                  "Saving and editing are paused to prevent overwrites. Choose a copy, or download this tab first.",
+                  "Đã tải bản mới nhất từ máy chủ. Xem lại dữ liệu trước khi thực hiện lại thao tác; có thể tải bản trước xung đột để đối chiếu.",
+                  "The latest server copy has been loaded. Review it before repeating your action. You can download the previous copy for comparison.",
                 )}
               </p>
               <div className="actions">
-                <Button onClick={exportJSON}>
-                  {text("Tải bản của tab này", "Download this tab's copy")}
-                </Button>
                 <Button
                   disabled={externalChange.raw === null}
                   onClick={downloadExternalCopy}
                 >
-                  {text("Tải bản từ tab khác", "Download other tab’s copy")}
-                </Button>
-                <Button
-                  disabled={externalChange.raw === null}
-                  onClick={loadExternalCopy}
-                >
                   {text(
-                    "Tải thay đổi từ tab khác",
-                    "Load changes from other tab",
+                    "Tải bản trước xung đột",
+                    "Download copy before conflict",
                   )}
                 </Button>
-                <Button onClick={keepLocalCopy}>
-                  {text("Dùng bản của tab này", "Use this tab's copy")}
+                <Button onClick={loadExternalCopy}>
+                  {text("Đã hiểu", "Dismiss")}
                 </Button>
               </div>
-              {!navigator.locks && (
-                <p>
-                  {text(
-                    "Trình duyệt chưa hỗ trợ khóa ghi giữa các tab. Nên chỉ chỉnh sửa ở một tab.",
-                    "Cross-tab write locks are unavailable. Edit in one tab at a time.",
-                  )}
-                </p>
-              )}
             </section>
           )}
 
@@ -235,8 +210,9 @@ const AppLayout: React.FC<IProps> = () => {
                 meal={editing}
                 plan={plan}
                 onCancel={() => setEditId(null)}
-                onSave={(m) => {
-                  if (!update((x) => replaceMeal(x, m.id, m))) return false;
+                onSave={async (m) => {
+                  if (!(await command("meal.replace", { id: m.id, meal: m })))
+                    return false;
                   setEditId(null);
                   setToast(source("mealSavedReviewYourPreparationAndStorage"));
                 }}
@@ -261,7 +237,7 @@ const AppLayout: React.FC<IProps> = () => {
                   </select>
                   <Button
                     disabled={!swapId}
-                    onClick={() => {
+                    onClick={async () => {
                       const src = plan.meals.find((m) => m.id === swapId);
                       if (!src) return;
                       if (
@@ -280,7 +256,12 @@ const AppLayout: React.FC<IProps> = () => {
                             "Review preparation-specific storage for this new day. Refrigerate Monday protein or freeze later-day protein promptly after prep. Frozen vegetables stay frozen until cooking.",
                           thaw: "Move frozen proteins and sauces to the fridge the morning before this meal. Confirm they are fully thawed before cooking.",
                         };
-                        if (!update((x) => replaceMeal(x, editing.id, copy)))
+                        if (
+                          !(await command("meal.replace", {
+                            id: editing.id,
+                            meal: copy,
+                          }))
+                        )
                           return;
                         setEditId(null);
                         setSwapId("");
@@ -305,6 +286,8 @@ const AppLayout: React.FC<IProps> = () => {
             <PrepDay />
           ) : view === "cook" ? (
             <CookingSession />
+          ) : view === "reports" ? (
+            <Reports />
           ) : view === "settings" ? (
             <HouseholdSettings />
           ) : (
@@ -354,34 +337,11 @@ const AppLayout: React.FC<IProps> = () => {
                     <span role="status">{tr("checkDoneness")}</span>
                   )}
                   <div className="actions">
-                    <Button
-                      onClick={() =>
-                        changeTimer(timer, (value) =>
-                          value.paused !== undefined
-                            ? { ...value, paused: value.paused + 60 }
-                            : {
-                                ...value,
-                                end: Math.max(Date.now(), value.end) + 60000,
-                              },
-                        )
-                      }
-                    >
+                    <Button onClick={() => changeTimer(timer, "extend")}>
                       +1 {text("phút", "min")}
                     </Button>
                     {remaining > 0 && (
-                      <Button
-                        onClick={() =>
-                          changeTimer(timer, (value) =>
-                            value.paused !== undefined
-                              ? {
-                                  ...value,
-                                  end: Date.now() + value.paused * 1000,
-                                  paused: undefined,
-                                }
-                              : { ...value, paused: remaining },
-                          )
-                        }
-                      >
+                      <Button onClick={() => changeTimer(timer, "toggle")}>
                         {timer.paused !== undefined
                           ? text("Tiếp tục", "Resume")
                           : text("Tạm dừng", "Pause")}
@@ -392,7 +352,7 @@ const AppLayout: React.FC<IProps> = () => {
                 <button
                   className="icon-button"
                   aria-label={tr("dismissTimer")}
-                  onClick={() => changeTimer(timer, () => null)}
+                  onClick={() => changeTimer(timer, "dismiss")}
                 >
                   <X size={17} />
                 </button>

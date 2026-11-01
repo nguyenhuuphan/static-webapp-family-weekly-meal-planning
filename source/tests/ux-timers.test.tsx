@@ -11,20 +11,20 @@ import {
 import { hydrateState, timerSeconds } from "../src/domain";
 it("supports two timers without replacement and persists pause add-time and resume", async () => {
   await boot();
-  nav("Cook");
-  fireEvent.click(
+  await nav("Cook");
+  await fireEvent.click(
     screen.getByRole("button", { name: "Start timer for step 1" }),
   );
-  fireEvent.click(
+  await fireEvent.click(
     screen.getByRole("button", { name: "Start timer for step 3" }),
   );
   expect(readState().timers).toHaveLength(1);
-  fireEvent.click(screen.getAllByRole("button", { name: "Pause" })[0]);
+  await fireEvent.click(screen.getAllByRole("button", { name: "Pause" })[0]);
   const paused = readState().timers![0].paused!;
   expect(paused).toBeGreaterThan(0);
-  fireEvent.click(screen.getAllByRole("button", { name: "+1 min" })[0]);
+  await fireEvent.click(screen.getAllByRole("button", { name: "+1 min" })[0]);
   expect(readState().timers![0].paused).toBe(paused + 60);
-  fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+  await fireEvent.click(screen.getByRole("button", { name: "Resume" }));
   expect(readState().timers![0].paused).toBeUndefined();
   expect(readState().timers![0].end).toBeGreaterThan(Date.now());
   expect(readState().timer?.step).toBe(2);

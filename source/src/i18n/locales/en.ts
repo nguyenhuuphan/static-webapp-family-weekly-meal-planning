@@ -1,4 +1,12 @@
 export const en = {
+  apiPreviousPending:
+    "A previous save is pending confirmation. Retry it before making another change.",
+  apiUnconfirmed:
+    "The save could not be confirmed. Retry safely; your request will not be duplicated.",
+  apiConflict:
+    "Another device changed the shared data. Review the latest copy, then retry your action.",
+  apiPendingRequired: "Retry the pending save before making another change.",
+  apiConnectRequired: "Connect your family code to save through the API.",
   breakfast: "Breakfast",
   saturday: "Saturday",
   sunday: "Sunday",
@@ -113,6 +121,7 @@ export const en = {
   lunchDinnerRiceHandledSeparately: "Lunch + dinner · rice handled separately",
   min: "min",
   enjoyed: "Enjoyed",
+  reports: "Reports",
   cook: "Cook",
   undoCompletion: "Undo completion",
   kitchenOverview: "Kitchen overview",

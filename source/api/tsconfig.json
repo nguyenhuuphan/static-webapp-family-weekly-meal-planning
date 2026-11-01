@@ -1,0 +1,6 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "types": ["node", "@cloudflare/workers-types"] },
+  "include": ["./**/*.ts", "../scripts/migrate-node.ts"],
+  "exclude": ["./tests/**"]
+}

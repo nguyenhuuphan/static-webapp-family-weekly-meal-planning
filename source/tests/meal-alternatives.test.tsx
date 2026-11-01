@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent } from "./userEvents";
 import { I18nProvider } from "../src/i18n";
 import {
   MealPlannerContext,
@@ -113,7 +114,9 @@ describe("five replacement recipes", () => {
         </MealPlannerContext.Provider>
       </I18nProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Replace meal:/ }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: /Replace meal:/ }),
+    );
     expect(screen.getAllByRole("radio")).toHaveLength(5);
     expect(
       (
@@ -122,13 +125,17 @@ describe("five replacement recipes", () => {
         }) as HTMLButtonElement
       ).disabled,
     ).toBe(true);
-    fireEvent.click(screen.getAllByRole("radio")[0]);
-    fireEvent.click(screen.getByRole("button", { name: "Replace this meal" }));
+    await fireEvent.click(screen.getAllByRole("radio")[0]);
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Replace this meal" }),
+    );
     await screen.findByRole("alert");
     expect((screen.getAllByRole("radio")[0] as HTMLInputElement).checked).toBe(
       true,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Replace this meal" }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Replace this meal" }),
+    );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(save).toHaveBeenCalledWith(plan.alternatives![0].id);
   });

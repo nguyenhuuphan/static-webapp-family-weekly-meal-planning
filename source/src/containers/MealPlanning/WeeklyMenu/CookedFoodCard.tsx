@@ -1,7 +1,7 @@
 import type { MealType } from "src/types";
 import FutureMealOptions from "./FutureMealOptions";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SavedFood } from "src/types";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { useText, useI18n } from "src/i18n";
@@ -11,22 +11,17 @@ import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEdi
 import { Button } from "src/modules/shared-main/components";
 
 export default function CookedFoodCard({ food }: { food: SavedFood }) {
-  const { update } = useMealPlanner(),
+  const { command } = useMealPlanner(),
     text = useText(),
     { content: ct } = useI18n();
   const [date, setDate] = useState(food.date || "");
   const [type, setType] = useState<MealType>(food.type || "Dinner");
   const [eaten, setEaten] = useState("1"),
     [reviewed, setReviewed] = useState(false);
+  const [note, setNote] = useState(food.storageNote);
+  useEffect(() => setNote(food.storageNote), [food.storageNote]);
   const change = (patch: Partial<SavedFood>) =>
-    update((s) =>
-      reconcileShopping({
-        ...s,
-        savedFood: s.savedFood?.map((f) =>
-          f.id === food.id ? { ...f, ...patch } : f,
-        ),
-      }),
-    );
+    command("saved.patch", { id: food.id, patch });
   return (
     <article className="saved-food-card">
       <h3>
@@ -56,16 +51,20 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
       <FoodStorageEditor
         cookedOnly
         value={food.storage}
-        onChange={(storage) => {
-          change({ storage });
-          setReviewed(false);
+        onChange={async (storage) => {
+          const saved = await change({ storage });
+          if (saved) setReviewed(false);
+          return saved;
         }}
       />
       <label>
         {text("Ghi chú bảo quản thực tế", "Actual storage notes")}
         <input
-          value={food.storageNote}
-          onChange={(e) => change({ storageNote: e.target.value })}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onBlur={() => {
+            if (note !== food.storageNote) void change({ storageNote: note });
+          }}
         />
       </label>
       <label className="readiness">
@@ -148,8 +147,9 @@ export default function CookedFoodCard({ food }: { food: SavedFood }) {
             +eaten < 1 ||
             +eaten > food.servings
           }
-          onClick={() => {
-            update((s) => eatCookedFood(s, food.id, +eaten));
+          onClick={async () => {
+            if (!(await command("saved.eat", { id: food.id, eaten: +eaten })))
+              return;
             setReviewed(false);
           }}
         >

@@ -25,7 +25,7 @@ const HouseholdSettings: React.FC<IProps> = () => {
     plan,
     edit,
     navigate,
-    update,
+    command,
     resetProgress,
     applyPlan,
     exportJSON,
@@ -193,10 +193,9 @@ const HouseholdSettings: React.FC<IProps> = () => {
                   ),
                 )
               ) {
-                update((x) => ({
-                  ...startWeek(x, x.weekStart),
+                command("household.servings", {
                   servings: Number(servingsDraft),
-                }));
+                });
               }
             }}
           >

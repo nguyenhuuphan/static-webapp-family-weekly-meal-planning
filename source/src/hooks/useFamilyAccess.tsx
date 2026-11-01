@@ -21,6 +21,9 @@ export function FamilyAccessProvider({ children }: { children: ReactNode }) {
     } catch {
       /* Browser storage may be unavailable; the session still works. */
     }
+    window.dispatchEvent(
+      new CustomEvent("family-access-changed", { detail: code }),
+    );
   };
   return (
     <Context.Provider value={{ accessCode, setAccessCode }}>

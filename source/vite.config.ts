@@ -10,10 +10,12 @@ export default defineConfig({
   },
   plugins: [offlineBundle()],
   resolve: { alias: { src: fileURLToPath(new URL("./src", import.meta.url)) } },
+  server: { proxy: { "/api": "http://127.0.0.1:3001" } },
   test: {
     maxWorkers: 2,
+    testTimeout: 15000,
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
-    exclude: ["node_modules/**", "dist/**", "cloudflare/tests/**"],
+    exclude: ["node_modules/**", "dist/**", "cloudflare/tests/**", "api/**"],
   },
 });

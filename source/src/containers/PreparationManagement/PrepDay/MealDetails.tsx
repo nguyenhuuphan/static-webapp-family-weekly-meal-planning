@@ -12,7 +12,7 @@ export default function MealDetails({
   meal: Meal;
   factor: number;
 }) {
-  const { s, update } = useMealPlanner();
+  const { s, command } = useMealPlanner();
   const { t, content, number, unit } = useI18n();
   const id = useId();
   const [pinned, setPinned] = useState(false);
@@ -88,10 +88,7 @@ export default function MealDetails({
         <FoodStorageEditor
           value={s.mealStorage?.[meal.id]}
           onChange={(storage) =>
-            update((s) => ({
-              ...s,
-              mealStorage: { ...s.mealStorage, [meal.id]: storage },
-            }))
+            command("storage.meal", { id: meal.id, storage })
           }
         />
         <div className="prep-storage-note">

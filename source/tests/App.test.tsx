@@ -1,11 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent } from "./userEvents";
 import App from "../src/App";
 import data from "../public/meal-plan.json";
 import type { Plan } from "../src/types";
@@ -27,14 +22,14 @@ async function boot(initial?: ReturnType<typeof freshState>) {
     name: "Family meal plan",
   });
 }
-const nav = (name: string) =>
-  fireEvent.click(
+const nav = async (name: string) =>
+  await fireEvent.click(
     within(screen.getByRole("navigation")).getByRole("button", { name }),
   );
 describe("React feature parity", () => {
   it("exports JSON without backend calls", async () => {
     await boot();
-    nav("Settings");
+    await nav("Settings");
     const create = vi.fn(() => "blob:backup");
     Object.defineProperty(URL, "createObjectURL", {
       configurable: true,
@@ -47,7 +42,9 @@ describe("React feature parity", () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(() => {});
-    fireEvent.click(screen.getByRole("button", { name: "Download backup" }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Download backup" }),
+    );
     expect(create).toHaveBeenCalledOnce();
     expect(click).toHaveBeenCalledOnce();
   });
@@ -55,11 +52,13 @@ describe("React feature parity", () => {
     const s = freshState(plan);
     s.progress.prep["mon-lunch:0"] = true;
     await boot(s);
-    fireEvent.click(screen.getByRole("button", { name: "Edit Monday Lunch" }));
-    fireEvent.change(screen.getByLabelText("Recipe pair to copy"), {
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Edit Monday Lunch" }),
+    );
+    await fireEvent.change(screen.getByLabelText("Recipe pair to copy"), {
       target: { value: "tue-lunch" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Replace pair" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Replace pair" }));
     await screen.findByRole("heading", {
       name: "Family meal plan",
     });
@@ -73,10 +72,10 @@ describe("React feature parity", () => {
     expect(
       within(screen.getByRole("main")).getAllByRole("button", { name: "Cook" }),
     ).toHaveLength(11);
-    nav("Shopping");
-    fireEvent.click(screen.getByRole("button", { name: "All" }));
+    await nav("Shopping");
+    await fireEvent.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByText("500 g")).toBeTruthy();
-    fireEvent.click(
+    await fireEvent.click(
       screen.getByRole("checkbox", { name: "Bought Shrimp, peeled" }),
     );
     expect(
@@ -89,7 +88,7 @@ describe("React feature parity", () => {
     const row = screen
       .getByRole("checkbox", { name: "Bought Shrimp, peeled" })
       .closest(".shopping-row")!;
-    fireEvent.click(
+    await fireEvent.click(
       within(row as HTMLElement).getByRole("checkbox", { name: "At home" }),
     );
     expect(
@@ -109,12 +108,12 @@ describe("React feature parity", () => {
   });
   it("prep checklist updates and clears readiness when unchecked", async () => {
     await boot();
-    nav("Prep Day");
-    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    await nav("Prep Day");
+    await fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
     const first = screen.getByRole("checkbox", { name: "Monday Lunch prep 1" });
-    fireEvent.click(first);
+    await fireEvent.click(first);
     expect((first as HTMLInputElement).checked).toBe(true);
-    fireEvent.click(first);
+    await fireEvent.click(first);
     await waitFor(() =>
       expect(
         JSON.parse(localStorage.getItem(STORAGE_KEY)!).progress.prep[
@@ -129,8 +128,8 @@ describe("React feature parity", () => {
       (_, i) => (s.progress.prep["mon-lunch:" + i] = true),
     );
     await boot(s);
-    nav("Cook");
-    fireEvent.click(
+    await nav("Cook");
+    await fireEvent.click(
       screen.getByRole("button", { name: "Start timer for step 3" }),
     );
     await waitFor(() =>
@@ -139,7 +138,9 @@ describe("React feature parity", () => {
       ).toBeGreaterThan(Date.now()),
     );
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).timer.step).toBe(2);
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss timer" }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Dismiss timer" }),
+    );
     expect(screen.queryByRole("button", { name: "Next step" })).toBeNull();
     expect(
       document.querySelectorAll(".cooking-instructions > li"),
@@ -149,8 +150,8 @@ describe("React feature parity", () => {
       (screen.getByRole("button", { name: "Finish meal" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
-    fireEvent.click(screen.getByRole("checkbox", { name: /I checked:/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Finish meal" }));
+    await fireEvent.click(screen.getByRole("checkbox", { name: /I checked:/ }));
+    await fireEvent.click(screen.getByRole("button", { name: "Finish meal" }));
     await waitFor(() =>
       expect(
         JSON.parse(localStorage.getItem(STORAGE_KEY)!).progress.done[
@@ -163,10 +164,12 @@ describe("React feature parity", () => {
     const s = freshState(plan);
     s.progress.done["mon-lunch"] = true;
     await boot(s);
-    fireEvent.click(screen.getByRole("button", { name: "Edit Monday Lunch" }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Edit Monday Lunch" }),
+    );
     const name = screen.getByLabelText("Main dish");
-    fireEvent.change(name, { target: { value: "Family garlic pork" } });
-    fireEvent.click(screen.getByRole("button", { name: "Save meal" }));
+    await fireEvent.change(name, { target: { value: "Family garlic pork" } });
+    await fireEvent.click(screen.getByRole("button", { name: "Save meal" }));
     await screen.findByRole("heading", { name: "Family garlic pork" });
     expect(
       JSON.parse(localStorage.getItem(STORAGE_KEY)!).progress.done["mon-lunch"],
@@ -174,19 +177,21 @@ describe("React feature parity", () => {
   });
   it("scales servings and supports week/progress reset and restoring defaults", async () => {
     await boot();
-    nav("Settings");
-    fireEvent.change(
+    await nav("Settings");
+    await fireEvent.change(
       screen.getByRole("spinbutton", { name: "People per meal" }),
       { target: { value: "4" } },
     );
     expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).servings).toBe(2);
-    fireEvent.click(screen.getByRole("button", { name: "Apply servings" }));
-    nav("Shopping");
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Apply servings" }),
+    );
+    await nav("Shopping");
     expect(
       screen.getByText(`${new Intl.NumberFormat("en-GB").format(1000)} g`),
     ).toBeTruthy();
-    nav("Settings");
-    fireEvent.click(
+    await nav("Settings");
+    await fireEvent.click(
       screen.getByRole("button", { name: "Restore original menu" }),
     );
     await screen.findByRole("heading", {
@@ -196,25 +201,29 @@ describe("React feature parity", () => {
   });
   it("validates advanced JSON instead of accepting malformed plans", async () => {
     await boot();
-    nav("Settings");
-    fireEvent.click(screen.getByRole("button", { name: "Advanced JSON" }));
-    fireEvent.change(screen.getByLabelText("Meal-plan JSON"), {
+    await nav("Settings");
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Advanced JSON" }),
+    );
+    await fireEvent.change(screen.getByLabelText("Meal-plan JSON"), {
       target: { value: '{"schemaVersion":999}' },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Validate & save" }));
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Validate & save" }),
+    );
     expect(screen.getByRole("alert").textContent).toContain("schemaVersion");
   });
   it("imports a v1 backup into the React UI", async () => {
     await boot();
-    nav("Settings");
+    await nav("Settings");
     const file = new File(["{}"], "backup.json", { type: "application/json" });
     Object.defineProperty(file, "text", {
       value: async () => JSON.stringify({ plan, servings: 3 }),
     });
-    fireEvent.change(screen.getByLabelText("Choose backup to restore"), {
+    await fireEvent.change(screen.getByLabelText("Choose backup to restore"), {
       target: { files: [file] },
     });
-    fireEvent.click(
+    await fireEvent.click(
       await screen.findByRole("button", { name: "Restore this backup" }),
     );
     await screen.findByRole("heading", {

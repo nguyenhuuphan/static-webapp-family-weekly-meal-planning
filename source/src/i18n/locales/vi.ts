@@ -1,5 +1,14 @@
 import type { Messages } from "./en";
 export const vi = {
+  apiPreviousPending:
+    "Lần lưu trước đang chờ xác nhận. Thử lại trước khi thay đổi tiếp.",
+  apiUnconfirmed:
+    "Chưa xác nhận được lần lưu. Bấm thử lại; thao tác sẽ không bị ghi trùng.",
+  apiConflict:
+    "Thiết bị khác vừa thay đổi dữ liệu. Xem bản mới nhất rồi thực hiện lại thao tác.",
+  apiPendingRequired:
+    "Thử lại lần lưu đang chờ xác nhận trước khi thay đổi tiếp.",
+  apiConnectRequired: "Kết nối mã gia đình để lưu thay đổi.",
   breakfast: "Bữa sáng",
   saturday: "Thứ Bảy",
   sunday: "Chủ nhật",
@@ -117,6 +126,7 @@ export const vi = {
   lunchDinnerRiceHandledSeparately: "Bữa trưa + bữa tối · cơm chuẩn bị riêng",
   min: "phút",
   enjoyed: "Đã hoàn thành",
+  reports: "Báo cáo",
   cook: "Nấu ăn",
   undoCompletion: "Bỏ đánh dấu hoàn thành",
   kitchenOverview: "Tổng quan căn bếp",

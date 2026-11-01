@@ -1,6 +1,7 @@
 import { sourcePreparationKey } from "../src/helpers/preparationParts";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import { fireEvent } from "./userEvents";
 import App from "../src/App";
 import data from "../public/meal-plan.json";
 import type { Plan } from "../src/types";
@@ -125,7 +126,7 @@ describe("ingredient preparation groups", () => {
     await screen.findByRole("heading", {
       name: "Family meal plan",
     });
-    fireEvent.click(
+    await fireEvent.click(
       within(screen.getByRole("navigation")).getByRole("button", {
         name: "Prep Day",
       }),
@@ -134,7 +135,7 @@ describe("ingredient preparation groups", () => {
       name: "Pork shoulder, boneless",
     });
     expect(within(group).queryByRole("checkbox")).toBeNull();
-    fireEvent.click(
+    await fireEvent.click(
       within(group).getByRole("button", {
         name: "Show preparation: Pork shoulder, boneless",
       }),
@@ -145,13 +146,13 @@ describe("ingredient preparation groups", () => {
     const trigger = within(group).getAllByRole("button", {
       name: /Meal details:/,
     })[0];
-    fireEvent.mouseEnter(trigger.parentElement!);
+    await fireEvent.mouseEnter(trigger.parentElement!);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    fireEvent.click(trigger);
+    await fireEvent.click(trigger);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    fireEvent.keyDown(trigger, { key: "Escape" });
+    await fireEvent.keyDown(trigger, { key: "Escape" });
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    fireEvent.click(
+    await fireEvent.click(
       within(group).getByRole("checkbox", {
         name: "Mark all portions prepared: Pork shoulder, boneless",
       }),
@@ -160,11 +161,11 @@ describe("ingredient preparation groups", () => {
     expect(saved.progress.prep["mon-lunch:0"]).toBe(true);
     expect(saved.progress.prep["thu-dinner:0"]).toBe(true);
     expect(within(group).queryByRole("checkbox")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Remaining" }));
+    await fireEvent.click(screen.getByRole("button", { name: "Remaining" }));
     expect(
       screen.queryByRole("region", { name: "Pork shoulder, boneless" }),
     ).toBeNull();
-    fireEvent.click(
+    await fireEvent.click(
       screen.getByRole("button", { name: "Undo last completion" }),
     );
     expect(
@@ -175,7 +176,7 @@ describe("ingredient preparation groups", () => {
         "mon-lunch:0"
       ],
     ).toBe(false);
-    fireEvent.click(
+    await fireEvent.click(
       within(screen.getByRole("navigation")).getByRole("button", {
         name: "Cook",
       }),

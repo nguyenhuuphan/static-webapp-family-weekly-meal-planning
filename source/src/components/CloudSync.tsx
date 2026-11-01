@@ -1,380 +1,126 @@
-import { signInUrl } from "src/services/signIn";
-import { useFamilyAccess } from "src/hooks/useFamilyAccess";
-import { useEffect, useId, useRef, useState } from "react";
-import { Cloud, CheckCircle2, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Cloud, CheckCircle2, ChevronDown, LoaderCircle } from "lucide-react";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
+import { useFamilyAccess } from "src/hooks/useFamilyAccess";
 import { useText } from "src/i18n";
-import { hydrateState } from "src/domain";
-import { cloudRequest, CloudError } from "src/services/cloudPlanService";
 import { Button } from "src/modules/shared-main/components";
-
-const CHECKPOINT_KEY = "family-sync-checkpoint-v1";
-function fingerprint(raw: string) {
-  let hash = 2166136261;
-  for (let n = 0; n < raw.length; n++)
-    hash = Math.imul(hash ^ raw.charCodeAt(n), 16777619);
-  return `${raw.length}:${hash >>> 0}`;
-}
-function remember(session: Session) {
-  try {
-    localStorage.setItem(
-      CHECKPOINT_KEY,
-      JSON.stringify({
-        revision: session.revision,
-        fingerprint: fingerprint(session.baseline),
-      }),
-    );
-  } catch {
-    /* Sync remains usable in this tab. */
-  }
-}
-function resume(code: string, raw: string): Session | null {
-  if (!code) return null;
-  try {
-    const checkpoint = JSON.parse(
-      localStorage.getItem(CHECKPOINT_KEY) || "null",
-    );
-    if (
-      !checkpoint ||
-      typeof checkpoint.revision !== "string" ||
-      typeof checkpoint.fingerprint !== "string"
-    )
-      return null;
-    return {
-      code,
-      revision: checkpoint.revision,
-      baseline:
-        checkpoint.fingerprint === fingerprint(raw)
-          ? raw
-          : "pending-local-changes",
-    };
-  } catch {
-    return null;
-  }
-}
-type Session = { code: string; revision: string | null; baseline: string };
+import { signInUrl } from "src/services/signIn";
 export default function CloudSync() {
-  const model = useMealPlanner();
-  const { accessCode, setAccessCode } = useFamilyAccess();
-  const text = useText();
-  const [code, setCode] = useState(accessCode);
-  const [expanded, setExpanded] = useState(false);
-  const detailsId = useId();
-  const [session, setSession] = useState<Session | null>(() =>
-    resume(accessCode, JSON.stringify(model.s)),
-  );
-  useEffect(() => {
-    if (!session && accessCode) setCode(accessCode);
-  }, [accessCode, session]);
-  const [status, setStatus] = useState<
-    "local" | "busy" | "synced" | "error" | "conflict"
-  >(session ? "busy" : "local");
-  const [busy, setBusy] = useState(false);
-  const latest = useRef(model);
-  latest.current = model;
-  const generation = useRef(0);
-  const wakeSync = useRef<() => void>(() => {});
-  const blocked = () =>
-    !!latest.current.externalChange ||
-    latest.current.recoveryRaw !== null ||
-    !!latest.current.storageError;
-  const apply = (raw: unknown) => {
-    const m = latest.current;
-    const next = hydrateState(raw, m.defaults);
-    if (!m.update(() => next)) throw Error("Local conflict");
-    m.setEditId(null);
-    m.setAdvanced(false);
-    return JSON.stringify(next);
-  };
-  async function connect(create: boolean) {
-    if (busy || blocked()) return;
-    const id = ++generation.current;
+  const model = useMealPlanner(),
+    { accessCode, setAccessCode } = useFamilyAccess(),
+    text = useText();
+  const [expanded, setExpanded] = useState(!accessCode),
+    [code, setCode] = useState(accessCode),
+    [busy, setBusy] = useState(false);
+  const ready = model.apiStatus === "synced",
+    pending = model.apiBusy || model.apiStatus === "loading";
+  async function connect() {
+    if (busy) return;
     setBusy(true);
-    setStatus("busy");
-    try {
-      const local = JSON.stringify(latest.current.s);
-      const result = create
-        ? await cloudRequest(code, latest.current.s, null)
-        : await cloudRequest(code);
-      if (generation.current !== id) return;
-      if (JSON.stringify(latest.current.s) !== local || blocked())
-        throw new CloudError(409);
-      if (!create && !result.state) throw Error("No shared plan");
-      const baseline = create ? local : apply(result.state);
-      const connected = { code, revision: result.revision, baseline };
-      remember(connected);
-      setSession(connected);
+    if (await model.connectApi(code)) {
       setAccessCode(code);
-      setCode("");
-      setStatus("synced");
       setExpanded(false);
-    } catch (error) {
-      if (generation.current === id)
-        setStatus(
-          error instanceof CloudError && error.status === 409
-            ? "conflict"
-            : "error",
-        );
-    } finally {
-      if (generation.current === id) setBusy(false);
     }
-  }
-  useEffect(() => {
-    if (!session) return;
-    let disposed = false,
-      paused = false,
-      inFlight = false,
-      requested = false;
-    let timeout: ReturnType<typeof setTimeout>;
-    const schedule = (delay: number) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(sync, delay);
-    };
-    const sync = async (): Promise<void> => {
-      if (disposed || paused || inFlight) return;
-      if (document.visibilityState === "hidden" || !navigator.onLine) {
-        schedule(5000);
-        return;
-      }
-      if (blocked()) {
-        schedule(1000);
-        return;
-      }
-      inFlight = true;
-      requested = false;
-      // Do not replace a draft the user is editing.
-      const m = latest.current;
-      const raw = JSON.stringify(m.s);
-      try {
-        if (raw !== session.baseline) {
-          setStatus("busy");
-          const saved = await cloudRequest(session.code, m.s, session.revision);
-          if (disposed) return;
-          session.revision = saved.revision;
-          session.baseline = raw;
-          remember(session);
-          setStatus("synced");
-        } else if (!m.editId && !m.advanced) {
-          const result = await cloudRequest(session.code);
-          if (disposed) return;
-          if (result.revision !== session.revision) {
-            if (
-              !result.state ||
-              blocked() ||
-              JSON.stringify(latest.current.s) !== raw ||
-              latest.current.editId ||
-              latest.current.advanced
-            )
-              throw new CloudError(409);
-            session.baseline = apply(result.state);
-            session.revision = result.revision;
-            remember(session);
-          }
-          setStatus("synced");
-        }
-      } catch (error) {
-        if (disposed) return;
-        setStatus(
-          error instanceof CloudError && error.status === 409
-            ? "conflict"
-            : "error",
-        );
-        // Pause on any error. Retrying is explicit, with local changes retained.
-        paused = true;
-        return;
-      } finally {
-        inFlight = false;
-        if (!disposed && !paused) schedule(requested ? 400 : 5000);
-      }
-    };
-    const wake = (delay = 400) => {
-      if (disposed || paused) return;
-      requested = true;
-      if (!inFlight) schedule(delay);
-    };
-    const requestSync = () => wake();
-    const foreground = () => {
-      if (document.visibilityState !== "hidden" && navigator.onLine) wake(0);
-    };
-    wakeSync.current = requestSync;
-    document.addEventListener("visibilitychange", foreground);
-    window.addEventListener("online", foreground);
-    schedule(800);
-    return () => {
-      disposed = true;
-      clearTimeout(timeout);
-      document.removeEventListener("visibilitychange", foreground);
-      window.removeEventListener("online", foreground);
-      if (wakeSync.current === requestSync) wakeSync.current = () => {};
-    };
-  }, [session]);
-  useEffect(() => {
-    if (session && JSON.stringify(model.s) !== session.baseline)
-      wakeSync.current();
-  }, [model.s, session]);
-  function disconnect() {
-    generation.current++;
-    setSession(null);
-    try {
-      localStorage.removeItem(CHECKPOINT_KEY);
-    } catch {
-      /* Unavailable storage. */
-    }
-    setAccessCode("");
-    setCode("");
     setBusy(false);
-    setStatus("local");
   }
-  const displayStatus =
-    status === "synced" &&
-    session &&
-    JSON.stringify(model.s) !== session.baseline
-      ? "busy"
-      : status;
-  useEffect(() => {
-    if (status === "error" || status === "conflict") setExpanded(true);
-  }, [status]);
-  const messages = {
-    local: text(
-      "Đang lưu trên thiết bị này. Nhập mã gia đình để dùng dữ liệu chung.",
-      "Saved on this device. Enter your family code to share data.",
-    ),
-    busy: text("Đang đồng bộ…", "Syncing…"),
-    synced: text(
-      "Đã đồng bộ. Các thiết bị dùng cùng mã sẽ nhận thay đổi khi đang xem ứng dụng.",
-      "Synced. Devices using the same code receive changes while the app is visible.",
-    ),
-    error: text(
-      "Chưa đồng bộ được. Kiểm tra kết nối, mã gia đình và cấu hình dịch vụ. Bản trên thiết bị vẫn được giữ.",
-      "Could not sync. Check your connection, family code and service configuration. Your device copy is retained.",
-    ),
-    conflict: text(
-      "Có bản khác đã lưu. Xuất backup trước, rồi ngắt kết nối và mở bản dùng chung. Không tự ghi đè.",
-      "A different copy was saved. Export a backup, then disconnect and open the shared copy. Nothing was overwritten.",
-    ),
-  };
   return (
     <section
       className="panel sync-panel"
-      data-status={displayStatus}
+      data-status={model.apiStatus}
       aria-label={text("Đồng bộ gia đình", "Family sync")}
     >
       <h2>
         <button
-          type="button"
           className="sync-toggle"
           aria-expanded={expanded}
-          aria-controls={detailsId}
           onClick={() => setExpanded(!expanded)}
         >
-          {displayStatus === "synced" ? (
-            <CheckCircle2 size={20} aria-hidden="true" />
+          {ready ? (
+            <CheckCircle2 size={20} />
+          ) : pending ? (
+            <LoaderCircle className="ai-spinner" size={20} />
           ) : (
-            <Cloud size={20} aria-hidden="true" />
+            <Cloud size={20} />
           )}
-          <span>{text("Đồng bộ gia đình", "Family sync")}</span>
-          <ChevronDown size={18} aria-hidden="true" />
+          <span>{text("Dữ liệu gia đình", "Family data")}</span>
+          <ChevronDown size={18} />
         </button>
       </h2>
-      <p
-        className="sync-status"
-        role={status === "error" || status === "conflict" ? "alert" : "status"}
-      >
-        {!expanded && displayStatus === "local"
+      <p className="sync-status" role="status">
+        {ready
           ? text(
-              "Chưa kết nối · Lưu trên thiết bị này",
-              "Not connected · Saved on this device",
+              "Đã lưu trên máy chủ. Các thiết bị dùng chung dữ liệu.",
+              "Saved on the server. Devices share the same data.",
             )
-          : !expanded && displayStatus === "synced"
-            ? text("Đã đồng bộ.", "Synced.")
-            : messages[displayStatus]}
+          : pending
+            ? text("Đang xử lý qua API…", "Connecting / saving…")
+            : model.apiStatus === "error"
+              ? text(
+                  "Chưa xác nhận được kết nối hoặc lần lưu. Dữ liệu đã lưu trên máy chủ vẫn được giữ.",
+                  "The connection or save could not be confirmed. Previously saved server data is retained.",
+                )
+              : text(
+                  "Kết nối mã gia đình để xem và lưu dữ liệu dùng chung.",
+                  "Connect your family code to read and save your shared data.",
+                )}
       </p>
-      <div id={detailsId} className="sync-details" hidden={!expanded}>
-        {status === "error" && (
-          <p>
+      {(expanded || model.apiStatus === "error") && (
+        <div className="sync-details">
+          <label>
+            {text("Mã truy cập gia đình", "Family access code")}
+            <input
+              type="password"
+              autoComplete="off"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && code.length >= 16) void connect();
+              }}
+            />
+          </label>
+          <div className="actions">
+            <Button
+              primary
+              disabled={busy || code.length < 16 || pending}
+              onClick={() => void connect()}
+            >
+              {text("Kết nối dữ liệu gia đình", "Connect family data")}
+            </Button>
+            {model.apiStatus === "error" && (
+              <Button
+                disabled={busy || pending}
+                onClick={() => void model.retryApi()}
+              >
+                {text("Thử lại kết nối / lần lưu", "Retry connection / save")}
+              </Button>
+            )}
+            <Button
+              disabled={pending || model.hasPendingSave}
+              onClick={() => {
+                model.disconnectApi();
+                setAccessCode("");
+                setCode("");
+              }}
+            >
+              {text("Quên mã trên thiết bị này", "Forget code on this device")}
+            </Button>
+            <Button onClick={model.exportJSON}>
+              {text("Xuất backup", "Export backup")}
+            </Button>
+          </div>
+          <p className="caption">
+            {text(
+              "Bản trên trình duyệt dùng để xem khi mất mạng. Các thay đổi chỉ được xác nhận sau khi máy chủ lưu thành công.",
+              "The browser copy is an offline read cache. Changes are confirmed only after the server saves successfully.",
+            )}
+          </p>
+          {model.apiStatus === "error" && (
             <a href={signInUrl} target="_blank" rel="noopener noreferrer">
               {text("Đăng nhập lại trên tab mới", "Sign in again in a new tab")}
             </a>
-          </p>
-        )}
-        {!session ? (
-          <>
-            <label>
-              {text("Mã truy cập gia đình", "Family access code")}
-              <input
-                type="password"
-                value={code}
-                autoComplete="off"
-                onKeyDown={(event) => {
-                  if (
-                    event.key === "Enter" &&
-                    code.length >= 16 &&
-                    !busy &&
-                    !blocked()
-                  ) {
-                    event.preventDefault();
-                    void connect(false);
-                  }
-                }}
-                onChange={(event) => setCode(event.target.value)}
-              />
-            </label>
-            <p className="caption">
-              {text(
-                "Mở bản dùng chung sẽ thay thế bản trên thiết bị. Xuất backup trước nếu cần giữ bản này. Lần đầu, chọn chia sẻ bản hiện tại.",
-                "Opening shared data replaces this device's copy. Export a backup first if needed. For first-time setup, share the current copy.",
-              )}
-            </p>
-            <div className="actions">
-              <Button
-                primary
-                disabled={code.length < 16 || busy || blocked()}
-                onClick={() => void connect(false)}
-              >
-                {text("Mở bản dùng chung", "Open shared data")}
-              </Button>
-              <Button
-                className="small"
-                disabled={code.length < 16 || busy || blocked()}
-                onClick={() => void connect(true)}
-              >
-                {text(
-                  "Chia sẻ bản hiện tại lần đầu",
-                  "Share current copy for the first time",
-                )}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="actions">
-            {status === "error" && (
-              <Button onClick={() => setSession({ ...session })}>
-                {text("Thử đồng bộ lại", "Retry sync")}
-              </Button>
-            )}
-            <Button className="small" onClick={disconnect}>
-              {text("Ngắt kết nối", "Disconnect")}
-            </Button>
-          </div>
-        )}
-        {!session && accessCode && (
-          <Button className="small" onClick={disconnect}>
-            {text(
-              "Quên mã trên trình duyệt này",
-              "Forget code in this browser",
-            )}
-          </Button>
-        )}
-        <p className="caption">
-          {text(
-            "Mã được ghi nhớ trên trình duyệt này. Ngắt kết nối để xóa mã trên thiết bị dùng chung.",
-            "This browser remembers your code. Disconnect to forget it on a shared device.",
           )}
-        </p>
-        <Button className="small sync-backup" onClick={model.exportJSON}>
-          {text("Xuất backup", "Export backup")}
-        </Button>
-      </div>
+        </div>
+      )}
     </section>
   );
 }

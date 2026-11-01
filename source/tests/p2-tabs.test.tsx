@@ -21,7 +21,7 @@ it("rejects a stale write even before the other-tab event arrives", () => {
   );
   expect(localStorage.getItem(STORAGE_KEY)).toBe("newer-copy");
 });
-it("pauses stale edits and explicitly loads another tab's valid changes", async () => {
+it("browser storage events cannot overwrite the authoritative server state", async () => {
   await boot(freshState(structuredClone(plan)));
   const other = readState();
   other.mealServings = { "mon-lunch": 1 };
@@ -36,18 +36,8 @@ it("pauses stale edits and explicitly loads another tab's valid changes", async 
       }),
     );
   });
-  fireEvent.change(screen.getByLabelText("Diners: Monday · Lunch"), {
+  await fireEvent.change(screen.getByLabelText("Diners: Monday · Lunch"), {
     target: { value: "0" },
   });
-  expect(localStorage.getItem(STORAGE_KEY)).toBe(raw);
-  fireEvent.click(
-    screen.getByRole("button", { name: "Load changes from other tab" }),
-  );
-  expect(
-    (screen.getByLabelText("Diners: Monday · Lunch") as HTMLSelectElement)
-      .value,
-  ).toBe("1");
-  expect(
-    screen.queryByRole("heading", { name: "Data changed in another tab" }),
-  ).toBeNull();
+  expect(readState().mealServings?.["mon-lunch"]).toBe(0);
 });

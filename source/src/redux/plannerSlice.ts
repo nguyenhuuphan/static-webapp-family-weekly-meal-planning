@@ -1,77 +1,15 @@
-import { setPreparationProgress } from "src/helpers/preparationProgress";
-import {
-  createSlice,
-  current as snapshot,
-  type PayloadAction,
-} from "@reduxjs/toolkit";
-import type { State, Plan, Progress } from "src/types";
-import {
-  availableAcquisitions,
-  committedPurchases,
-  shoppingRequirements,
-} from "src/helpers/shopping";
-import { ingredientKey } from "src/utils";
-import { consumeMeal } from "src/helpers/inventory";
-import { reconcileShopping } from "src/helpers/shopping";
-import { freshProgress } from "src/helpers";
-interface IPlannerState {
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { State, Plan } from "src/types";
+interface PlannerState {
   current: State | null;
   defaults: Plan | null;
 }
-const initialState: IPlannerState = { current: null, defaults: null };
-const plannerSlice = createSlice({
+const initialState: PlannerState = { current: null, defaults: null };
+// Redux holds confirmed API state and the offline read cache; business mutations run on the server.
+const slice = createSlice({
   name: "planner",
   initialState,
   reducers: {
-    progressToggled: (
-      state,
-      action: PayloadAction<{
-        group: Exclude<keyof Progress, "cook">;
-        key: string;
-        value: boolean;
-      }>,
-    ) => {
-      if (!state.current) return;
-      const { group, key, value } = action.payload;
-      if (group === "done") {
-        if (value) state.current = consumeMeal(snapshot(state.current), key);
-        else if (state.current.stockUses) delete state.current.stockUses[key];
-      }
-      if (group !== "prep") state.current.progress[group][key] = value;
-      if (group === "done")
-        state.current = reconcileShopping(snapshot(state.current));
-      if (group === "prep") setPreparationProgress(state.current, key, value);
-      if (group === "shopping") {
-        const current = state.current;
-        current.purchased ??= {};
-        if (!value) delete current.purchased[key];
-        else {
-          const item = shoppingRequirements(current).find(
-            (i) => ingredientKey(i) === key,
-          );
-          if (item)
-            current.purchased[key] = {
-              ...item,
-              qty:
-                Math.max(
-                  0,
-                  item.qty - availableAcquisitions(current, key).home,
-                ) +
-                Math.max(
-                  0,
-                  (committedPurchases(current)[key] || 0) -
-                    (current.pantry?.[key] || 0),
-                ),
-            };
-        }
-      }
-    },
-    progressReset: (state) => {
-      if (!state.current) return;
-      state.current.progress = freshProgress();
-      state.current.timer = null;
-      state.current.timers = [];
-    },
     initialized: (
       _state,
       action: PayloadAction<{ current: State; defaults: Plan }>,
@@ -81,6 +19,5 @@ const plannerSlice = createSlice({
     },
   },
 });
-export const { initialized, stateChanged, progressToggled, progressReset } =
-  plannerSlice.actions;
-export default plannerSlice.reducer;
+export const { initialized, stateChanged } = slice.actions;
+export default slice.reducer;

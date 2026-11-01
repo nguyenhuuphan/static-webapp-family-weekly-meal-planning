@@ -4238,3 +4238,47 @@ select:focus-visible {
   color: #62450d;
   font-weight: 700;
 }
+.report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+}
+.report-filters label {
+  display: grid;
+  gap: 6px;
+}
+.report-filters input {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+}
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-block: 20px;
+}
+.report-cards article {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+.report-cards strong {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.report-table-wrap {
+  overflow: auto;
+}
+.report-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.report-table-wrap th,
+.report-table-wrap td {
+  padding: 10px 8px;
+  text-align: start;
+  border-bottom: 1px solid var(--border);
+}

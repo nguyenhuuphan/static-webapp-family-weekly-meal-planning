@@ -264,7 +264,7 @@ function PurchaseRecord({
 }) {
   const text = useText(),
     { content, language, unit } = useI18n(),
-    { s, update } = useMealPlanner();
+    { s, command, apiBusy } = useMealPlanner();
   const [editing, setEditing] = useState(false),
     [amount, setAmount] = useState(moneyInput(r.paid)),
     [currency, setCurrency] = useState<Money["currency"]>(
@@ -272,20 +272,13 @@ function PurchaseRecord({
     ),
     [invoiceId, setInvoiceId] = useState(r.invoiceId || ""),
     [error, setError] = useState(false);
-  function save() {
+  async function save() {
     try {
       const paid = parseMoney(amount, currency);
-      const updated = update((s) => {
-        const next = {
-          ...s,
-          purchaseReceipts: s.purchaseReceipts?.map((p) =>
-            p.id === r.id
-              ? { ...p, paid, invoiceId: invoiceId || undefined }
-              : p,
-          ),
-        };
-        validatePurchaseHistory(next);
-        return next;
+      const updated = await command("purchase.update", {
+        id: r.id,
+        paid,
+        invoiceId: invoiceId || undefined,
       });
       if (updated) {
         setEditing(false);
@@ -405,7 +398,7 @@ function PurchaseRecord({
             <Button onClick={() => setEditing(false)}>
               {text("Hủy", "Cancel")}
             </Button>
-            <Button primary onClick={save}>
+            <Button primary disabled={apiBusy} onClick={() => void save()}>
               {text("Lưu giá mua", "Save purchase price")}
             </Button>
           </div>

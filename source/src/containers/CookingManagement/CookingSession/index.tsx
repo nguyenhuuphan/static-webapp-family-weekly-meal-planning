@@ -35,7 +35,7 @@ const CookingSession: React.FC<IProps> = () => {
     meal,
     ready,
     pos,
-    update,
+    command,
     seconds,
     t,
     startTimer,
@@ -173,7 +173,7 @@ const CookingSession: React.FC<IProps> = () => {
                             ),
                           )
                         )
-                          update((s) => cancelCooking(s, meal.id));
+                          command("cooking.cancel", { id: meal.id });
                       }}
                     >
                       {text("Chưa nấu: hủy mẻ", "Not cooked yet: cancel batch")}
@@ -181,7 +181,7 @@ const CookingSession: React.FC<IProps> = () => {
                   </div>
                 ) : (
                   <Button
-                    onClick={() => update((s) => beginCooking(s, meal.id))}
+                    onClick={() => command("cooking.begin", { id: meal.id })}
                   >
                     {text("Bắt đầu nấu mẻ này", "Start this cooking batch")}
                   </Button>
@@ -250,10 +250,7 @@ const CookingSession: React.FC<IProps> = () => {
               key={meal.id}
               value={s.mealStorage?.[meal.id]}
               onChange={(storage) =>
-                update((s) => ({
-                  ...s,
-                  mealStorage: { ...s.mealStorage, [meal.id]: storage },
-                }))
+                command("storage.meal", { id: meal.id, storage })
               }
             />
             <label className="readiness">
@@ -298,13 +295,7 @@ const CookingSession: React.FC<IProps> = () => {
                   <Button
                     aria-pressed={pos === index}
                     onClick={() =>
-                      update((state) => ({
-                        ...beginCooking(state, meal.id),
-                        progress: {
-                          ...state.progress,
-                          cook: { ...state.progress.cook, [meal.id]: index },
-                        },
-                      }))
+                      command("cooking.step", { id: meal.id, index })
                     }
                   >
                     {pos === index

@@ -7,7 +7,7 @@ import { useText } from "src/i18n";
 import { Button } from "src/modules/shared-main/components";
 
 export default function QuickCompletion({ meal }: { meal: Meal }) {
-  const { s, update } = useMealPlanner(),
+  const { s, command } = useMealPlanner(),
     text = useText();
   const count = s.cookingBatches?.[meal.id]?.servings ?? mealPortions(s, meal);
   const [open, setOpen] = useState(false),
@@ -74,8 +74,8 @@ export default function QuickCompletion({ meal }: { meal: Meal }) {
         <Button
           primary
           disabled={!valid}
-          onClick={() => {
-            if (update((s) => completeMealQuickly(s, meal.id, cooked, eaten)))
+          onClick={async () => {
+            if (await command("cooking.quick", { id: meal.id, cooked, eaten }))
               setOpen(false);
           }}
         >

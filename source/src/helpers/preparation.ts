@@ -128,11 +128,16 @@ function isProfileCooking(meal: Meal, taskIndex: number) {
   );
 }
 export function isCookingPreparation(meal: Meal, taskIndex: number): boolean {
-  return (
-    isProfileCooking(meal, taskIndex) ||
-    preparationParts(meal, meal.prep[taskIndex]).every(
-      (part) => part.category === "Cooking",
-    )
+  const recipe = meal.recipeId || meal.id;
+  const profile = profiles[recipe]?.[taskIndex];
+  if (
+    profile &&
+    original.meals.find((item) => item.id === recipe)?.prep[taskIndex]?.text ===
+      meal.prep[taskIndex]?.text
+  )
+    return profile.operation === "prepareSauces";
+  return preparationParts(meal, meal.prep[taskIndex]).every(
+    (part) => part.category === "Cooking",
   );
 }
 export function cookingPreparations(

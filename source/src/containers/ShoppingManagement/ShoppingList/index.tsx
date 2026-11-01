@@ -20,17 +20,9 @@ const ShoppingList: React.FC<IProps> = () => {
     "needed",
   );
   const { t: tr, content: ct, number: num, unit } = useI18n();
-  const { s, needs, bought, shopping, toggle, search, setSearch, update } =
+  const { s, needs, bought, shopping, toggle, search, setSearch, command } =
     useMealPlanner();
-  const surplus = Object.entries(s.purchased || {}).flatMap(([key, item]) => {
-    const required = shopping.find((i) => ingredientKey(i) === key)?.qty || 0;
-    const available = availableAcquisitions(s, key);
-    const extra = Math.max(
-      0,
-      Math.round((available.home + available.purchased - required) * 100) / 100,
-    );
-    return extra > 0 ? [{ ...item, qty: extra }] : [];
-  });
+  const {surplus}=useMealPlanner();
   const normalize = (value: string) =>
     value
       .normalize("NFD")
@@ -269,9 +261,7 @@ const ShoppingList: React.FC<IProps> = () => {
                               }
                               if (amount === availableAcquisitions(s, k).home)
                                 return;
-                              update((state) =>
-                                updateHomeStock(state, k, amount),
-                              );
+                              command("pantry.set", { key: k, amount });
                             }}
                           />
                         </label>
@@ -281,9 +271,10 @@ const ShoppingList: React.FC<IProps> = () => {
                             checked={!!owned}
                             onChange={(event) => {
                               const owned = event.target.checked;
-                              update((state) =>
-                                updateHomeStock(state, k, owned ? i.qty : 0),
-                              );
+                              command("pantry.set", {
+                                key: k,
+                                amount: owned ? i.qty : 0,
+                              });
                             }}
                           />
                           {tr("atHome")}

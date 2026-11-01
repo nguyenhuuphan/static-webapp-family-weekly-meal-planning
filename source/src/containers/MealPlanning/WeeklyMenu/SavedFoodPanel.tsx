@@ -16,7 +16,7 @@ import { mealPortions } from "src/utils";
 import { Button } from "src/modules/shared-main/components";
 
 function FoodCard({ food }: { food: SavedFood }) {
-  const { s, update, setToast } = useMealPlanner();
+  const { s, command, setToast } = useMealPlanner();
   const { content: ct, instruction } = useI18n();
   const text = useText();
   const [target, setTarget] = useState("");
@@ -25,14 +25,7 @@ function FoodCard({ food }: { food: SavedFood }) {
   const [storage, setStorage] = useState(food.storageNote);
   const [reviewed, setReviewed] = useState(false);
   const change = (patch: Partial<SavedFood>) =>
-    update((s) =>
-      reconcileShopping({
-        ...s,
-        savedFood: s.savedFood?.map((f) =>
-          f.id === food.id ? { ...f, ...patch } : f,
-        ),
-      }),
-    );
+    command("saved.patch", { id: food.id, patch });
   const destination = s.plan.meals.find((m) => m.id === target);
   const label = food.date
     ? `${food.date} · ${ct(food.type || "Dinner")}`
@@ -170,7 +163,7 @@ function FoodCard({ food }: { food: SavedFood }) {
             }
             onClick={() => {
               try {
-                update((s) => assignFood(s, food.id, target));
+                command("saved.assign", { id: food.id, target });
               } catch (e) {
                 setToast((e as Error).message);
               }
@@ -182,7 +175,7 @@ function FoodCard({ food }: { food: SavedFood }) {
             disabled={!destination || (food.kind === "prepared" && !reviewed)}
             onClick={() => {
               try {
-                update((s) => mergeFood(s, food.id, target));
+                command("saved.merge", { id: food.id, target });
               } catch (e) {
                 setToast((e as Error).message);
               }
@@ -308,7 +301,7 @@ function FoodCard({ food }: { food: SavedFood }) {
                 ),
               )
             )
-              update((s) => finishSavedFood(s, food.id));
+              command("saved.finish", { id: food.id });
           }}
         >
           {text(

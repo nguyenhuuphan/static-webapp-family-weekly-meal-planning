@@ -10,7 +10,7 @@ import {
 } from "./uxSupport";
 it("previews a full backup without changing data until restore and preserves progress", async () => {
   await boot();
-  nav("Settings");
+  await nav("Settings");
   const backup = freshState(plan);
   backup.servings = 4;
   backup.progress.done["mon-lunch"] = true;
@@ -24,12 +24,14 @@ it("previews a full backup without changing data until restore and preserves pro
   Object.defineProperty(file, "text", {
     value: async () => JSON.stringify(backup),
   });
-  fireEvent.change(screen.getByLabelText("Choose backup to restore"), {
+  await fireEvent.change(screen.getByLabelText("Choose backup to restore"), {
     target: { files: [file] },
   });
   await screen.findByRole("button", { name: "Restore this backup" });
   expect(readState().servings).toBe(2);
-  fireEvent.click(screen.getByRole("button", { name: "Restore this backup" }));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Restore this backup" }),
+  );
   expect(readState().servings).toBe(4);
   expect(readState().progress.done["mon-lunch"]).toBe(true);
   expect(readState().pantry).toEqual(backup.pantry);

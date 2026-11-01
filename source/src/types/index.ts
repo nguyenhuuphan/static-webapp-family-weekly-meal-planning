@@ -180,4 +180,4 @@ export type FoodStorage = {
     place: FoodStorage["place"];
   }[];
 };
-export type View = "week" | "shop" | "prep" | "cook" | "settings" | "safety";
+export type View = "week" | "shop" | "prep" | "cook" | "settings" | "safety" | "reports";

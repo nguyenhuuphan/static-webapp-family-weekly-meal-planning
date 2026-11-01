@@ -4,13 +4,11 @@ import { useScreenWakeLock } from "../src/hooks/useScreenWakeLock";
 it("opts in, reacquires on visibility and releases on exit", async () => {
   vi.stubGlobal("isSecureContext", true);
   const release = vi.fn().mockResolvedValue(undefined),
-    request = vi
-      .fn()
-      .mockImplementation(async () => ({
-        released: false,
-        release,
-        addEventListener: vi.fn(),
-      }));
+    request = vi.fn().mockImplementation(async () => ({
+      released: false,
+      release,
+      addEventListener: vi.fn(),
+    }));
   Object.defineProperty(navigator, "wakeLock", {
     configurable: true,
     value: { request },

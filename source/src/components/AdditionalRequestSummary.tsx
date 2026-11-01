@@ -133,7 +133,7 @@ export default function AdditionalRequestSummary({
       {!!contract.conflicts.length && (
         <p className="notice warning" role="alert">
           {text(
-            "Yêu cầu mâu thuẫn với lịch ăn, chế độ ăn hoặc nguyên liệu cần tránh. Điều chỉnh yêu cầu hoặc các lựa chọn trước khi tạo.",
+            "Yêu cầu mâu thuẫn với lịch ăn, chế độ ăn, dụng cụ hoặc nguyên liệu cần tránh. Điều chỉnh yêu cầu hoặc các lựa chọn trước khi tạo.",
             contract.conflicts.join(" "),
           )}
         </p>

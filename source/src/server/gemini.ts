@@ -205,6 +205,7 @@ export class GenerationError extends Error {
       slot?: string;
       stepCount?: number;
       instructionCharacters?: number;
+      appliance?: string;
     },
   ) {
     super(code);
@@ -536,15 +537,31 @@ export function validateGeneratedPlan(
       ...meal.steps.map((s) => s.text),
     ].join(" ");
     for (const [label, pattern] of appliancePatterns) {
-      const source =
+      let source =
         label === "Oven"
           ? instructions.replace(/microwave oven/gi, "microwave")
           : instructions;
+      // A basket/rack used over a selected stove is cookware, not an electric steamer.
+      if (
+        label === "Steamer" &&
+        input.equipment.some((e) => /stove/i.test(e)) &&
+        !meal.equipment?.includes("Steamer")
+      )
+        source = source.replace(
+          /\b(?:(?:bamboo|metal|collapsible|stainless steel) )?steamer (?:basket|rack|insert)\b/gi,
+          "steaming insert",
+        );
+      if (label === "Microwave")
+        source = source.replace(/\bmicrowave[- ]safe\b/gi, "heat-safe");
       if (
         pattern.test(source) &&
         !input.equipment.some((e) => pattern.test(e) || e === label)
       )
-        throw new GenerationError("unavailable_equipment");
+        throw new GenerationError("unavailable_equipment", {
+          reason: "unselected_appliance",
+          slot: meal.id,
+          appliance: label,
+        });
     }
     if (
       /\bstove(?:top)?\b/i.test(instructions) &&
@@ -697,6 +714,19 @@ export function generationPayload(
         unit,
       })),
     })),
+    allowedAppliances: input.equipment,
+    unavailableAppliances: [
+      "Air fryer",
+      "Electric stove",
+      "Induction stove",
+      "Gas stove",
+      "Blender",
+      "Oven",
+      "Microwave",
+      "Rice cooker",
+      "Steamer",
+      "Pressure cooker",
+    ].filter((e) => !input.equipment.includes(e)),
     responseSchema: responseSchema(input),
     referenceServings: defaultPlan.servings,
     referenceRecipe,

@@ -39,7 +39,6 @@ const foods = {
       "ca ngu",
       "ca chim",
       "ca bop",
-      "ca",
     ],
   },
   broccoli: {
@@ -56,7 +55,7 @@ const foods = {
   chicken: {
     en: "chicken",
     vi: "thịt gà",
-    aliases: ["chicken", "thit ga", "ga"],
+    aliases: ["chicken", "thit ga"],
   },
   beef: { en: "beef", vi: "thịt bò", aliases: ["beef", "thit bo"] },
   pork: {
@@ -71,7 +70,7 @@ const foods = {
   mushroom: {
     en: "mushrooms",
     vi: "nấm",
-    aliases: ["mushroom", "mushrooms", "nam"],
+    aliases: ["mushroom", "mushrooms"],
   },
   cabbage: { en: "cabbage", vi: "bắp cải", aliases: ["cabbage", "bap cai"] },
   carrot: {
@@ -107,6 +106,15 @@ export type RequestContract = {
 };
 export const slotId = (day: Day, type: MealType) =>
   `${day.slice(0, 3).toLowerCase()}-${type.toLowerCase()}`;
+function requestText(value: string) {
+  // Preserve distinctions lost by accent folding: cá/cà, nấm/năm, gà/ga.
+  return normalizeAvoidance(
+    value
+      .replace(/(^|[^\p{L}])cá(?=$|[^\p{L}])/giu, "$1fish")
+      .replace(/(^|[^\p{L}])nấm(?=$|[^\p{L}])/giu, "$1mushroom")
+      .replace(/(^|[^\p{L}])gà(?=$|[^\p{L}])/giu, "$1chicken"),
+  );
+}
 const contains = (text: string, term: string) =>
   ` ${text} `.includes(` ${term} `);
 const foodCodes = Object.keys(foods) as FoodCode[];
@@ -172,7 +180,7 @@ export function compileAdditionalRequest(input: MenuInput): RequestContract {
     .split(/[;\n]+|(?<=[.!?])\s+/)
     .map((s) => s.trim())
     .filter(Boolean)) {
-    const text = normalizeAvoidance(source);
+    const text = requestText(source);
     const negative = text.match(
       /\b(?:avoid|exclude|without|no|tranh|khong an|khong dung|khong su dung)\s+(.+?)(?=\b(?:but|nhung|include|need|want|muon|can)\b|$)/,
     );
@@ -279,6 +287,10 @@ export function compileAdditionalRequest(input: MenuInput): RequestContract {
   }
   contract.excludedIngredients = [...new Set(contract.excludedIngredients)];
   for (const rule of contract.rules) {
+    if (rule.cookingMethod && input.equipment.includes("No heating appliance"))
+      contract.conflicts.push(
+        "The requested cooking method requires heat but no heating appliance is selected.",
+      );
     if (
       rule.ingredients.some(
         (food) =>
@@ -303,7 +315,11 @@ export function compileAdditionalRequest(input: MenuInput): RequestContract {
       contract.conflicts.push(
         "The egg request conflicts with the selected vegan diet.",
       );
-    const avoided = input.avoid.split(/[,;\n]+/).map(normalizeAvoidance);
+    const avoided = input.avoid
+      .split(/[,;\n]+/)
+      .map((value) =>
+        requestText(value) === "ca" ? "fish" : requestText(value),
+      );
     if (
       rule.ingredients.some((food) =>
         avoided.some((term) => foods[food].aliases.includes(term)),
@@ -338,8 +354,8 @@ export function mealContainsFood(
   vi: Record<string, string> = {},
 ) {
   return meal.ingredients.some((ingredient) => {
-    const en = normalizeAvoidance(ingredient.name),
-      translated = normalizeAvoidance(vi[ingredient.name] || "");
+    const en = requestText(ingredient.name),
+      translated = requestText(vi[ingredient.name] || "");
     // Fish sauce/stock does not make a meal a fish dish.
     if (
       food === "fish" &&

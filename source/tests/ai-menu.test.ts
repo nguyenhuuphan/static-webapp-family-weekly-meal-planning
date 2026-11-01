@@ -141,6 +141,18 @@ describe("AI requirements and flexible weeks", () => {
       "incomplete_recipe",
     );
   });
+  it("allows ordinary steamer baskets on a selected stove but rejects an unselected electric steamer", () => {
+    const output = aiBilingualOutput();
+    const meal = Object.values(output.meals)[0];
+    meal.steps[0].text.en += " Use a steamer basket over the stove.";
+    meal.steps[0].text.vi += " Dùng xửng hấp trên bếp.";
+    expect(() => validateGeneratedPlan(output, aiInput)).not.toThrow();
+    meal.steps[0].text.en += " Use an electric steamer.";
+    meal.steps[0].text.vi += " Dùng nồi hấp điện.";
+    expect(() => validateGeneratedPlan(output, aiInput)).toThrow(
+      "unavailable_equipment",
+    );
+  });
   it("accepts a simple cold dish without forcing extra ingredients or heating steps", () => {
     const text = (en: string, vi: string) => ({ en, vi });
     const output = {

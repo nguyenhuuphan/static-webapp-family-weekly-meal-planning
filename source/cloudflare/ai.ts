@@ -238,6 +238,7 @@ export async function generateWithBackup(
   }
   if (context.alternatives) {
     const choiceInput = JSON.stringify({
+      unavailableAppliances: basePayload.unavailableAppliances,
       additionalRequest: additionalRequestPayload(
         context.requirements,
         input,

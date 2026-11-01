@@ -80,6 +80,7 @@ export type MenuJob = {
     slot?: string;
     stepCount?: number;
     instructionCharacters?: number;
+    appliance?: string;
   };
   /** Administration-only synthetic job flag; never accepted by the generation API. */
   diagnostic?: boolean;

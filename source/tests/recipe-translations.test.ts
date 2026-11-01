@@ -27,6 +27,17 @@ describe("recipe translation quantity protection", () => {
     );
     expect(canonicalQuantities("[000.12500 tsp]")).toBe("[0.125 tsp]");
   });
+  it("normalizes egg counts without dropping the ingredient or changing the count", () => {
+    expect(canonicalQuantities("Crack [2 eggs] into a bowl.")).toBe(
+      "Crack [2 each] eggs into a bowl.",
+    );
+    expect(canonicalQuantities("Đập [2 eggs] vào bát.", true)).toBe(
+      "Đập [2 each] trứng vào bát.",
+    );
+    expect(canonicalQuantities("Crack [2 eggs] eggs into a bowl.")).toBe(
+      "Crack [2 each] eggs into a bowl.",
+    );
+  });
   it("localizes known culinary terms while preserving all ingredient quantities", () => {
     const raw = {
       en: "Add [20 g] lemongrass.",

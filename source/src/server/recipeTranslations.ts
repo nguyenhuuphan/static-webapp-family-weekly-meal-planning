@@ -20,18 +20,30 @@ const units: Record<string, string> = {
   "thìa canh": "tbsp",
   "muỗng canh": "tbsp",
   each: "each",
+  egg: "each",
+  eggs: "each",
+  trứng: "each",
+  "quả trứng": "each",
   quả: "each",
   cái: "each",
 };
 export function canonicalQuantities(text: string, vietnamese = false) {
   return text.replace(
-    /[\[［]\s*(\d+(?:[.,]\d+)?)\s*(g|grams?|gam|ml|milliliters?|millilitres?|tsp|teaspoons?|tbsp|tablespoons?|each|thìa cà phê|muỗng cà phê|thìa canh|muỗng canh|quả|cái)\s*[\]］]/giu,
-    (token, amount: string, unit: string) => {
+    /[\[［]\s*(\d+(?:[.,]\d+)?)\s*(g|grams?|gam|ml|milliliters?|millilitres?|tsp|teaspoons?|tbsp|tablespoons?|each|eggs?|quả trứng|trứng|thìa cà phê|muỗng cà phê|thìa canh|muỗng canh|quả|cái)\s*[\]］]/giu,
+    (token, amount: string, unit: string, offset: number) => {
       if (!vietnamese && amount.includes(",")) return token;
       const [whole, fraction] = amount.replace(",", ".").split(".");
       const integer = whole.replace(/^0+(?=\d)/, "");
       const decimal = fraction?.replace(/0+$/, "");
-      return `[${integer}${decimal ? "." + decimal : ""} ${units[unit.toLowerCase()]}]`;
+      const quantity = `[${integer}${decimal ? "." + decimal : ""} ${units[unit.toLowerCase()]}]`;
+      if (/^(eggs?|trứng|quả trứng)$/iu.test(unit)) {
+        const rest = text.slice(offset + token.length);
+        const alreadyNamed = vietnamese
+          ? /^\s+(?:quả\s+)?trứng\b/iu.test(rest)
+          : /^\s+eggs?\b/i.test(rest);
+        return quantity + (alreadyNamed ? "" : vietnamese ? " trứng" : " eggs");
+      }
+      return quantity;
     },
   );
 }

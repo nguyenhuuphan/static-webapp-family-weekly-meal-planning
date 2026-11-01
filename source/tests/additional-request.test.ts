@@ -152,6 +152,25 @@ describe("explicit additional meal requests", () => {
       1,
     );
   });
+  it("does not mistake Thursday, gas stoves or carrots for mushrooms, chicken or fish", () => {
+    const requested = {
+      ...full,
+      days: ["Thursday"] as import("../src/types").Day[],
+      customPrompt:
+        "Tôi cần 1 bữa Âu cá chiên và cà rốt vào bữa tối thứ Năm, dùng bếp ga.",
+    };
+    const rule = compileAdditionalRequest(requested).rules[0];
+    expect(rule.ingredients).toEqual(["fish", "carrot"]);
+    expect(rule.slots).toEqual(["thu-dinner"]);
+    const next = plan();
+    next.meals[0].ingredients = [
+      { name: "Carrot", qty: 200, unit: "g", category: "Produce" },
+    ];
+    next.translations = { vi: { Carrot: "Cà rốt" } };
+    expect(
+      requestViolations(next, full).some((v) => v.ingredient === "fish"),
+    ).toBe(true);
+  });
   it("finds schedule/diet/allergy conflicts before generation without discarding other free text", () => {
     expect(
       compileAdditionalRequest({

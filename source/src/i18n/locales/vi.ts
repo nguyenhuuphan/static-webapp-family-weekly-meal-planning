@@ -367,6 +367,11 @@ export const vi = {
   prepCollapseCategory: "Thu gọn: {category}",
   prepExpandCategory: "Mở rộng: {category}",
   prepCompleteCategory: "Hoàn thành nhóm: {category}",
+  cookJustInTimeTitle: "Chuẩn bị ngay trước bữa ăn",
+  cookJustInTimeHelp:
+    "Vo gạo và nấu cơm khi chuẩn bị ăn; không tính vào phần sơ chế sẵn.",
+  prepCookJustInTime:
+    "Thực hiện ngay trước bữa ăn, không làm sẵn trong ngày sơ chế.",
   cookSeasoningsTitle: "Chuẩn bị nước xốt & gia vị trước khi nấu",
   cookSeasoningsHelp:
     "Đong các phần này lúc bắt đầu nấu món này; không cần chuẩn bị trước.",

@@ -1,3 +1,4 @@
+import { sourcePreparationKey } from "../src/helpers/preparationParts";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import App from "../src/App";
@@ -33,13 +34,13 @@ describe("ingredient preparation groups", () => {
       item.allocations.map((item) => item.key),
     );
     expect(new Set(keys).size).toBe(keys.length);
-    expect(keys.sort()).toEqual(
+    expect([...new Set(keys.map(sourcePreparationKey))].sort()).toEqual(
       plan.meals
         .flatMap((meal) => meal.prep.map((_, index) => `${meal.id}:${index}`))
         .sort(),
     );
   });
-  it("shows one card per generated meal while retaining every independent prep task", () => {
+  it("shows one card per generated meal and category while retaining every independent prep task", () => {
     const generated = structuredClone(plan);
     for (const meal of generated.meals)
       meal.prep = meal.prep.map((task, index) => ({
@@ -48,7 +49,11 @@ describe("ingredient preparation groups", () => {
       }));
     const raw = groupPreparation(generated, 2),
       cards = recipePreparationCards(raw);
-    expect(cards).toHaveLength(generated.meals.length);
+    expect(
+      new Set(
+        cards.map((card) => card.allocations[0].meal.id + ":" + card.category),
+      ).size,
+    ).toBe(cards.length);
     expect(
       cards
         .flatMap((card) => card.allocations.map((allocation) => allocation.key))
@@ -60,8 +65,13 @@ describe("ingredient preparation groups", () => {
         )
         .sort(),
     );
-    expect(cards[0].allocations).toHaveLength(generated.meals[0].prep.length);
-    expect(raw).toHaveLength(
+    expect(
+      new Set(
+        raw.flatMap((group) =>
+          group.allocations.map((a) => sourcePreparationKey(a.key)),
+        ),
+      ).size,
+    ).toBe(
       generated.meals.reduce((total, meal) => total + meal.prep.length, 0),
     );
   });
@@ -91,7 +101,13 @@ describe("ingredient preparation groups", () => {
     )!.qty = 500;
     groups = groupPreparation(edited, 2);
     expect(
-      groups.find((item) => item.key === "individual:mon-lunch:0"),
+      groups.find(
+        (item) =>
+          item.operation === "reviewIndividually" &&
+          item.allocations.some(
+            (a) => sourcePreparationKey(a.key) === "mon-lunch:0",
+          ),
+      ),
     ).toBeTruthy();
   });
   it("supports focused groups, visible storage, completion, undo and remaining filter", async () => {

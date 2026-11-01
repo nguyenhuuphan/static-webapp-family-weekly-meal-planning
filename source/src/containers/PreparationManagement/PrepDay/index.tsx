@@ -1,3 +1,12 @@
+import {
+  preparationChecked,
+  preparationKeys,
+} from "src/helpers/preparationProgress";
+import {
+  sourcePreparationKey,
+  categoryStorageText,
+} from "src/helpers/preparationParts";
+import { createTranslator } from "src/i18n/translate";
 import PreparationLinks from "src/modules/shared-main/components/PreparationLinks";
 import { useMemo, useState } from "react";
 import { usePersistentState } from "src/hooks/usePersistentState";
@@ -14,6 +23,8 @@ import {
   groupPreparation,
   recipePreparationCards,
   type PrepOperation,
+  type PrepAllocation,
+  type PrepGroup,
 } from "src/helpers/preparation";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
@@ -40,6 +51,7 @@ const operationKeys = {
   keepEggs: "prepKeepEggs",
   prepareSauces: "prepPrepareSauces",
   prepareMixed: "prepPrepareMixed",
+  cookJustInTime: "prepCookJustInTime",
   reviewIndividually: "prepReviewIndividually",
 } satisfies Record<PrepOperation, MessageKey>;
 
@@ -66,18 +78,53 @@ const PrepDay: React.FC = () => {
   );
   const [undo, setUndo] = usePersistentState<{
     before: Record<string, boolean>;
+    touched?: string[];
     preparedTasks?: typeof s.preparedTasks;
     ready: Record<string, boolean>;
     after: boolean;
     plan: string;
   } | null>("prep:undo", null);
-  const { t: tr, content: ct, number, unit, instruction } = useI18n();
+  const { t: tr, content: ct, number, unit, instruction, language } = useI18n();
   const { s, plan, navigate, toggle, update } = useMealPlanner();
   const prepInstruction = (value: string, meal: (typeof plan.meals)[number]) =>
     currentMealLabel(
       instruction(value, mealPortions(s, meal) / plan.servings),
       `${ct(meal.day)} · ${ct(meal.type)}`,
     );
+  const allocationInstruction = (allocation: PrepAllocation) => {
+    if (!allocation.displayText)
+      return prepInstruction(allocation.task.text, allocation.meal);
+    return currentMealLabel(
+      createTranslator(
+        language,
+        false,
+        allocation.displayVi
+          ? { [allocation.displayText]: allocation.displayVi }
+          : {},
+      ).instruction(
+        allocation.displayText,
+        mealPortions(s, allocation.meal) / plan.servings,
+      ),
+      `${ct(allocation.meal.day)} · ${ct(allocation.meal.type)}`,
+    );
+  };
+  const allocationStorage = (allocation: PrepAllocation, group: PrepGroup) => {
+    if (allocation.task.storage) return ct(allocation.task.storage);
+    if (group.operation === "reviewIndividually")
+      return categoryStorageText(
+        allocation.meal,
+        group.category,
+        ct(allocation.meal.storage),
+        plan.translations?.vi,
+      );
+    if (!allocation.baselineStorage || !group.ingredient)
+      return ct(allocation.meal.storage);
+    if (group.operation === "keepEggs")
+      return tr("keepEggsIntactInTheirCartonInTheRefrigerator");
+    return group.category === "Protein"
+      ? ct(allocation.meal.storage).split(/\.\s+/)[0] + "."
+      : ct(allocation.meal.storage).split(/\.\s+/).slice(1).join(". ");
+  };
   const prepIdentity = JSON.stringify([
     plan,
     s.servings,
@@ -87,12 +134,16 @@ const PrepDay: React.FC = () => {
   const complete = (keys: string[], checked: boolean) => {
     setUndo({
       preparedTasks: s.preparedTasks,
+      touched: keys,
       before: Object.fromEntries(
-        keys.map((key) => [key, !!s.progress.prep[key]]),
+        [...new Set(keys.flatMap((key) => preparationKeys(s, key)))].map(
+          (key) => [key, !!s.progress.prep[key]],
+        ),
       ),
       ready: Object.fromEntries(
         keys.map((key) => {
-          const mealId = key.slice(0, key.lastIndexOf(":"));
+          const source = sourcePreparationKey(key);
+          const mealId = source.slice(0, source.lastIndexOf(":"));
           return [mealId, !!s.progress.ready[mealId]];
         }),
       ),
@@ -106,7 +157,7 @@ const PrepDay: React.FC = () => {
         if (
           group.allocations.some((a) => keys.includes(a.key)) &&
           group.allocations.every((a) =>
-            keys.includes(a.key) ? checked : !!s.progress.prep[a.key],
+            keys.includes(a.key) ? checked : preparationChecked(s, a.key),
           )
         ) {
           next[group.key] = false;
@@ -119,14 +170,22 @@ const PrepDay: React.FC = () => {
     () =>
       recipePreparationCards(
         groupPreparation(plan, s.servings, s.mealServings),
-      ).filter((group) => group.operation !== "prepareSauces"),
+      ).filter(
+        (group) =>
+          group.operation !== "prepareSauces" &&
+          group.operation !== "cookJustInTime",
+      ),
     [plan, s.servings, s.mealServings],
   );
   const completedGroups = groups.filter((group) =>
-    group.allocations.every((allocation) => s.progress.prep[allocation.key]),
+    group.allocations.every((allocation) =>
+      preparationChecked(s, allocation.key),
+    ),
   ).length;
   const nextGroup = groups.find((group) =>
-    group.allocations.some((allocation) => !s.progress.prep[allocation.key]),
+    group.allocations.some(
+      (allocation) => !preparationChecked(s, allocation.key),
+    ),
   )?.key;
   return (
     <>
@@ -144,6 +203,12 @@ const PrepDay: React.FC = () => {
         {text(
           "Chỉ đánh dấu hoàn tất khi phần đó đã sơ chế, chia đúng lượng, ướp theo món và cất đúng nơi. Làm dở thì để chưa đánh dấu; có thể mở lại bất kỳ nhóm nào.",
           "Mark a portion complete after preparing, dividing, seasoning as directed and storing it. Leave unfinished portions unchecked; you can reopen any group.",
+        )}
+      </p>
+      <p className="caption">
+        {text(
+          "Rau củ và thịt cá được sơ chế riêng. Vo gạo, nấu cơm thực hiện ngay trước bữa ăn.",
+          "Prepare vegetables and raw proteins separately. Rinse and cook rice just before the meal.",
         )}
       </p>
       <div className="progress-panel">
@@ -180,17 +245,16 @@ const PrepDay: React.FC = () => {
         </Button>
         {undo &&
           undo.plan === prepIdentity &&
-          Object.keys(undo.before).every(
-            (key) => !!s.progress.prep[key] === undo.after,
+          (undo.touched || Object.keys(undo.before)).every(
+            (key) => preparationChecked(s, key) === undo.after,
           ) && (
             <Button
               onClick={() => {
-                Object.entries(undo.before).forEach(([key, value]) =>
-                  toggle("prep", key, value),
-                );
                 update((state) => {
                   const preparedTasks = { ...state.preparedTasks };
-                  for (const key of Object.keys(undo.before)) {
+                  for (const key of new Set(
+                    Object.keys(undo.before).map(sourcePreparationKey),
+                  )) {
                     if (undo.preparedTasks?.[key])
                       preparedTasks[key] = undo.preparedTasks[key];
                     else delete preparedTasks[key];
@@ -200,6 +264,7 @@ const PrepDay: React.FC = () => {
                     preparedTasks,
                     progress: {
                       ...state.progress,
+                      prep: { ...state.progress.prep, ...undo.before },
                       ready: { ...state.progress.ready, ...undo.ready },
                     },
                   };
@@ -241,7 +306,7 @@ const PrepDay: React.FC = () => {
             (group) =>
               (!remainingOnly ||
                 group.allocations.some(
-                  (allocation) => !s.progress.prep[allocation.key],
+                  (allocation) => !preparationChecked(s, allocation.key),
                 )) &&
               (category.key === "Other"
                 ? !["Produce", "Protein", "Pantry"].includes(group.category)
@@ -291,18 +356,20 @@ const PrepDay: React.FC = () => {
               >
                 {categoryGroups.map((group) => {
                   const groupIndex = groups.indexOf(group);
-                  const done = group.allocations.filter(
-                    (allocation) => s.progress.prep[allocation.key],
+                  const done = group.allocations.filter((allocation) =>
+                    preparationChecked(s, allocation.key),
                   ).length;
                   const allDone = done === group.allocations.length;
                   const isOpen = expanded[group.key] ?? group.key === nextGroup;
-                  const name = group.ingredient
-                    ? ct(group.ingredient)
-                    : group.operation === "prepareSauces"
-                      ? tr("prepSaucesTitle")
-                      : group.operation === "prepareMixed"
-                        ? tr("prepMixedTitle")
-                        : ct(group.allocations[0].meal.main);
+                  const name = group.displayIngredients?.length
+                    ? group.displayIngredients.map(ct).join(", ")
+                    : group.ingredient
+                      ? ct(group.ingredient)
+                      : group.operation === "prepareSauces"
+                        ? tr("prepSaucesTitle")
+                        : group.operation === "prepareMixed"
+                          ? tr("prepMixedTitle")
+                          : ct(group.allocations[0].meal.main);
                   return (
                     <section
                       key={group.key}
@@ -320,7 +387,8 @@ const PrepDay: React.FC = () => {
                           {group.operation === "reviewIndividually" && (
                             <span className="caption">
                               {ct(group.allocations[0].meal.day)} ·{" "}
-                              {ct(group.allocations[0].meal.type)}
+                              {ct(group.allocations[0].meal.type)} ·{" "}
+                              {ct(group.allocations[0].meal.main)}
                             </span>
                           )}
                         </div>
@@ -374,19 +442,25 @@ const PrepDay: React.FC = () => {
                         hidden={!isOpen}
                         className="prep-group-body"
                       >
-                        <h4>{tr("prepSharedAction")}</h4>
-                        <p className="prep-batch-operation">
-                          {tr(operationKeys[group.operation])}
-                        </p>
-                        {group.operation === "reviewIndividually" && (
-                          <p className="caption">{tr("prepUnknownHelp")}</p>
+                        {group.operation === "reviewIndividually" ? (
+                          <h4>
+                            {text("Các bước sơ chế", "Preparation steps")}
+                          </h4>
+                        ) : (
+                          <>
+                            <h4>{tr("prepSharedAction")}</h4>
+                            <p className="prep-batch-operation">
+                              {tr(operationKeys[group.operation])}
+                            </p>
+                            <h4>{tr("prepDivideAction")}</h4>
+                          </>
                         )}
-                        <h4>{tr("prepDivideAction")}</h4>
                         <div className="prep-allocations">
                           {group.allocations.map((allocation) => (
                             <div
-                              className={`prep-allocation ${s.progress.prep[allocation.key] ? "checked" : ""}`}
+                              className={`prep-allocation ${preparationChecked(s, allocation.key) ? "checked" : ""}`}
                               key={allocation.key}
+                              data-prep-key={allocation.key}
                             >
                               <div className="prep-allocation-heading">
                                 {group.operation === "reviewIndividually" && (
@@ -409,6 +483,91 @@ const PrepDay: React.FC = () => {
                                   }
                                 />
                               </div>
+                              <p className="prep-portion-instruction">
+                                {["sliceThin", "cutChicken"].includes(
+                                  group.operation,
+                                )
+                                  ? prepInstruction(
+                                      allocation.task.text,
+                                      allocation.meal,
+                                    )
+                                      .split(/\.\s+/)
+                                      .slice(1)
+                                      .join(". ")
+                                  : allocationInstruction(allocation)}
+                              </p>
+                              {["sliceThin", "cutChicken"].includes(
+                                group.operation,
+                              ) && (
+                                <details className="prep-original">
+                                  <summary>
+                                    {tr("prepOriginalInstruction")}
+                                  </summary>
+                                  <p>
+                                    {prepInstruction(
+                                      allocation.task.text,
+                                      allocation.meal,
+                                    )}
+                                  </p>
+                                </details>
+                              )}
+                              {movedFromOriginal(allocation.meal) && (
+                                <p className="notice warning">
+                                  {text(
+                                    "Đã đổi lịch. Hướng dẫn bảo quản dưới đây thuộc lịch gốc; hãy kiểm tra thực tế trước khi dùng.",
+                                    "Meal moved. Storage guidance below refers to the original schedule; review actual storage before use.",
+                                  )}
+                                </p>
+                              )}
+                              {allocationStorage(allocation, group) && (
+                                <div className="prep-storage-inline">
+                                  <Snowflake size={16} />
+                                  <p>
+                                    <strong>{tr("store")}</strong>{" "}
+                                    {allocationStorage(allocation, group)}
+                                  </p>
+                                </div>
+                              )}
+                              <p className="caption">
+                                <strong>
+                                  {text("Nhãn phần", "Portion label")}:{" "}
+                                </strong>
+                                {allocation.task.label ||
+                                  `${ct(allocation.meal.day)} · ${ct(allocation.meal.type)} · ${allocation.displayIngredients?.length ? allocation.displayIngredients.map(ct).join(", ") : name}`}
+                              </p>
+                              <label className="prep-row">
+                                <input
+                                  type="checkbox"
+                                  aria-describedby="prep-completion-help"
+                                  checked={
+                                    !!preparationChecked(s, allocation.key)
+                                  }
+                                  aria-label={
+                                    tr("prepTaskLabel", {
+                                      day: ct(allocation.meal.day),
+                                      type: ct(allocation.meal.type),
+                                      count: allocation.taskIndex + 1,
+                                    }) +
+                                    (allocation.key.includes("::")
+                                      ? ` · ${tr(category.title)}`
+                                      : "")
+                                  }
+                                  onChange={(event) =>
+                                    complete(
+                                      [allocation.key],
+                                      event.target.checked,
+                                    )
+                                  }
+                                />
+                                <span>
+                                  {group.operation === "reviewIndividually"
+                                    ? text(
+                                        "Đã sơ chế và cất nguyên liệu cho bước này",
+                                        "Prepared and stored the ingredients for this step",
+                                      )
+                                    : tr("prepPortionDone")}
+                                </span>
+                              </label>
                               {allocation.task.ingredients === undefined && (
                                 <PreparationLinks
                                   meal={allocation.meal}
@@ -438,104 +597,6 @@ const PrepDay: React.FC = () => {
                                   }
                                 />
                               )}
-                              <p className="prep-portion-instruction">
-                                {["sliceThin", "cutChicken"].includes(
-                                  group.operation,
-                                )
-                                  ? prepInstruction(
-                                      allocation.task.text,
-                                      allocation.meal,
-                                    )
-                                      .split(/\.\s+/)
-                                      .slice(1)
-                                      .join(". ")
-                                  : prepInstruction(
-                                      allocation.task.text,
-                                      allocation.meal,
-                                    )}
-                              </p>
-                              {["sliceThin", "cutChicken"].includes(
-                                group.operation,
-                              ) && (
-                                <details className="prep-original">
-                                  <summary>
-                                    {tr("prepOriginalInstruction")}
-                                  </summary>
-                                  <p>
-                                    {prepInstruction(
-                                      allocation.task.text,
-                                      allocation.meal,
-                                    )}
-                                  </p>
-                                </details>
-                              )}
-                              {movedFromOriginal(allocation.meal) && (
-                                <p className="notice warning">
-                                  {text(
-                                    "Đã đổi lịch. Hướng dẫn bảo quản dưới đây thuộc lịch gốc; hãy kiểm tra thực tế trước khi dùng.",
-                                    "Meal moved. Storage guidance below refers to the original schedule; review actual storage before use.",
-                                  )}
-                                </p>
-                              )}
-                              <div className="prep-storage-inline">
-                                <Snowflake size={16} />
-                                <p>
-                                  <strong>{tr("store")}</strong>{" "}
-                                  {allocation.task.storage
-                                    ? ct(allocation.task.storage)
-                                    : !allocation.baselineStorage
-                                      ? ct(allocation.meal.storage)
-                                      : group.operation === "keepEggs"
-                                        ? tr(
-                                            "keepEggsIntactInTheirCartonInTheRefrigerator",
-                                          )
-                                        : group.operation ===
-                                              "reviewIndividually" ||
-                                            !group.ingredient
-                                          ? ct(allocation.meal.storage)
-                                          : group.category === "Protein"
-                                            ? ct(allocation.meal.storage).split(
-                                                /\.\s+/,
-                                              )[0] + "."
-                                            : ct(allocation.meal.storage)
-                                                .split(/\.\s+/)
-                                                .slice(1)
-                                                .join(". ")}
-                                </p>
-                              </div>
-                              <p className="caption">
-                                <strong>
-                                  {text("Nhãn phần", "Portion label")}:{" "}
-                                </strong>
-                                {allocation.task.label ||
-                                  `${ct(allocation.meal.day)} · ${ct(allocation.meal.type)} · ${name}`}
-                              </p>
-                              <label className="prep-row">
-                                <input
-                                  type="checkbox"
-                                  aria-describedby="prep-completion-help"
-                                  checked={!!s.progress.prep[allocation.key]}
-                                  aria-label={tr("prepTaskLabel", {
-                                    day: ct(allocation.meal.day),
-                                    type: ct(allocation.meal.type),
-                                    count: allocation.taskIndex + 1,
-                                  })}
-                                  onChange={(event) =>
-                                    complete(
-                                      [allocation.key],
-                                      event.target.checked,
-                                    )
-                                  }
-                                />
-                                <span>
-                                  {group.operation === "reviewIndividually"
-                                    ? text(
-                                        "Đã sơ chế và cất nguyên liệu cho bước này",
-                                        "Prepared and stored the ingredients for this step",
-                                      )
-                                    : tr("prepPortionDone")}
-                                </span>
-                              </label>
                             </div>
                           ))}
                         </div>

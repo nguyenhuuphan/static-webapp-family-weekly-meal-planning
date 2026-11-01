@@ -1,3 +1,8 @@
+import {
+  preparationParts,
+  preparationPartKey,
+  preparationPartIngredients,
+} from "./preparationParts";
 import original from "../../public/meal-plan.json";
 import type { Meal, Plan, Step, Unit } from "src/types";
 
@@ -19,6 +24,7 @@ export type PrepOperation =
   | "sliceAromatics"
   | "keepEggs"
   | "prepareSauces"
+  | "cookJustInTime"
   | "prepareMixed"
   | "reviewIndividually";
 
@@ -91,6 +97,9 @@ const profiles: Record<string, Profile[]> = {
 };
 
 export type PrepAllocation = {
+  displayIngredients?: string[];
+  displayText?: string;
+  displayVi?: string;
   baselineStorage: boolean;
   key: string;
   meal: Meal;
@@ -99,6 +108,7 @@ export type PrepAllocation = {
   quantity: number | null;
 };
 export type PrepGroup = {
+  displayIngredients?: string[];
   key: string;
   ingredient: string | null;
   operation: PrepOperation;
@@ -108,13 +118,47 @@ export type PrepGroup = {
   allocations: PrepAllocation[];
 };
 
-export function isCookingPreparation(meal: Meal, taskIndex: number): boolean {
+function isProfileCooking(meal: Meal, taskIndex: number) {
   return (
     profiles[meal.recipeId || meal.id]?.[taskIndex]?.operation ===
       "prepareSauces" &&
     original.meals.find((item) => item.id === (meal.recipeId || meal.id))?.prep[
       taskIndex
     ]?.text === meal.prep[taskIndex]?.text
+  );
+}
+export function isCookingPreparation(meal: Meal, taskIndex: number): boolean {
+  return (
+    isProfileCooking(meal, taskIndex) ||
+    preparationParts(meal, meal.prep[taskIndex]).every(
+      (part) => part.category === "Cooking",
+    )
+  );
+}
+export function cookingPreparations(
+  meal: Meal,
+  vi: Record<string, string> = {},
+) {
+  return meal.prep.flatMap((task, index) =>
+    isProfileCooking(meal, index)
+      ? [{ text: task.text, vi: vi[task.text], rice: false }]
+      : preparationParts(meal, task, vi)
+          .filter((part) => part.category === "Cooking")
+          .map((part) => ({
+            text: part.text
+              .replace(
+                /(?:^|(?<=[.!?])\s+)(?:Label|Ghi nhãn|Dán nhãn)[^.]*[.!?]?/giu,
+                "",
+              )
+              .trim(),
+            vi: part.vi
+              ?.replace(
+                /(?:^|(?<=[.!?])\s+)(?:Label|Ghi nhãn|Dán nhãn)[^.]*[.!?]?/giu,
+                "",
+              )
+              .trim(),
+            rice: true,
+          })),
   );
 }
 
@@ -149,6 +193,57 @@ export function groupPreparation(
             currentIngredient.qty === originalIngredient.qty &&
             currentIngredient.unit === originalIngredient.unit));
       const profile = matches ? candidate : undefined;
+      if (!profile || profile.operation === "prepareMixed") {
+        const parts = preparationParts(meal, task, plan.translations?.vi);
+        const advanceParts = parts.filter(
+          (part) => part.category !== "Cooking",
+        );
+        for (const part of parts) {
+          const sourceKey = `${meal.id}:${taskIndex}`;
+          const key =
+            part.category === "Cooking" || advanceParts.length > 1
+              ? preparationPartKey(sourceKey, part.category)
+              : sourceKey;
+          const operation: PrepOperation =
+            part.category === "Cooking"
+              ? "cookJustInTime"
+              : "reviewIndividually";
+          groups.set(`individual:${key}`, {
+            key: `individual:${key}`,
+            ingredient: null,
+            displayIngredients: preparationPartIngredients(
+              meal,
+              part.category,
+              part.text,
+              plan.translations?.vi,
+            ),
+            operation,
+            quantity: null,
+            unit: null,
+            category: part.category,
+            allocations: [
+              {
+                key,
+                meal,
+                task,
+                taskIndex,
+                quantity: null,
+                displayIngredients: preparationPartIngredients(
+                  meal,
+                  part.category,
+                  part.text,
+                  plan.translations?.vi,
+                ),
+                baselineStorage: meal.storage === baseline?.storage,
+                ...(parts.length > 1
+                  ? { displayText: part.text, displayVi: part.vi }
+                  : {}),
+              },
+            ],
+          });
+        }
+        return;
+      }
       const name = profile?.ingredient || null;
       const operation = profile?.operation || "reviewIndividually";
       const measure = name ? currentIngredient!.unit : null;
@@ -206,16 +301,23 @@ export function recipePreparationCards(groups: PrepGroup[]): PrepGroup[] {
       continue;
     }
     for (const allocation of group.allocations) {
-      let recipe = recipes.get(allocation.meal.id);
+      const recipeKey = `${allocation.meal.id}:${group.category}`;
+      let recipe = recipes.get(recipeKey);
       if (!recipe) {
         recipe = {
           ...group,
-          key: `recipe:${allocation.meal.id}`,
+          key: `recipe:${recipeKey}`,
           allocations: [],
         };
-        recipes.set(allocation.meal.id, recipe);
+        recipes.set(recipeKey, recipe);
         output.push(recipe);
       }
+      recipe.displayIngredients = [
+        ...new Set([
+          ...(recipe.displayIngredients || []),
+          ...(group.displayIngredients || []),
+        ]),
+      ];
       recipe.allocations.push(allocation);
     }
   }

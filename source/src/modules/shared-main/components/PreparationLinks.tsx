@@ -38,28 +38,17 @@ export default function PreparationLinks({
     setError("");
   };
   return (
-    <details
-      className="preparation-links"
-      open={task.ingredients === undefined}
-    >
+    <details className="preparation-links">
       <summary>
         {text(
-          "Nguyên liệu được giữ trong bước này",
-          "Ingredients held by this preparation step",
+          "Phân bổ nguyên liệu để dùng cho bữa khác (tùy chọn)",
+          "Allocate ingredients for another meal (optional)",
         )}
       </summary>
-      {task.ingredients === undefined && (
-        <p role="status">
-          {text(
-            "Chưa đối chiếu được. Xác nhận nguyên liệu để không mua lại phần đã sơ chế.",
-            "Not yet matched. Confirm ingredients to avoid buying prepared quantities again.",
-          )}
-        </p>
-      )}
       <p className="caption">
         {text(
-          "Lượng theo công thức gốc. Phân bổ mỗi lượng nguyên liệu một lần; bước xử lý tiếp cùng phần không phân bổ lại.",
-          "Amounts use the recipe base. Allocate each quantity once; later operations on the same portion should not allocate it again.",
+          "Chỉ cần khi để dành phần đã sơ chế cho bữa khác. Chọn nguyên liệu và lượng thực tế đã chuẩn bị, theo công thức gốc; mỗi lượng chỉ ghi một lần. Không cần thao tác này để hoàn tất bước sơ chế.",
+          "Use this only when saving prepared ingredients for another meal. Record the actual prepared amount at the recipe base servings, once per quantity. This is not required to complete preparation.",
         )}
       </p>
       {meal.ingredients.map((i) => {

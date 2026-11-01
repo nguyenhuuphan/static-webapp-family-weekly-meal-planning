@@ -361,6 +361,10 @@ export const en = {
   prepCollapseCategory: "Collapse: {category}",
   prepExpandCategory: "Expand: {category}",
   prepCompleteCategory: "Complete category: {category}",
+  cookJustInTimeTitle: "Prepare fresh before cooking",
+  cookJustInTimeHelp:
+    "Rinse and cook rice at mealtime; these tasks are not part of advance preparation.",
+  prepCookJustInTime: "Do this just before cooking, not on Prep Day.",
   cookSeasoningsTitle: "Prepare sauces & seasonings before cooking",
   cookSeasoningsHelp:
     "Measure these now for this meal; no advance preparation is needed.",

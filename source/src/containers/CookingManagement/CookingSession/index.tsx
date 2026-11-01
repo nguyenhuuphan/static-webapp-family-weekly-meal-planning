@@ -1,3 +1,4 @@
+import { createTranslator } from "src/i18n/translate";
 import CookingScreenTools from "./CookingScreenTools";
 import AllergyWarnings from "src/modules/shared-main/components/AllergyWarnings";
 import MealOutcome from "./MealOutcome";
@@ -5,7 +6,7 @@ import { beginCooking, cancelCooking } from "src/helpers/cooking";
 import FoodStorageEditor from "src/modules/shared-main/components/FoodStorageEditor";
 import { useI18n, useText } from "src/i18n";
 import { currentMealLabel, movedFromOriginal } from "src/helpers/mealLabels";
-import { isCookingPreparation } from "src/helpers/preparation";
+import { cookingPreparations } from "src/helpers/preparation";
 import {
   ShoppingBag,
   ArrowRight,
@@ -26,7 +27,7 @@ import { timerSeconds } from "src/utils";
 interface IProps {}
 const CookingSession: React.FC<IProps> = () => {
   const text = useText();
-  const { t: tr, source, content: ct, number: num, unit } = useI18n();
+  const { t: tr, source, content: ct, number: num, unit, language } = useI18n();
   const {
     s,
     plan,
@@ -211,22 +212,36 @@ const CookingSession: React.FC<IProps> = () => {
               </div>
               <p className="caption">{ct(meal.thaw)}</p>
             </details>
-            {meal.prep.some((_, index) =>
-              isCookingPreparation(meal, index),
-            ) && (
+            {cookingPreparations(meal, plan.translations?.vi).length > 0 && (
               <div className="cook-seasonings">
-                <h3>{tr("cookSeasoningsTitle")}</h3>
-                <p className="caption">{tr("cookSeasoningsHelp")}</p>
+                <h3>
+                  {tr(
+                    cookingPreparations(meal).some((p) => p.rice)
+                      ? "cookJustInTimeTitle"
+                      : "cookSeasoningsTitle",
+                  )}
+                </h3>
+                <p className="caption">
+                  {tr(
+                    cookingPreparations(meal).some((p) => p.rice)
+                      ? "cookJustInTimeHelp"
+                      : "cookSeasoningsHelp",
+                  )}
+                </p>
                 <ul>
-                  {meal.prep.map((task, index) =>
-                    isCookingPreparation(meal, index) ? (
+                  {cookingPreparations(meal, plan.translations?.vi).map(
+                    (task, index) => (
                       <li key={index}>
                         {currentMealLabel(
-                          t(task.text),
+                          createTranslator(
+                            language,
+                            false,
+                            task.vi ? { [task.text]: task.vi } : {},
+                          ).instruction(task.text, factor),
                           `${ct(meal.day)} · ${ct(meal.type)}`,
                         )}
                       </li>
-                    ) : null,
+                    ),
                   )}
                 </ul>
               </div>

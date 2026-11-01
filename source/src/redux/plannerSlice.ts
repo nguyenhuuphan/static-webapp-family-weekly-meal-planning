@@ -1,3 +1,4 @@
+import { setPreparationProgress } from "src/helpers/preparationProgress";
 import {
   createSlice,
   current as snapshot,
@@ -9,7 +10,7 @@ import {
   committedPurchases,
   shoppingRequirements,
 } from "src/helpers/shopping";
-import { aggregate, ingredientKey, mealPortions } from "src/utils";
+import { ingredientKey } from "src/utils";
 import { consumeMeal } from "src/helpers/inventory";
 import { reconcileShopping } from "src/helpers/shopping";
 import { freshProgress } from "src/helpers";
@@ -36,32 +37,10 @@ const plannerSlice = createSlice({
         if (value) state.current = consumeMeal(snapshot(state.current), key);
         else if (state.current.stockUses) delete state.current.stockUses[key];
       }
-      state.current.progress[group][key] = value;
+      if (group !== "prep") state.current.progress[group][key] = value;
       if (group === "done")
         state.current = reconcileShopping(snapshot(state.current));
-      if (group === "prep") {
-        const current = state.current;
-        current.preparedTasks ??= {};
-        const mealId = key.slice(0, key.lastIndexOf(":"));
-        const meal = current.plan.meals.find((m) => m.id === mealId);
-        if (value && meal && !current.mealStorage?.[mealId]) {
-          current.mealStorage ??= {};
-          const at = new Date().toISOString();
-          current.mealStorage[mealId] = {
-            stage: "unknown",
-            place: "unknown",
-            events: [
-              { type: "prepared", at, stage: "unknown", place: "unknown" },
-            ],
-          };
-        }
-        if (value && meal)
-          current.preparedTasks[key] = {
-            servings: mealPortions(current, meal),
-            at: current.preparedTasks[key]?.at || new Date().toISOString(),
-          };
-        if (!value) delete current.preparedTasks[key];
-      }
+      if (group === "prep") setPreparationProgress(state.current, key, value);
       if (group === "shopping") {
         const current = state.current;
         current.purchased ??= {};
@@ -86,8 +65,6 @@ const plannerSlice = createSlice({
             };
         }
       }
-      if (group === "prep" && !value)
-        delete state.current.progress.ready[key.slice(0, key.lastIndexOf(":"))];
     },
     progressReset: (state) => {
       if (!state.current) return;

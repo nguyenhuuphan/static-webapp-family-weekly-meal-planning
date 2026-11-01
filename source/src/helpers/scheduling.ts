@@ -29,6 +29,10 @@ export function changePortions(state: State, id: string, count: number): State {
       "This cooking batch keeps its original portions. Record diners and leftovers when finishing.",
     );
   const next = structuredClone(state);
+  if (count !== mealPortions(state, meal))
+    for (const key of Object.keys(next.progress.prep))
+      if (key.startsWith(id + ":") && key.includes("::"))
+        delete next.progress.prep[key];
   next.purchased ??= {};
   const before = shoppingRequirements(state);
   next.pantry ??= {};

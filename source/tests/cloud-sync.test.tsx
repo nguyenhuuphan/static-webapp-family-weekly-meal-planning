@@ -146,3 +146,39 @@ it("keeps a working in-memory family connection when browser storage is unavaila
     screen.getByText("Saved on the server. Devices share the same data."),
   ).toBeTruthy();
 });
+
+it("keeps server-calculated prep readable after an offline reload without accepting offline writes", async () => {
+  const { PLANNER_CACHE_KEY } = await import("../src/services/plannerCache");
+  await boot();
+  await screen.findByText("Saved on the server. Devices share the same data.");
+  await waitFor(() =>
+    expect(localStorage.getItem(PLANNER_CACHE_KEY)).not.toBeNull(),
+  );
+  cleanup();
+  apiFixture.handler = async () => {
+    throw Error("offline");
+  };
+  render(<App />);
+  await screen.findByRole("navigation");
+  await nav("Prep Day");
+  await screen.findByRole("region", { name: "Pork shoulder, boneless" });
+  await fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+  const before = structuredClone(apiFixture.state);
+  await fireEvent.click(
+    screen.getByRole("checkbox", { name: "Monday Lunch prep 1" }),
+  );
+  expect(apiFixture.state).toEqual(before);
+  expect(readState().progress.prep["mon-lunch:0"]).toBeUndefined();
+});
+it("rejects display projections paired with a different cached plan", async () => {
+  const { readProjection, PLANNER_CACHE_KEY } =
+    await import("../src/services/plannerCache");
+  await boot();
+  await screen.findByText("Saved on the server. Devices share the same data.");
+  await waitFor(() =>
+    expect(localStorage.getItem(PLANNER_CACHE_KEY)).not.toBeNull(),
+  );
+  const raw = readState();
+  raw.servings = 9;
+  expect(await readProjection(JSON.stringify(raw))).toBeNull();
+});

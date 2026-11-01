@@ -85,7 +85,8 @@ const PrepDay: React.FC = () => {
     plan: string;
   } | null>("prep:undo", null);
   const { t: tr, content: ct, number, unit, instruction, language } = useI18n();
-  const { s, plan, navigate, command, preparationGroups } = useMealPlanner();
+  const { s, plan, navigate, command, preparationGroups, apiRevision } =
+    useMealPlanner();
   const prepInstruction = (value: string, meal: (typeof plan.meals)[number]) =>
     currentMealLabel(
       instruction(value, mealPortions(s, meal) / plan.servings),
@@ -280,9 +281,19 @@ const PrepDay: React.FC = () => {
           {tr("prepExpandAll")}
         </Button>
       </div>
-      {remainingOnly && completedGroups === groups.length && (
-        <p role="status">{tr("prepEmpty")}</p>
+      {apiRevision === null && (
+        <p className="notice">
+          {text(
+            "Kết nối dữ liệu gia đình để tải danh sách sơ chế.",
+            "Connect family data to load the preparation checklist.",
+          )}
+        </p>
       )}
+      {apiRevision !== null &&
+        remainingOnly &&
+        completedGroups === groups.length && (
+          <p role="status">{tr("prepEmpty")}</p>
+        )}
       <div className="prep-batch-list">
         {categories.map((category) => {
           const categoryGroups = groups.filter(

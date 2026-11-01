@@ -12,6 +12,7 @@ import {
 } from "src/domain";
 import { queryMealPlan } from "src/queries";
 import { STORAGE_KEY } from "src/appConfig";
+import { cacheProjection, readProjection } from "src/services/plannerCache";
 import { storageService } from "src/services/storageService";
 import { readFamilyCode } from "./useFamilyAccess";
 import {
@@ -110,7 +111,8 @@ export function usePlannerController() {
       const previous = storageService.raw();
       if (previous && !localStorage.getItem(STORAGE_KEY + ":pre-api-backup"))
         localStorage.setItem(STORAGE_KEY + ":pre-api-backup", previous);
-      storageService.write(result.state);
+      const raw = storageService.write(result.state);
+      void cacheProjection(result, raw);
       setRecoveryRaw(null);
     } catch {
       /* Server saving must not depend on browser storage. */
@@ -166,15 +168,23 @@ export function usePlannerController() {
       .then(async (p) => {
         if (!active) return;
         let initial = freshState(p);
+        let cachedProjection: Awaited<ReturnType<typeof readProjection>> = null;
         try {
           const cached = storageService.read();
-          if (cached) initial = hydrateState(cached, p);
+          if (cached) {
+            initial = hydrateState(cached, p);
+            const raw = storageService.raw();
+            if (raw) cachedProjection = await readProjection(raw);
+          }
         } catch {
           try {
             setRecoveryRaw(storageService.raw() || "");
           } catch {}
         }
+        if (!active) return;
         dispatch(initialized({ current: initial, defaults: p }));
+        if (cachedProjection)
+          setEnvelope({ ...cachedProjection, state: initial });
         if (code.current) await connectApi(code.current);
       })
       .catch((e) => {

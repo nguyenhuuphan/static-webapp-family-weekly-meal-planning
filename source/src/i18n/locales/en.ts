@@ -378,6 +378,7 @@ export const en = {
   prepSaucesTitle: "Sauces & seasonings",
   prepMixedTitle: "Other recipe preparations",
   prepRecipeSpecific: "By recipe",
+  prepStepProgress: "{count} / {total} preparation steps complete",
   prepPortionProgress: "{count} / {total} portions prepared",
   prepCompleteGroup: "All portions in this group are fully prepared",
   prepCompleteGroupLabel: "Mark all portions prepared: {ingredient}",

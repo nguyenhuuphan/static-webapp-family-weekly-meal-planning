@@ -27,6 +27,7 @@ export type Step = {
   label?: string;
 };
 export type Meal = {
+  cuisine?: string;
   recipeId?: string;
   equipment?: string[];
   id: string;

@@ -1,4 +1,9 @@
 import {
+  additionalRequestPayload,
+  compileAdditionalRequest,
+  CUISINE_CODES,
+} from "../src/ai/additionalRequest";
+import {
   CHOICES_SYSTEM,
   CHOICES_SCHEMA,
   validateChoices,
@@ -41,6 +46,7 @@ export function cloudflareSchema(input: MenuInput) {
           ...recipe,
           properties: {
             ...recipe.properties,
+            cuisine: { type: "string", enum: CUISINE_CODES },
             equipment: input.equipment.includes("No heating appliance")
               ? { type: "array", items: { type: "string" }, maxItems: 0 }
               : {
@@ -110,6 +116,7 @@ const FALLBACK_CODES = new Set([
   "unavailable_equipment",
   "restricted_ingredient",
   "not_configured",
+  "additional_request_mismatch",
 ]);
 export async function generateWithBackup(
   env: Env,
@@ -126,6 +133,8 @@ export async function generateWithBackup(
     event: Omit<MenuProviderProgress, "batch">,
   ) => Promise<void>,
 ) {
+  if (compileAdditionalRequest(context.requirements).conflicts.length)
+    throw new GenerationError("request_conflict");
   let chosenNames: string[] | undefined;
   const validateBatch = (plan: Plan) => {
     if (
@@ -179,9 +188,69 @@ export async function generateWithBackup(
   );
   let payload = JSON.stringify(basePayload);
   let outputSchema: unknown = cloudflareSchema(input);
+  if (
+    !context.alternatives &&
+    compileAdditionalRequest(context.requirements).rules.some(
+      (rule) => rule.cuisine,
+    )
+  ) {
+    const base = cloudflareSchema(input),
+      recipe = base.properties.meals.items;
+    const requirements = additionalRequestPayload(
+      context.requirements,
+      input,
+      false,
+    );
+    outputSchema = {
+      ...base,
+      properties: {
+        ...base.properties,
+        meals: {
+          type: "object",
+          properties: Object.fromEntries(
+            requirements.slotRequirements.map((slot) => {
+              const expected = slot.required.find(
+                (rule) => rule.cuisine,
+              )?.cuisine;
+              const allowed = expected
+                ? [expected]
+                : CUISINE_CODES.filter(
+                    (code) => !slot.forbiddenCuisines.includes(code),
+                  );
+              return [
+                slot.id,
+                {
+                  ...recipe,
+                  properties: {
+                    ...recipe.properties,
+                    cuisine: { type: "string", enum: allowed },
+                  },
+                },
+              ];
+            }),
+          ),
+          required: requirements.slotRequirements.map((slot) => slot.id),
+          additionalProperties: false,
+        },
+      },
+    };
+    payload = JSON.stringify({ ...basePayload, responseSchema: outputSchema });
+  }
   if (context.alternatives) {
     const choiceInput = JSON.stringify({
-      requirements: context.requirements,
+      additionalRequest: additionalRequestPayload(
+        context.requirements,
+        input,
+        true,
+      ),
+      requirements: {
+        ...context.requirements,
+        customPrompt: additionalRequestPayload(
+          context.requirements,
+          input,
+          true,
+        ).verbatim,
+      },
       masterPrompt,
       plannedMeals: context.meals.map((meal) => ({
         main: meal.main,
@@ -307,7 +376,7 @@ export async function generateWithBackup(
     }
 
     return {
-      plan: validateBatch(validateGeneratedPlan(raw, input)),
+      plan: validateBatch(validateGeneratedPlan(raw, input, context)),
       provider: "cloudflare" as const,
     };
   } catch (error) {

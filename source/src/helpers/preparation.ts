@@ -195,3 +195,29 @@ export function groupPreparation(
     (a, b) => (rank[a.category] ?? 2) - (rank[b.category] ?? 2),
   );
 }
+
+/** One visible card per unreviewed recipe, retaining every independent task key. */
+export function recipePreparationCards(groups: PrepGroup[]): PrepGroup[] {
+  const output: PrepGroup[] = [],
+    recipes = new Map<string, PrepGroup>();
+  for (const group of groups) {
+    if (group.operation !== "reviewIndividually") {
+      output.push(group);
+      continue;
+    }
+    for (const allocation of group.allocations) {
+      let recipe = recipes.get(allocation.meal.id);
+      if (!recipe) {
+        recipe = {
+          ...group,
+          key: `recipe:${allocation.meal.id}`,
+          allocations: [],
+        };
+        recipes.set(allocation.meal.id, recipe);
+        output.push(recipe);
+      }
+      recipe.allocations.push(allocation);
+    }
+  }
+  return output;
+}

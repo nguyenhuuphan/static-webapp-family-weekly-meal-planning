@@ -91,6 +91,13 @@ export function validatePlan(p: unknown): string[] {
   const ids = new Set(),
     slots = new Set();
   for (const m of v.meals) {
+    if (
+      m?.cuisine !== undefined &&
+      (typeof m.cuisine !== "string" ||
+        !m.cuisine.trim() ||
+        m.cuisine.length > 80)
+    )
+      errors.push("Invalid recipe cuisine.");
     if (m) errors.push(...validatePreparationLinks(m));
     if (
       m?.equipment !== undefined &&

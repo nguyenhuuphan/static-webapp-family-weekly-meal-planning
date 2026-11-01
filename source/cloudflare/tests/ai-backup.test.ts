@@ -170,6 +170,74 @@ describe("Cloudflare backup", () => {
     expect(env.AI!.run).toHaveBeenCalledTimes(2);
     expect(starts.mock.calls[1][0].activity).toBe("repairing_translations");
   });
+  it("falls back when a structurally valid menu ignores the additional request", async () => {
+    const env = environment();
+    const input = {
+      ...aiInput,
+      days: ["Monday"] as typeof aiInput.days,
+      mealTypes: ["Dinner"] as typeof aiInput.mealTypes,
+      customPrompt: "I need 1 western meal with fried fish and broccoli.",
+    };
+    const wrong = aiBilingualOutput(input);
+    Object.values(wrong.meals)[0].cuisine = "Vietnamese";
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({
+            status: "completed",
+            steps: [
+              {
+                type: "model_output",
+                content: [{ type: "text", text: JSON.stringify(wrong) }],
+              },
+            ],
+          }),
+        ),
+    );
+    const fixed = aiBilingualOutput(input),
+      meal = Object.values(fixed.meals)[0];
+    meal.cuisine = "European";
+    meal.main = {
+      en: "Fried salmon and broccoli",
+      vi: "Cá hồi chiên và bông cải xanh",
+    };
+    meal.ingredients.push(
+      {
+        name: { en: "Salmon fillet", vi: "Phi lê cá hồi" },
+        qty: 200,
+        unit: "g",
+        category: { en: "Protein", vi: "Đạm" },
+      },
+      {
+        name: { en: "Broccoli florets", vi: "Bông cải xanh" },
+        qty: 200,
+        unit: "g",
+        category: { en: "Produce", vi: "Rau củ" },
+      },
+    );
+    meal.steps[0].text = {
+      en: "Pan-fry the salmon fillet until golden and fully cooked.",
+      vi: "Áp chảo chiên phi lê cá hồi đến khi vàng và chín kỹ.",
+    };
+    vi.mocked(env.AI!.run).mockResolvedValue({ response: fixed } as never);
+    const starts = vi.fn().mockResolvedValue(undefined);
+    const result = await generateWithBackup(
+      env,
+      input,
+      DEFAULT_MASTER_PROMPT,
+      [],
+      { requirements: input, meals: [] },
+      undefined,
+      starts,
+    );
+    expect(result.provider).toBe("cloudflare");
+    expect(starts.mock.calls[1][0].fallbackReason).toBe(
+      "additional_request_mismatch",
+    );
+    expect(result.plan.meals[0].cuisine).toBe("European");
+  });
   it("uses successful Gemini output without calling the backup", async () => {
     const env = environment();
     vi.stubGlobal(

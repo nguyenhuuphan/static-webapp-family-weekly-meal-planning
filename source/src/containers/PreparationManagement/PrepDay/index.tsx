@@ -10,7 +10,11 @@ import {
 } from "lucide-react";
 import { useI18n, useText } from "src/i18n";
 import type { MessageKey } from "src/i18n/locales/en";
-import { groupPreparation, type PrepOperation } from "src/helpers/preparation";
+import {
+  groupPreparation,
+  recipePreparationCards,
+  type PrepOperation,
+} from "src/helpers/preparation";
 import { Button, Heading } from "src/modules/shared-main/components";
 import { useMealPlanner } from "src/hooks/useMealPlanner";
 import { currentMealLabel, movedFromOriginal } from "src/helpers/mealLabels";
@@ -113,9 +117,9 @@ const PrepDay: React.FC = () => {
   };
   const groups = useMemo(
     () =>
-      groupPreparation(plan, s.servings, s.mealServings).filter(
-        (group) => group.operation !== "prepareSauces",
-      ),
+      recipePreparationCards(
+        groupPreparation(plan, s.servings, s.mealServings),
+      ).filter((group) => group.operation !== "prepareSauces"),
     [plan, s.servings, s.mealServings],
   );
   const completedGroups = groups.filter((group) =>
@@ -313,6 +317,12 @@ const PrepDay: React.FC = () => {
                               : tr("prepRecipeSpecific")}
                           </span>
                           <h3 id={`prep-group-${groupIndex}`}>{name}</h3>
+                          {group.operation === "reviewIndividually" && (
+                            <span className="caption">
+                              {ct(group.allocations[0].meal.day)} ·{" "}
+                              {ct(group.allocations[0].meal.type)}
+                            </span>
+                          )}
                         </div>
                         {group.quantity !== null && group.unit && (
                           <strong className="prep-batch-quantity">
@@ -327,10 +337,15 @@ const PrepDay: React.FC = () => {
                               {tr("prepared")}
                             </>
                           ) : (
-                            tr("prepPortionProgress", {
-                              count: done,
-                              total: group.allocations.length,
-                            })
+                            tr(
+                              group.operation === "reviewIndividually"
+                                ? "prepStepProgress"
+                                : "prepPortionProgress",
+                              {
+                                count: done,
+                                total: group.allocations.length,
+                              },
+                            )
                           )}
                         </span>
                       </div>
@@ -374,6 +389,12 @@ const PrepDay: React.FC = () => {
                               key={allocation.key}
                             >
                               <div className="prep-allocation-heading">
+                                {group.operation === "reviewIndividually" && (
+                                  <strong>
+                                    {text("Bước", "Step")}{" "}
+                                    {number(allocation.taskIndex + 1)}
+                                  </strong>
+                                )}
                                 {allocation.quantity !== null && group.unit && (
                                   <strong className="prep-portion-quantity">
                                     {number(allocation.quantity)}{" "}
@@ -506,7 +527,14 @@ const PrepDay: React.FC = () => {
                                     )
                                   }
                                 />
-                                <span>{tr("prepPortionDone")}</span>
+                                <span>
+                                  {group.operation === "reviewIndividually"
+                                    ? text(
+                                        "Đã sơ chế và cất nguyên liệu cho bước này",
+                                        "Prepared and stored the ingredients for this step",
+                                      )
+                                    : tr("prepPortionDone")}
+                                </span>
                               </label>
                             </div>
                           ))}

@@ -1,3 +1,5 @@
+import AdditionalRequestSummary from "src/components/AdditionalRequestSummary";
+import { compileAdditionalRequest } from "src/ai/additionalRequest";
 import AIProviderStatus from "src/components/AIProviderStatus";
 import MealReplacement from "src/components/MealReplacement";
 import { swapPlanMeal } from "src/helpers/mealAlternatives";
@@ -186,7 +188,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
   const validRequirements = (() => {
     try {
       validateMenuInput(requestInput());
-      return true;
+      return compileAdditionalRequest(requestInput()).conflicts.length === 0;
     } catch {
       return false;
     }
@@ -324,6 +326,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
     let data;
     try {
       data = validateMenuInput(requestInput());
+      if (compileAdditionalRequest(data).conflicts.length) {
+        setError("request_conflict");
+        return;
+      }
       validateMasterPrompt(master);
     } catch {
       setError("invalid_input");
@@ -477,6 +483,14 @@ function GeneratorDialog({ close }: { close: () => void }) {
     backup_unavailable: text(
       "Cả AI chính và dự phòng đều chưa phản hồi. Hãy thử lại sau.",
       "Both AI providers are currently unavailable. Try again later.",
+    ),
+    request_conflict: text(
+      "Yêu cầu thêm mâu thuẫn với các lựa chọn. Kiểm tra lịch ăn, chế độ ăn và nguyên liệu cần tránh.",
+      "The additional request conflicts with your selections. Check the schedule, diet and excluded ingredients.",
+    ),
+    additional_request_mismatch: text(
+      "AI chưa đáp ứng đúng bữa, nguyên liệu hoặc cách nấu được yêu cầu. Bản nháp chưa được áp dụng.",
+      "The AI did not match the requested meal slot, ingredients or cooking method. The draft was not applied.",
     ),
     invalid_output: text(
       "AI trả về thực đơn chưa hợp lệ hoặc thiếu bản dịch. Chưa có dữ liệu nào được thay thế.",
@@ -953,6 +967,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
                 {text("Yêu cầu thêm", "Additional request")}
                 <textarea
                   maxLength={2000}
+                  aria-label={text("Yêu cầu thêm", "Additional request")}
                   value={input.customPrompt}
                   onChange={(e) => patch("customPrompt", e.target.value)}
                   placeholder={text(
@@ -961,6 +976,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
                   )}
                 />
               </label>
+              <AdditionalRequestSummary input={requestInput()} />
               <details>
                 <summary>
                   {text("Master prompt dùng chung", "Shared master prompt")}
@@ -1174,6 +1190,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
           {preview && (
             <>
               <h3>{recipes.content(preview.name)}</h3>
+              <AdditionalRequestSummary input={input} plan={preview} />
               <p>
                 {input.weekStart} · {preview.meals.length}{" "}
                 {text("bữa", "meals")} · {preview.servings}{" "}

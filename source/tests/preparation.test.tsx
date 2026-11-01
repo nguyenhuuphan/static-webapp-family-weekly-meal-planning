@@ -3,7 +3,10 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import App from "../src/App";
 import data from "../public/meal-plan.json";
 import type { Plan } from "../src/types";
-import { groupPreparation } from "../src/helpers/preparation";
+import {
+  groupPreparation,
+  recipePreparationCards,
+} from "../src/helpers/preparation";
 import { STORAGE_KEY } from "../src/domain";
 import { freshState, isPrepared } from "../src/domain";
 import { isCookingPreparation } from "../src/helpers/preparation";
@@ -34,6 +37,32 @@ describe("ingredient preparation groups", () => {
       plan.meals
         .flatMap((meal) => meal.prep.map((_, index) => `${meal.id}:${index}`))
         .sort(),
+    );
+  });
+  it("shows one card per generated meal while retaining every independent prep task", () => {
+    const generated = structuredClone(plan);
+    for (const meal of generated.meals)
+      meal.prep = meal.prep.map((task, index) => ({
+        ...task,
+        text: `Generated task ${index}: ${task.text}`,
+      }));
+    const raw = groupPreparation(generated, 2),
+      cards = recipePreparationCards(raw);
+    expect(cards).toHaveLength(generated.meals.length);
+    expect(
+      cards
+        .flatMap((card) => card.allocations.map((allocation) => allocation.key))
+        .sort(),
+    ).toEqual(
+      raw
+        .flatMap((group) =>
+          group.allocations.map((allocation) => allocation.key),
+        )
+        .sort(),
+    );
+    expect(cards[0].allocations).toHaveLength(generated.meals[0].prep.length);
+    expect(raw).toHaveLength(
+      generated.meals.reduce((total, meal) => total + meal.prep.length, 0),
     );
   });
   it("scales totals and portions without modifying the plan", () => {

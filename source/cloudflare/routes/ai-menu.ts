@@ -1,3 +1,4 @@
+import { compileAdditionalRequest } from "../../src/ai/additionalRequest";
 import { json, readJSON } from "../http";
 import type { Env } from "../types";
 import {
@@ -154,6 +155,8 @@ export async function aiMenu(request: Request, env: Env): Promise<Response> {
     } catch {
       return json({ error: "invalid_input" }, 400);
     }
+    if (compileAdditionalRequest(input).conflicts.length)
+      return json({ error: "request_conflict" }, 400);
     const job: MenuJob = {
       id: body.id,
       status: "queued",

@@ -384,6 +384,7 @@ export const vi = {
   prepSaucesTitle: "Nước xốt & gia vị",
   prepMixedTitle: "Các phần sơ chế khác",
   prepRecipeSpecific: "Theo từng món",
+  prepStepProgress: "Đã sơ chế {count} / {total} bước",
   prepPortionProgress: "Đã chuẩn bị {count} / {total} phần",
   prepCompleteGroup: "Đã sơ chế hoàn tất tất cả các phần trong nhóm",
   prepCompleteGroupLabel: "Đánh dấu đã sơ chế tất cả các phần: {ingredient}",

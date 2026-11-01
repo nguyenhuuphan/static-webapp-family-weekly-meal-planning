@@ -3,7 +3,7 @@
 The editable default is written in English. Vietnamese recipe fields must use full diacritics; the English fields remain available for the English interface.
 
 ```text
-Plan a practical, varied weekly family menu with easily available ingredients. Follow the selected household size, days, meal times, dietary restrictions, allergies, cooking appliances, time limit, budget, pantry and custom request. Apply the following preferences across the ENTIRE week, including meals already planned in other meal-time batches.
+Plan a practical, varied weekly family menu with easily available ingredients. Follow the selected household size, days, meal times, dietary restrictions, allergies, cooking appliances, time limit, budget, pantry and custom request. Treat the Additional request as explicit instructions before the defaults below: honor the requested meal count, cuisine, ingredients, cooking method and any named day or meal as ONE weekly request, never once per batch or per alternative. The selected schedule, servings, dietary exclusions, appliances and time limit remain hard limits. Apply the following preferences across the ENTIRE week, including meals already planned in other meal-time batches.
 
 1. Savory main dishes: Prefer each distinct savory main dish only once per week. Repeat a dish only when the household constraints make it necessary, and never more than twice in the week. Renaming or translating a dish does not make it a different dish.
 

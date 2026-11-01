@@ -19,6 +19,7 @@ export function aiOutput(input = aiInput) {
   const meals = input.days.flatMap((day) =>
     input.mealTypes.map((type) => ({
       ...structuredClone((original as Plan).meals[0]),
+      cuisine: "Vietnamese",
       id: `${day.slice(0, 3).toLowerCase()}-${type.toLowerCase()}`,
       day,
       type,
@@ -74,6 +75,7 @@ export function aiBilingualOutput(input = aiInput) {
       output.meals.map((meal) => [
         meal.id,
         {
+          cuisine: "Vietnamese",
           equipment: meal.equipment,
           minutes: meal.minutes,
           main: text(meal.main),

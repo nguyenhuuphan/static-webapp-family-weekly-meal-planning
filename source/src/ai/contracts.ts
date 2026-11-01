@@ -47,7 +47,13 @@ export type MenuAllowance = {
   resetsAt: string;
 };
 export type MenuProviderProgress = {
-  activity?: "generating" | "planning_alternatives" | "repairing_translations";
+  activity?:
+    | "generating"
+    | "planning_alternatives"
+    | "repairing_translations"
+    | "validating";
+  completedBatches?: number;
+  totalBatches?: number;
   provider: AIProvider;
   model: string;
   batch: string;

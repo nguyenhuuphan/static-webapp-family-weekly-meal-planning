@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { generateWithBackup, CLOUDFLARE_MODEL } from "../ai";
+import {
+  generateWithBackup,
+  CLOUDFLARE_MODEL,
+  parseCloudflareOutput,
+  cloudflareSchema,
+} from "../ai";
 import { database } from "./database";
 import type { Env } from "../types";
 import { aiInput, aiBilingualOutput } from "../../tests/ai-fixtures";
@@ -182,19 +187,17 @@ describe("Cloudflare backup", () => {
     Object.values(wrong.meals)[0].cuisine = "Vietnamese";
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json({
-            status: "completed",
-            steps: [
-              {
-                type: "model_output",
-                content: [{ type: "text", text: JSON.stringify(wrong) }],
-              },
-            ],
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        Response.json({
+          status: "completed",
+          steps: [
+            {
+              type: "model_output",
+              content: [{ type: "text", text: JSON.stringify(wrong) }],
+            },
+          ],
+        }),
+      ),
     );
     const fixed = aiBilingualOutput(input),
       meal = Object.values(fixed.meals)[0];
@@ -269,4 +272,50 @@ describe("Cloudflare backup", () => {
     ).toBe("gemini");
     expect(env.AI!.run).not.toHaveBeenCalled();
   });
+});
+
+it("identifies a truncated response even when it contains parseable partial JSON", () => {
+  expect(() =>
+    parseCloudflareOutput({
+      choices: [{ finish_reason: "length", message: { content: "{}" } }],
+      response: {},
+    }),
+  ).toThrowError(
+    expect.objectContaining({
+      code: "output_limit",
+      diagnostic: { reason: "output_limit" },
+    }),
+  );
+  expect(() => parseCloudflareOutput({ response: "{broken" })).toThrowError(
+    expect.objectContaining({
+      code: "invalid_output",
+      diagnostic: { reason: "invalid_json" },
+    }),
+  );
+  const recipe = cloudflareSchema(aiInput).properties.meals.items;
+  expect(recipe.properties.ingredients.maxItems).toBe(12);
+  expect(recipe.properties.prep.maxItems).toBe(3);
+  expect(recipe.properties.steps.maxItems).toBe(6);
+  expect(
+    recipe.properties.steps.items.properties.text.properties.en.maxLength,
+  ).toBe(300);
+});
+it("backs up an incomplete Gemini response and records the output-limit reason", async () => {
+  const env = environment();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(Response.json({ status: "incomplete" })),
+  );
+  const starts = vi.fn();
+  const result = await generateWithBackup(
+    env,
+    aiInput,
+    DEFAULT_MASTER_PROMPT,
+    [],
+    context,
+    undefined,
+    starts,
+  );
+  expect(result.provider).toBe("cloudflare");
+  expect(starts.mock.calls.at(-1)?.[0].fallbackReason).toBe("output_limit");
 });

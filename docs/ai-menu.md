@@ -82,3 +82,9 @@ Checks use real ingredient lists, cuisine metadata and cooking instructions, not
 ## Prep Day recipe cards
 
 Generated and edited preparation tasks without reviewed compatibility profiles are presented in one card per scheduled meal, with its day, meal time and preparation-step count. The underlying task groups and completion keys remain unchanged: individual instructions, ingredient allocations, storage, checkboxes and undo are retained. Reviewed compatible ingredient batches remain grouped by ingredient/operation. This removes repeated recipe-title cards without treating different instructions as duplicates or merging preparation across unrelated meals.
+
+Generation feedback includes an immediate submission spinner, live meal-time/alternative batch progress, a validation stage, and distinct success/failure panels. Failed drafts offer **Retry generation** with the same household answers and master prompt, or **Edit request**. A terminal failure gets a new job ID; a retry after an uncertain network response keeps its original ID to avoid duplicate jobs. Applying a ready draft remains a separate action.
+
+Cloudflare recipe schemas bound ingredient lists, preparation/cooking step counts, and bilingual text lengths. The schema is sent through `response_format` once rather than duplicated in the user prompt. Truncated provider responses are rejected with `output_limit` and an explicit retry message; incomplete JSON is never applied or padded with invented recipe data. Family allowance and provider free-tier caps continue to apply.
+
+Scheduled custom requests are scoped before sending each batch: parsed requests assigned to another meal time are removed from that batch's prose and represented as reserved combinations. Unparsed preferences and global exclusions remain available, and validation still checks the original full-week request. This prevents a Monday dinner request from being repeated in Monday lunch.

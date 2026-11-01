@@ -8,6 +8,7 @@ import {
   assertAdditionalRequest,
   generationPayload,
 } from "../src/server/gemini";
+import { DEFAULT_MASTER_PROMPT } from "../src/ai/contracts";
 import { aiInput } from "./ai-fixtures";
 import type { Meal, Plan } from "../src/types";
 const input = {
@@ -217,4 +218,34 @@ describe("explicit additional meal requests", () => {
     options.meals[0].main = "Steamed fish";
     expect(requestViolations(options, requested, "alternatives")).toEqual([]);
   });
+});
+
+it("reserves a counted Vietnamese pan-fried dinner outside the lunch batch", () => {
+  const requested = {
+    ...full,
+    customPrompt:
+      "tôi muốn 1 bữa ăn với cá hồi áp chảo, kèm với broccoli vào bữa tối thứ 2.",
+  };
+  const batch = {
+    ...requested,
+    mealTypes: ["Lunch"] as import("../src/types").MealType[],
+  };
+  const payload = generationPayload(batch, DEFAULT_MASTER_PROMPT, [], {
+    requirements: requested,
+    meals: [],
+  });
+  expect(payload.additionalRequest.batchRules).toEqual([]);
+  expect(payload.additionalRequest.reservedMealsOutsideBatch[0]).toMatchObject({
+    slots: ["mon-dinner"],
+    cookingMethod: "fried",
+  });
+  expect(
+    payload.additionalRequest.slotRequirements[0].forbiddenMealCombinations[0]
+      .ingredients,
+  ).toEqual(["fish", "broccoli"]);
+  expect(payload.requirements.customPrompt).toBe("");
+  expect(payload.additionalRequest.verbatim).toBe("");
+  expect(
+    payload.additionalRequest.reservedMealsOutsideBatch[0],
+  ).not.toHaveProperty("source");
 });

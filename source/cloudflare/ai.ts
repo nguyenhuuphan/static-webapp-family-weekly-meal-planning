@@ -31,6 +31,15 @@ import type { MenuInput } from "../src/ai/contracts";
 import type { Env } from "./types";
 import { reserveGeneration } from "./store";
 export const CLOUDFLARE_MODEL = "@cf/qwen/qwen3-30b-a3b-fp8";
+const boundedText = (en: number, vi: number) => ({
+  type: "object",
+  properties: {
+    en: { type: "string", minLength: 1, maxLength: en },
+    vi: { type: "string", minLength: 1, maxLength: vi },
+  },
+  required: ["en", "vi"],
+  additionalProperties: false,
+});
 export function cloudflareSchema(input: MenuInput) {
   const schema = providerSchema(input);
   const recipe = schema.properties.meals
@@ -40,12 +49,27 @@ export function cloudflareSchema(input: MenuInput) {
     ...schema,
     properties: {
       ...schema.properties,
+      name: boundedText(100, 150),
       meals: {
         ...schema.properties.meals,
         items: {
           ...recipe,
           properties: {
             ...recipe.properties,
+            ...Object.fromEntries(
+              ["storage", "thaw"].map((key) => [
+                key,
+                {
+                  type: "object",
+                  properties: {
+                    en: { type: "string", maxLength: 300 },
+                    vi: { type: "string", maxLength: 450 },
+                  },
+                  required: ["en", "vi"],
+                  additionalProperties: false,
+                },
+              ]),
+            ),
             cuisine: { type: "string", enum: CUISINE_CODES },
             equipment: input.equipment.includes("No heating appliance")
               ? { type: "array", items: { type: "string" }, maxItems: 0 }
@@ -54,12 +78,28 @@ export function cloudflareSchema(input: MenuInput) {
                   items: { type: "string", enum: input.equipment },
                 },
             minutes: { type: "integer", minimum: 1, maximum: input.maxMinutes },
+            main: boundedText(120, 180),
+            side: boundedText(120, 180),
+            prep: {
+              ...recipe.properties.prep,
+              maxItems: 3,
+              items: {
+                ...recipe.properties.prep.items,
+                properties: {
+                  ...recipe.properties.prep.items.properties,
+                  text: boundedText(240, 360),
+                },
+              },
+            },
             ingredients: {
               ...recipe.properties.ingredients,
+              maxItems: 12,
               items: {
                 ...recipe.properties.ingredients.items,
                 properties: {
                   ...recipe.properties.ingredients.items.properties,
+                  name: boundedText(96, 144),
+                  category: boundedText(32, 48),
                   unit: {
                     type: "string",
                     enum: ["g", "ml", "each", "tsp", "tbsp"],
@@ -71,7 +111,7 @@ export function cloudflareSchema(input: MenuInput) {
             steps: {
               ...recipe.properties.steps,
               minItems: 4,
-              maxItems: 8,
+              maxItems: 6,
               items: {
                 ...recipe.properties.steps.items,
                 properties: {
@@ -79,8 +119,8 @@ export function cloudflareSchema(input: MenuInput) {
                   text: {
                     ...recipe.properties.steps.items.properties.text,
                     properties: {
-                      en: { type: "string", minLength: 40 },
-                      vi: { type: "string", minLength: 1 },
+                      en: { type: "string", minLength: 40, maxLength: 300 },
+                      vi: { type: "string", minLength: 1, maxLength: 450 },
                     },
                   },
                 },
@@ -92,7 +132,7 @@ export function cloudflareSchema(input: MenuInput) {
     },
   };
 }
-function parseCloudflareOutput(output: unknown): unknown {
+export function parseCloudflareOutput(output: unknown): unknown {
   let raw: unknown = output;
   if (raw && typeof raw === "object") {
     const response = raw as {
@@ -100,10 +140,16 @@ function parseCloudflareOutput(output: unknown): unknown {
       choices?: { finish_reason?: string; message?: { content?: string } }[];
     };
     if (response.choices?.[0]?.finish_reason === "length")
-      throw new GenerationError("invalid_output");
+      throw new GenerationError("output_limit", { reason: "output_limit" });
     raw = response.choices?.[0]?.message?.content ?? response.response ?? raw;
   }
-  if (typeof raw === "string") raw = JSON.parse(raw);
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      throw new GenerationError("invalid_output", { reason: "invalid_json" });
+    }
+  }
   return raw;
 }
 const FALLBACK_CODES = new Set([
@@ -112,6 +158,7 @@ const FALLBACK_CODES = new Set([
   "provider_error",
   "provider_access",
   "invalid_output",
+  "output_limit",
   "incomplete_recipe",
   "unavailable_equipment",
   "restricted_ingredient",
@@ -180,12 +227,24 @@ export async function generateWithBackup(
       throw error;
     fallbackReason = error instanceof GenerationError ? error.code : "network";
   }
-  const basePayload = generationPayload(
-    input,
-    masterPrompt,
-    recentMeals,
-    context,
-  );
+  const basePayload = {
+    ...generationPayload(input, masterPrompt, recentMeals, context),
+    // The decoding schema is supplied once through response_format, not repeated in the user prompt.
+    responseSchema:
+      "Use the JSON schema supplied in response_format. For object meals, use the slot IDs as keys.",
+    referenceNote:
+      "referenceRecipe is a PARTIAL format example, not a complete recipe to copy. Generate complete new recipes for every slot.",
+    outputStyle:
+      "Return compact JSON. Write concise, actionable instructions: at most 12 ingredients, 3 prep steps and 6 cooking steps per recipe. Include quantities, doneness and safe storage, but no repeated explanations, duplicate keys or paragraph-long ingredient names. Finish every slot and its Vietnamese translation within the response budget.",
+  };
+  // Keep the bundled recipe as a short format example; its full instructions
+  // duplicate system guidance and leave less input room for the household request.
+  basePayload.referenceRecipe = {
+    ...basePayload.referenceRecipe,
+    ingredients: basePayload.referenceRecipe.ingredients.slice(0, 3),
+    prep: basePayload.referenceRecipe.prep.slice(0, 1),
+    steps: basePayload.referenceRecipe.steps.slice(0, 2),
+  };
   let payload = JSON.stringify(basePayload);
   let outputSchema: unknown = cloudflareSchema(input);
   if (
@@ -234,7 +293,7 @@ export async function generateWithBackup(
         },
       },
     };
-    payload = JSON.stringify({ ...basePayload, responseSchema: outputSchema });
+    payload = JSON.stringify(basePayload);
   }
   if (context.alternatives) {
     const choiceInput = JSON.stringify({
@@ -301,7 +360,6 @@ export async function generateWithBackup(
     outputSchema = choiceRecipeSchema(cloudflareSchema(input), input, choices);
     payload = JSON.stringify({
       ...basePayload,
-      responseSchema: outputSchema,
       chosenAlternatives: choices,
       finalInstruction:
         "Write the five chosen recipes exactly once using the supplied object keys and fixed dish names. Do not invent or repeat dish names. Produce complete recipes matching the original requirements and all translations.",

@@ -20,22 +20,25 @@ async function boot(
   ready = false,
   savedPlan?: Plan,
   savedMaster = DEFAULT_MASTER_PROMPT,
+  initialJob?: MenuJob,
 ) {
   const initial = freshState(data as Plan);
   initial.weekStart = "2026-10-26";
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-  let created: MenuJob | null = ready
-    ? {
-        id,
-        revision: "v1",
-        status: "ready",
-        input: aiInput,
-        masterPrompt: savedMaster,
-        recentMeals: [],
-        createdAt: new Date().toISOString(),
-        plan: savedPlan || aiPlan(),
-      }
-    : null;
+  let created: MenuJob | null =
+    initialJob ||
+    (ready
+      ? {
+          id,
+          revision: "v1",
+          status: "ready",
+          input: aiInput,
+          masterPrompt: savedMaster,
+          recentMeals: [],
+          createdAt: new Date().toISOString(),
+          plan: savedPlan || aiPlan(),
+        }
+      : null);
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});
   const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
     if (!url.includes("ai-menu")) return Response.json(data);
@@ -298,4 +301,93 @@ it("starts a new request with current family defaults and lets the user restore 
         init?.body && JSON.parse(init.body as string).action === "generate",
     ),
   ).toHaveLength(0);
+});
+
+it("retries a failed menu with the same answers, shows loading immediately and prevents duplicate clicks", async () => {
+  const failed: MenuJob = {
+    id,
+    status: "failed",
+    errorCode: "output_limit",
+    input: aiInput,
+    masterPrompt: "My unchanged family prompt",
+    recentMeals: [],
+    createdAt: new Date().toISOString(),
+  };
+  const { dialog, fetcher } = await boot(
+    true,
+    false,
+    undefined,
+    DEFAULT_MASTER_PROMPT,
+    failed,
+  );
+  const ui = within(dialog);
+  await ui.findByRole("heading", { name: "Could not complete your menu" });
+  expect(ui.getByText(/AI response was cut short/)).toBeTruthy();
+  const before = localStorage.getItem(STORAGE_KEY);
+  const original = fetcher.getMockImplementation()!;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  fetcher.mockImplementation(async (url, init) => {
+    if (init?.body && JSON.parse(init.body as string).action === "generate")
+      await gate;
+    return original(url, init);
+  });
+  const retry = ui.getByRole("button", { name: "Retry generation" });
+  fireEvent.click(retry);
+  fireEvent.click(retry);
+  await ui.findByRole("heading", { name: "Submitting your request…" });
+  expect(
+    ui.getByRole("progressbar", { name: "Menu generation progress" }),
+  ).toBeTruthy();
+  expect(ui.queryByRole("button", { name: "Retry generation" })).toBeNull();
+  expect(ui.queryByRole("button", { name: "Apply this menu" })).toBeNull();
+  const sent = fetcher.mock.calls.filter(
+    ([, init]) =>
+      init?.body && JSON.parse(init.body as string).action === "generate",
+  );
+  expect(sent).toHaveLength(1);
+  expect(JSON.parse(sent[0][1]!.body as string)).toMatchObject({
+    input: aiInput,
+    masterPrompt: failed.masterPrompt,
+  });
+  expect(JSON.parse(sent[0][1]!.body as string).id).not.toBe(failed.id);
+  release();
+  await ui.findByRole("heading", { name: "Your draft is ready" });
+  expect(ui.getByRole("button", { name: "Apply this menu" })).toBeTruthy();
+  expect(localStorage.getItem(STORAGE_KEY)).toBe(before);
+});
+
+it("retains the submission ID when retrying an uncertain network failure", async () => {
+  const { dialog, fetcher } = await boot();
+  const ui = within(dialog);
+  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  fireEvent.click(ui.getByRole("checkbox", { name: "Gas stove" }));
+  fireEvent.click(ui.getByRole("button", { name: "Continue" }));
+  const original = fetcher.getMockImplementation()!;
+  let fail = true;
+  fetcher.mockImplementation(async (url, init) => {
+    if (
+      init?.body &&
+      JSON.parse(init.body as string).action === "generate" &&
+      fail
+    ) {
+      fail = false;
+      throw new TypeError("Connection interrupted");
+    }
+    return original(url, init);
+  });
+  fireEvent.click(ui.getByRole("button", { name: "Generate menu" }));
+  await ui.findByRole("button", { name: "Retry generation" });
+  fireEvent.click(ui.getByRole("button", { name: "Retry generation" }));
+  await ui.findByRole("heading", { name: "Your draft is ready" });
+  const calls = fetcher.mock.calls
+    .filter(
+      ([, init]) =>
+        init?.body && JSON.parse(init.body as string).action === "generate",
+    )
+    .map(([, init]) => JSON.parse(init!.body as string));
+  expect(calls).toHaveLength(2);
+  expect(calls[1].id).toBe(calls[0].id);
 });

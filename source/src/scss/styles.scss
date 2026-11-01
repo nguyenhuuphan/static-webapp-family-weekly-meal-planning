@@ -2998,7 +2998,7 @@ select:focus-visible {
   max-height: 92dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scroll-padding-block: 24px 110px;
+  scroll-padding-block: 96px 110px;
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: var(--dialog-padding);
@@ -3011,6 +3011,12 @@ select:focus-visible {
   background: rgb(20 35 28 / 60%);
 }
 .ai-dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  padding-block: 12px;
+  background: #fffdf6;
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -3886,4 +3892,114 @@ select:focus-visible {
 }
 .request-summary .caption {
   margin-block: 10px 0;
+}
+
+.ai-generation-state {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(16px, 3vw, 24px);
+  margin-block: 16px 24px;
+  background: white;
+  &.is-ready {
+    border-color: #9fb6a1;
+    background: #f3f8f1;
+  }
+  &.is-failed {
+    border-color: #d9b978;
+    background: #fff8e9;
+  }
+  .caption {
+    margin-block: 12px 0;
+    max-width: none;
+  }
+}
+.ai-generation-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  > svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--green);
+  }
+  > div {
+    min-width: 0;
+  }
+  h4 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    line-height: 1.4;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--ink);
+  }
+  p {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+.is-failed .ai-generation-heading > svg {
+  color: #94610d;
+}
+.ai-spinner {
+  animation: ai-spin 1s linear infinite;
+}
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ai-generation-progress {
+  width: 100%;
+  height: 8px;
+  margin: 20px 0 12px;
+  accent-color: var(--green);
+}
+.ai-generation-batches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-size: 13px;
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  li > span {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #f5efdf;
+  }
+  .active {
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .complete > span {
+    background: #dfeadb;
+    color: #294a30;
+  }
+}
+.ai-retry-actions {
+  margin-top: 20px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+@media (max-width: 480px) {
+  .ai-retry-actions > button {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-spinner {
+    animation: none;
+  }
 }

@@ -674,26 +674,25 @@ export function generationPayload(
   recentMeals: string[],
   weekContext?: WeekContext,
 ) {
+  const request = additionalRequestPayload(
+    weekContext?.requirements || input,
+    input,
+    !!weekContext?.alternatives,
+  );
   return {
     purpose: weekContext?.alternatives
       ? "Generate exactly five DISTINCT unscheduled replacement recipes, different from every plannedMealsThisWeek main and from each other. Slots are placeholders for ordering only. Do not mention weekdays, meal slots, dates or container labels anywhere. All dietary, equipment, time and servings rules still apply. These are alternatives for the selected meal times in weekRequirements."
       : "Generate the scheduled meals for this batch.",
-    additionalRequest: additionalRequestPayload(
-      weekContext?.requirements || input,
-      input,
-      !!weekContext?.alternatives,
-    ),
+    additionalRequest: request,
     masterPrompt,
-    requirements: weekContext?.alternatives
-      ? {
-          ...input,
-          customPrompt: additionalRequestPayload(
-            weekContext.requirements,
-            input,
-            true,
-          ).verbatim,
-        }
-      : input,
+    // Send the verbatim weekly request once, under additionalRequest; repeating it in
+    // per-batch requirements makes models apply a dinner instruction to lunch as well.
+    requirements: {
+      ...input,
+      customPrompt: weekContext?.alternatives
+        ? request.verbatim
+        : request.batchRules.map((rule) => rule.source).join("\n"),
+    },
     slots: input.days.flatMap((day) =>
       input.mealTypes.map((type) => ({
         id: menuSlotId(day, type),
@@ -702,7 +701,11 @@ export function generationPayload(
       })),
     ),
     recentMealsToAvoid: recentMeals,
-    weekRequirements: weekContext?.requirements || input,
+    weekRequirements: {
+      ...(weekContext?.requirements || input),
+      customPrompt:
+        "See additionalRequest.batchRules and reservedMealsOutsideBatch; other batches are generated separately.",
+    },
     plannedMealsThisWeek: (weekContext?.meals || []).map((meal) => ({
       day: meal.day,
       type: meal.type,
@@ -809,9 +812,9 @@ export async function generateMenuBatch(
     }[];
   };
   if (data.status !== "completed")
-    throw invalidOutput(
-      data.status === "incomplete" ? "output_limit" : "provider_finish",
-    );
+    throw data.status === "incomplete"
+      ? new GenerationError("output_limit", { reason: "output_limit" })
+      : invalidOutput("provider_finish");
   const output = data.steps
     ?.filter((step) => step.type === "model_output")
     .flatMap((step) => step.content || [])

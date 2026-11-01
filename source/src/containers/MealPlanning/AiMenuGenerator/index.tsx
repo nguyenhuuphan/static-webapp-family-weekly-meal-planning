@@ -1,3 +1,4 @@
+import MenuGenerationStatus from "src/components/MenuGenerationStatus";
 import AdditionalRequestSummary from "src/components/AdditionalRequestSummary";
 import { compileAdditionalRequest } from "src/ai/additionalRequest";
 import AIProviderStatus from "src/components/AIProviderStatus";
@@ -121,6 +122,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
     });
     return () => cancelAnimationFrame(frame);
   }, [editMeal]);
+  const [submitting, setSubmitting] = useState(false);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
@@ -158,7 +160,11 @@ function GeneratorDialog({ close }: { close: () => void }) {
     text("Gia đình & lịch ăn", "Household & schedule"),
     text("Sở thích & yêu cầu", "Preferences & requests"),
     text("Xác nhận", "Review request"),
-    text("Bản nháp", "Draft"),
+    submitting || job?.status === "queued" || job?.status === "running"
+      ? text("Đang tạo", "Generating")
+      : job?.status === "failed" || (step === 3 && error && !preview)
+        ? text("Chưa hoàn tất", "Not completed")
+        : text("Bản nháp", "Draft"),
   ];
   const stepDescriptions = [
     text(
@@ -173,10 +179,20 @@ function GeneratorDialog({ close }: { close: () => void }) {
       "Kiểm tra yêu cầu trước khi dùng một lượt tạo thực đơn.",
       "Check your choices before using a menu generation.",
     ),
-    text(
-      "Xem và chỉnh sửa bản nháp. Chỉ thay thực đơn khi bạn bấm áp dụng.",
-      "Review and edit your draft. Your menu changes only when you apply it.",
-    ),
+    submitting || job?.status === "queued" || job?.status === "running"
+      ? text(
+          "AI đang chuẩn bị các bữa ăn và món thay thế theo yêu cầu của bạn.",
+          "AI is preparing your meals and alternatives from your request.",
+        )
+      : job?.status === "failed" || (step === 3 && error && !preview)
+        ? text(
+            "Thử lại với cùng yêu cầu hoặc chỉnh sửa các lựa chọn.",
+            "Retry with the same request or edit your choices.",
+          )
+        : text(
+            "Xem và chỉnh sửa bản nháp. Chỉ thay thực đơn khi bạn bấm áp dụng.",
+            "Review and edit your draft. Your menu changes only when you apply it.",
+          ),
   ];
   const validSchedule =
     isMonday(input.weekStart) &&
@@ -214,7 +230,11 @@ function GeneratorDialog({ close }: { close: () => void }) {
         throw new MenuApiError("invalid_output");
       setPreview(next.plan);
     }
-    if (next.status === "failed") setError(next.errorCode || "provider_error");
+    if (next.status !== "ready") setPreview(null);
+    if (next.status === "failed") {
+      submissionId.current = null;
+      setError(next.errorCode || "provider_error");
+    }
   };
   async function loadSettings() {
     if (inflight.current || code.length < 16) return;
@@ -339,6 +359,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
     setBusy(true);
     setError("");
     setNotice("");
+    setSubmitting(true);
+    setJob(null);
+    setPreview(null);
+    setStep(3);
     baseline.current = JSON.stringify(latest.current.s);
     submissionId.current ??= crypto.randomUUID();
     try {
@@ -362,13 +386,20 @@ function GeneratorDialog({ close }: { close: () => void }) {
     } catch (e) {
       if (alive.current) {
         if (e instanceof MenuApiError && e.quota) setQuota(e.quota);
-        if (e instanceof MenuApiError && e.code === "daily_limit")
+        // Retain the ID after uncertain transport failures: retrying must not start two jobs.
+        if (
+          e instanceof MenuApiError &&
+          !["network", "unauthorized"].includes(e.code)
+        )
           submissionId.current = null;
         setError(e instanceof MenuApiError ? e.code : "network");
       }
     } finally {
       inflight.current = false;
-      if (alive.current) setBusy(false);
+      if (alive.current) {
+        setBusy(false);
+        setSubmitting(false);
+      }
     }
   }
   async function saveMaster() {
@@ -439,6 +470,10 @@ function GeneratorDialog({ close }: { close: () => void }) {
     provider_busy: text(
       "Gemini đang quá tải hoặc tạm thời không phản hồi. Hãy thử lại sau; menu và dữ liệu hiện tại vẫn được giữ.",
       "Gemini is busy or temporarily unavailable. Try again later; your current menu and data are retained.",
+    ),
+    output_limit: text(
+      "AI chưa hoàn thành đủ nội dung trong một lần trả lời. Bấm Thử tạo lại để tạo bản mới với cùng yêu cầu.",
+      "The AI response was cut short before the menu was complete. Retry generation with the same request.",
     ),
     incomplete_recipe: text(
       "Bản nháp thiếu nguyên liệu hoặc hướng dẫn nấu còn quá sơ sài. Menu hiện tại vẫn được giữ; hãy chỉnh yêu cầu trước khi tạo lại.",
@@ -525,7 +560,17 @@ function GeneratorDialog({ close }: { close: () => void }) {
       "Generation timed out. Your current menu is unchanged.",
     ),
   };
-  const running = !!job && ["queued", "running"].includes(job.status);
+  const running =
+    submitting || (!!job && ["queued", "running"].includes(job.status));
+  const generationFailed = step === 3 && !running && !preview && !!error;
+  function editRequest() {
+    setJob(null);
+    setPreview(null);
+    submissionId.current = null;
+    setStep(0);
+    setError("");
+    setNotice("");
+  }
   const canApply =
     preview &&
     !running &&
@@ -606,7 +651,7 @@ function GeneratorDialog({ close }: { close: () => void }) {
         </h3>
         <p id="ai-step-help">{stepDescriptions[step]}</p>
       </div>
-      {error && (
+      {error && !generationFailed && (
         <p role="alert" className="notice warning">
           {errors[error] ||
             text(
@@ -626,7 +671,9 @@ function GeneratorDialog({ close }: { close: () => void }) {
         </p>
       )}
       {notice && <p role="status">{notice}</p>}
-      {busy && <p role="status">{text("Đang xử lý…", "Working…")}</p>}
+      {busy && !submitting && (
+        <p role="status">{text("Đang xử lý…", "Working…")}</p>
+      )}
       {step < 3 && (
         <>
           {step === 0 && (
@@ -1150,42 +1197,22 @@ function GeneratorDialog({ close }: { close: () => void }) {
       )}
       {step === 3 && (
         <>
-          {running && (
-            <div role="status" className="ai-generating">
-              <Sparkles size={28} aria-hidden="true" />
-              <h3>{text("Đang tạo menu…", "Creating your menu…")}</h3>
-              <p>
-                <strong>
-                  {input.days.length * input.mealTypes.length}{" "}
-                  {text("bữa", "meals")} · {input.servings}{" "}
-                  {text("người", "people")}
-                </strong>
-              </p>
-              <p>
-                {text(
-                  "Bạn có thể đóng popup và mở lại để xem tác vụ. Menu hiện tại chưa thay đổi.",
-                  "You can close this dialog and reopen it to check the job. Your current menu is unchanged.",
-                )}
-              </p>
-            </div>
-          )}
-          {job?.status === "failed" && (
-            <Button
-              disabled={busy}
-              onClick={() => {
-                setJob(null);
-                setPreview(null);
-                submissionId.current = null;
-                setStep(0);
-                setMaster(settings?.masterPrompt || DEFAULT_MASTER_PROMPT);
-                setError("");
-              }}
-            >
-              {text(
-                "Sửa yêu cầu / tạo lại bằng lượt mới",
-                "Edit request / start a new generation",
-              )}
-            </Button>
+          {(running || generationFailed || preview) && (
+            <MenuGenerationStatus
+              job={job}
+              input={input}
+              submitting={submitting}
+              error={
+                errors[error] ||
+                text(
+                  "Dịch vụ chưa phản hồi. Hãy thử lại với cùng yêu cầu.",
+                  "The service is unavailable. Retry with the same request.",
+                )
+              }
+              retry={() => void generate()}
+              edit={editRequest}
+              disabled={busy || !settings?.configured || quota?.remaining === 0}
+            />
           )}
           {preview && (
             <>

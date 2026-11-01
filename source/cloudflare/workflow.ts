@@ -99,7 +99,12 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
                   : undefined,
                 async (event) => {
                   await store
-                    .setJSON("progress/" + id, { ...event, batch: type })
+                    .setJSON("progress/" + id, {
+                      ...event,
+                      batch: type,
+                      completedBatches: plans.length,
+                      totalBatches: claimed.job.input.mealTypes.length + 1,
+                    })
                     .catch(() => undefined);
                 },
               );
@@ -129,6 +134,18 @@ export class MenuWorkflow extends WorkflowEntrypoint<Env, { id: string }> {
         providers.add(batch.provider);
         if (isAlternative) alternatives = batch.plan;
         else plans.push(batch.plan);
+      }
+      if (!failure) {
+        const progress = await store.get("progress/" + id).catch(() => null);
+        if (progress)
+          await store
+            .setJSON("progress/" + id, {
+              ...(progress as object),
+              activity: "validating",
+              completedBatches: plans.length + 1,
+              totalBatches: claimed.job.input.mealTypes.length + 1,
+            })
+            .catch(() => undefined);
       }
       const result =
         failure ??

@@ -194,7 +194,7 @@ export function compileAdditionalRequest(input: MenuInput): RequestContract {
     const cuisine = cuisineCode(positive);
     const ingredients = foodMentions(positive);
     const cookingMethod: RequestRule["cookingMethod"] =
-      /\b(fried|fry|frying|chien|ran)\b/.test(positive)
+      /\b(fried|fry|frying|chien|ran|ap chao)\b/.test(positive)
         ? "fried"
         : /\b(baked|bake|roasted|roast|nuong lo|dut lo)\b/.test(positive)
           ? "baked"
@@ -522,29 +522,41 @@ export function additionalRequestPayload(
   alternatives = false,
 ) {
   const contract = compileAdditionalRequest(input);
+  const inBatch = (rule: RequestRule) =>
+    !alternatives &&
+    rule.slots.some((id) =>
+      batch.days.some((day) =>
+        batch.mealTypes.some((type) => slotId(day, type) === id),
+      ),
+    );
+  const batchRules = contract.rules.filter(inBatch);
+  const verbatim = contract.rules
+    .filter((rule) => !inBatch(rule))
+    .reduce(
+      (remaining, rule) => remaining.replace(rule.source, ""),
+      contract.originalText,
+    )
+    .trim();
   return {
-    verbatim: alternatives
-      ? contract.rules
-          .reduce(
-            (remaining, rule) => remaining.replace(rule.source, ""),
-            contract.originalText,
-          )
-          .trim()
-      : contract.originalText,
-    originalWeeklyRequest: contract.originalText,
+    verbatim,
     priority:
       "Explicit additional-request instructions override master-prompt and default cuisine/variety preferences. Keep selected schedule, servings, dietary exclusions, appliances, time limit, JSON format and bilingual quantity protections.",
-    interpretation: contract.rules,
+    interpretation: batchRules,
     globalExclusions: contract.excludedIngredients,
-    batchRules: alternatives
+    batchRules,
+    currentBatchSlots: alternatives
       ? []
-      : contract.rules.filter((rule) =>
-          rule.slots.some((id) =>
-            batch.days.some((day) =>
-              batch.mealTypes.some((type) => slotId(day, type) === id),
-            ),
-          ),
+      : batch.days.flatMap((day) =>
+          batch.mealTypes.map((type) => slotId(day, type)),
         ),
+    reservedMealsOutsideBatch: alternatives
+      ? []
+      : contract.rules
+          .filter((rule) => rule.countMode === "exact" && !inBatch(rule))
+          .map(({ source: _source, ...rule }) => rule),
+    batchInstruction: alternatives
+      ? "Generate unscheduled alternatives only. Dated meal requests are context, not instructions for these recipes."
+      : "Generate ONLY currentBatchSlots. Apply only batchRules here. A reservedMealsOutsideBatch recipe MUST NOT appear in this batch: choose a different food combination and cooking method. In particular, a dinner request must never become lunch. Other assigned slots will be generated separately; their prose is intentionally omitted from this batch.",
     scheduledOnly: alternatives
       ? "These five alternatives are unscheduled and never count toward a weekly cuisine count or satisfy a dated meal request. Follow global exclusions/preferences, but do not repeat a dated request five times."
       : "Apply each dated/counted request only to its assigned slots across the full week, never once per batch.",
@@ -556,6 +568,19 @@ export function additionalRequestPayload(
             return {
               id,
               required: contract.rules.filter((r) => r.slots.includes(id)),
+              forbiddenMealCombinations: contract.rules
+                .filter(
+                  (r) =>
+                    r.countMode === "exact" &&
+                    !r.slots.includes(id) &&
+                    !r.cuisine &&
+                    r.ingredients.length,
+                )
+                .map((r) => ({
+                  ingredients: r.ingredients.map((food) => foods[food].en),
+                  cookingMethod: r.cookingMethod,
+                  reservedSlots: r.slots,
+                })),
               forbiddenCuisines: [
                 ...new Set(
                   contract.rules

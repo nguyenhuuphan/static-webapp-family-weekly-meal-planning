@@ -426,7 +426,10 @@ describe("Gemini API boundary", () => {
     );
     await expect(
       generateMenu(aiInput, DEFAULT_MASTER_PROMPT, []),
-    ).rejects.toMatchObject({ code: "invalid_output" });
+    ).rejects.toMatchObject({
+      code: "output_limit",
+      diagnostic: { reason: "output_limit" },
+    });
   });
   it("reports temporary provider overload without retrying or exposing its message", async () => {
     const fetcher = vi

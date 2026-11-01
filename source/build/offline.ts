@@ -6,7 +6,11 @@ export function workerSource(version: string, assets: string[]) {
   return `const PREFIX = "weekday-table:" + self.registration.scope;
 const CACHE = PREFIX + ${JSON.stringify(version)};
 const URLS = ${JSON.stringify(assets)}.map(path => new URL(path, self.registration.scope).href);
-self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(URLS.map(url => new Request(url, { cache: "reload" })))).then(() => self.skipWaiting())));
+const hasRedirect = response => response.redirected || response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400);
+// A fresh Response has no redirect URL history, which Safari rejects for navigations.
+const cleanResponse = response => new Response(response.body, { status: response.status, statusText: response.statusText, headers: response.headers });
+const signIn = request => { const target = new URL(request.url); target.searchParams.set("sign-in", "1"); return Response.redirect(target.href, 302); };
+self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(URLS.map(url => new Request(url, { cache: "reload", redirect: "error" })))).then(() => self.skipWaiting())));
 self.addEventListener("activate", event => event.waitUntil((async () => { const own = (await caches.keys()).filter(key => key.startsWith(PREFIX)); await Promise.all(own.filter(key => key !== CACHE && !own.slice(-2).includes(key)).map(key => caches.delete(key))); await self.clients.claim(); })()));
 self.addEventListener("message", event => { if (event.data === "ACTIVATE_UPDATE") self.skipWaiting(); });
 self.addEventListener("fetch", event => {
@@ -16,15 +20,26 @@ self.addEventListener("fetch", event => {
   const key = event.request.mode === "navigate" ? new URL("index.html", self.registration.scope).href : url.href;
   if (event.request.mode === "navigate") {
     event.respondWith((async () => {
-      try { const response = await fetch(event.request); if (response.ok && !response.redirected) return response; } catch {}
+      try {
+        // Let the browser perform Access redirects on a navigation the worker bypasses.
+        const response = await fetch(event.request, { redirect: "manual" });
+        if (hasRedirect(response) || response.status === 401 || response.status === 403) return signIn(event.request);
+        if (response.ok) return cleanResponse(response);
+        if (response.status < 500) return cleanResponse(response);
+      } catch {}
       const saved = await (await caches.open(CACHE)).match(key);
-      if (saved) return saved;
-      return fetch(event.request);
+      if (saved && saved.ok && !hasRedirect(saved)) return cleanResponse(saved);
+      // Never return a cached login page or a second fetch with followed redirects.
+      return new Response("No valid offline copy. Reconnect and open the sign-in link (?sign-in=1).", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } });
     })());
     return;
   }
   if (event.request.mode !== "navigate" && !URLS.includes(key)) return;
-  event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(key)) || fetch(event.request)));
+  event.respondWith(caches.open(CACHE).then(async cache => {
+    const saved = await cache.match(key);
+    if (saved && saved.ok && !hasRedirect(saved)) return cleanResponse(saved);
+    return fetch(event.request, { redirect: "error" });
+  }));
 });`;
 }
 export function offlineBundle(): Plugin {
@@ -52,6 +67,8 @@ export function offlineBundle(): Plugin {
       await walk(output);
       files.sort();
       const hash = createHash("sha256");
+      // Worker-only fixes must also receive a fresh cache, independently of asset changes.
+      hash.update(workerSource("", []));
       for (const file of files) hash.update(await readFile(file));
       const urls = files.map((file) =>
         relative(output, file).replaceAll("\\", "/"),
